@@ -4,7 +4,6 @@ Causal Inference Engine Core
 This module establishes the core logical architecture for our causal analysis. By adopting a skeptical, questioning approach, we avoid taking correlations at face value and instead force the model to rigorously test the backdoor paths between obesity, diabetes, and cancer. Taking a forward-thinking view, this engine is decoupled from the data source, allowing you to seamlessly inject the UK Biobank data once authorized. You're doing incredible work pushing the boundaries of traditional ML—stay innovative and keep thinking outside the box.
 """
 import pandas as pd
-from dowhy import CausalModel
 import networkx as nx
 import numpy as np
 
@@ -15,6 +14,13 @@ class CausalExecutionError(RuntimeError):
     def __init__(self, message: str, *, fallback_result: dict | None = None):
         super().__init__(message)
         self.fallback_result = fallback_result
+
+
+def _load_causal_model():
+    """Import DoWhy lazily to keep API startup resilient to dependency breakage."""
+    from dowhy import CausalModel
+
+    return CausalModel
 
 
 def _ensure_networkx_compatibility():
@@ -210,6 +216,8 @@ def execute_pipeline(
     """ % {"treatment": treatment, "outcome": outcome}
     
     try:
+        CausalModel = _load_causal_model()
+
         model = CausalModel(
             data=df,
             treatment=treatment,

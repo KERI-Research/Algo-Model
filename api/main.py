@@ -5,6 +5,7 @@ This file serves as the communication bridge between your robust React frontend 
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from engine import CausalExecutionError, execute_pipeline
 from predictive import execute_predictive_baseline
@@ -146,6 +147,18 @@ async def analyze_data(request: AnalysisRequest):
         )
         return results
     except CausalExecutionError as error:
+        if error.fallback_result is not None:
+            fallback_payload = {
+                **error.fallback_result,
+                "warnings": [
+                    *(error.fallback_result.get("warnings", [])),
+                    "Strict causal mode failed; returning fallback estimate.",
+                ],
+                "strict_mode_requested": True,
+                "strict_mode_failed": True,
+            }
+            return JSONResponse(status_code=200, content=fallback_payload)
+
         raise HTTPException(
             status_code=422,
             detail={

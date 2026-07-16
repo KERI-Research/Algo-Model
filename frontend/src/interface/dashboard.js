@@ -93,21 +93,62 @@ const CausalDashboard = () => {
 		setLoading(true);
 		setError(null);
 		try {
+			const runDirectionalAnalysis = async (
+				treatment,
+				outcome,
+			) => {
+				const strictRequest = {
+					treatment,
+					outcome,
+					allowFallback: !strictCausalMode,
+				};
+
+				try {
+					return await fetchModelResults(
+						selectedDataset,
+						strictRequest,
+					);
+				} catch (analysisError) {
+					const isStrictCompatibilityFailure =
+						strictCausalMode &&
+						typeof analysisError?.message ===
+							"string" &&
+						analysisError.message.includes(
+							"fallback was disabled",
+						);
+
+					if (!isStrictCompatibilityFailure) {
+						throw analysisError;
+					}
+
+					const fallbackResult =
+						await fetchModelResults(
+							selectedDataset,
+							{
+								treatment,
+								outcome,
+								allowFallback: true,
+							},
+						);
+
+					return {
+						...fallbackResult,
+						warnings: [
+							...(fallbackResult.warnings ||
+								[]),
+							"Strict causal mode failed due to DoWhy runtime compatibility. Automatically switched to fallback estimate for this run.",
+						],
+					};
+				}
+			};
+
 			const [
 				diabetesToCancer,
 				cancerToDiabetes,
 				predictiveBaseline,
 			] = await Promise.all([
-				fetchModelResults(selectedDataset, {
-					treatment: "Diabetes",
-					outcome: "Cancer",
-					allowFallback: !strictCausalMode,
-				}),
-				fetchModelResults(selectedDataset, {
-					treatment: "Cancer",
-					outcome: "Diabetes",
-					allowFallback: !strictCausalMode,
-				}),
+				runDirectionalAnalysis("Diabetes", "Cancer"),
+				runDirectionalAnalysis("Cancer", "Diabetes"),
 				fetchPredictiveBaseline(selectedDataset),
 			]);
 
