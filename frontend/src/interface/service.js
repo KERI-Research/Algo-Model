@@ -114,3 +114,36 @@ export const fetchPredictiveBaseline = async (datasetName) => {
 
 	return await response.json();
 };
+
+export const fetchBiomarkerDiscovery = async (datasetName, options = {}) => {
+	const {
+		patientRecord = null,
+		topK = 8,
+		forceRetrain = false,
+	} = options;
+
+	const response = await fetch(
+		`${API_BASE_URL}/api/v1/biomarker-discovery`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				dataset: datasetName,
+				patient_record: patientRecord,
+				top_k: topK,
+				force_retrain: forceRetrain,
+			}),
+		},
+	);
+
+	if (!response.ok) {
+		throw await buildApiError(
+			response,
+			"Biomarker discovery failed",
+		);
+	}
+
+	return await response.json();
+};

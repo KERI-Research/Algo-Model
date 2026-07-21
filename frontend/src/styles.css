@@ -152,6 +152,7 @@ body {
 }
 
 select,
+input,
 button {
     font: inherit;
     border-radius: 12px;
@@ -159,7 +160,8 @@ button {
     border: 1px solid var(--line);
 }
 
-select {
+select,
+input {
     background: white;
     color: var(--ink);
     min-width: 210px;
@@ -182,6 +184,16 @@ button:hover:not(:disabled) {
 button:disabled {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+.secondary-button {
+    background: #e6f4f1;
+    color: var(--accent-strong);
+    border-color: #b7ddd8;
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: #d4ece8;
 }
 
 .panel-header {
@@ -215,6 +227,12 @@ button:disabled {
     border-color: #fcd34d;
     background: #fff7ed;
     color: var(--warn);
+}
+
+.alert-success {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
 }
 
 .compact-alert {
@@ -427,6 +445,86 @@ th {
     color: var(--ink);
 }
 
+.patient-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.upload-control {
+    margin-top: 14px;
+    display: grid;
+    gap: 6px;
+}
+
+.upload-control span {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-family: "IBM Plex Mono", monospace;
+    color: #6d7479;
+}
+
+.patient-form-grid label {
+    display: grid;
+    gap: 6px;
+}
+
+.patient-form-grid span {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-family: "IBM Plex Mono", monospace;
+    color: #6d7479;
+}
+
+.biomarker-list {
+    margin-top: 16px;
+    display: grid;
+    gap: 10px;
+}
+
+.biomarker-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: #fcf7ee;
+}
+
+.biomarker-item strong {
+    display: block;
+    color: var(--ink);
+}
+
+.biomarker-stats {
+    display: grid;
+    gap: 4px;
+    text-align: right;
+    font-size: 0.82rem;
+    font-family: "IBM Plex Mono", monospace;
+    color: #6b7280;
+}
+
+.patient-assessment {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #eadfc9;
+}
+
+.biomarker-score {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.follow-up-list {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+}
+
 @keyframes drift {
     from {
         transform: translateY(0) translateX(0) scale(1);
@@ -460,6 +558,18 @@ th {
 
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .patient-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .biomarker-item {
+        flex-direction: column;
+    }
+
+    .biomarker-stats {
+        text-align: left;
     }
 
     .metric-grid {

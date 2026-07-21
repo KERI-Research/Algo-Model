@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from biomarker import execute_biomarker_discovery
 from engine import CausalExecutionError, execute_pipeline
 from predictive import execute_predictive_baseline
 from pathlib import Path
@@ -32,6 +33,13 @@ class AnalysisRequest(BaseModel):
 
 class DatasetRequest(BaseModel):
     dataset: str = "nhanes_merged.csv"
+
+
+class BiomarkerRequest(BaseModel):
+    dataset: str = "nhanes_merged.csv"
+    patient_record: dict[str, object] | None = None
+    top_k: int = 8
+    force_retrain: bool = False
 
 
 def resolve_dataset_path(dataset_name: str) -> Path | None:
@@ -185,5 +193,31 @@ async def predictive_baseline(request: DatasetRequest):
 
     try:
         return execute_predictive_baseline(str(file_path))
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.post("/api/v1/biomarker-discovery")
+async def biomarker_discovery(request: BiomarkerRequest):
+    file_path = resolve_dataset_path(request.dataset)
+
+    if file_path is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Dataset not found. Expected one of: "
+                f"data/{request.dataset}, api/nhanes_data/{request.dataset}, or nhanes_data/{request.dataset}"
+            ),
+        )
+
+    try:
+        return execute_biomarker_discovery(
+            str(file_path),
+            patient_record=request.patient_record,
+            top_k=request.top_k,
+            force_retrain=request.force_retrain,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error))
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))

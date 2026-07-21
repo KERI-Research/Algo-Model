@@ -16,6 +16,7 @@ KERI provides four core capabilities:
 2. Dataset preview: inspect columns and sample rows before analysis.
 3. Causal analysis: estimate directional effects (for example Diabetes -> Cancer) with refutation checks.
 4. Predictive baseline: fit a simple logistic baseline and report imbalance-aware metrics.
+5. Biomarker discovery: train a local tabular model, rank cohort-level biomarkers, benchmark HistGradientBoosting against XGBoost, score patient-style records, and ask for missing required fields when confidence is too low or records are incomplete.
 
 ## Project Structure
 
@@ -25,6 +26,8 @@ KERI/
   main.py                # FastAPI routes
   engine.py              # DAG + causal inference execution
   predictive.py          # Predictive baseline model
+  biomarker.py           # Biomarker discovery, local artifact loading, ChromaDB retrieval
+  train_biomarker_model.py # Offline training CLI for the biomarker model
   fetch_nhanes.py        # NHANES download/merge/build pipeline
   nhanes_data/
    nhanes_merged.csv
@@ -46,6 +49,13 @@ The NHANES builder script pulls 2017-2018 public files and merges them by partic
 - BMX (body measurements)
 - DIQ (diabetes questionnaire)
 - MCQ (medical conditions questionnaire)
+- GHB (glycohemoglobin / HbA1c)
+- GLU (fasting glucose)
+- INS (fasting insulin)
+- TRIGLY (triglycerides and LDL)
+- HDL (HDL cholesterol)
+- TCHOL (total cholesterol)
+- HSCRP (high-sensitivity C-reactive protein)
 
 The merged file is written to both:
 
@@ -57,6 +67,9 @@ The pipeline also derives model-ready binary columns when possible:
 - Obesity from BMX_BMXBMI (BMI >= 30)
 - Diabetes from DIQ_DIQ010
 - Cancer from MCQ_MCQ220
+- HOMA-IR proxy from fasting glucose and insulin
+- Elevated HbA1c flag from GHB_LBXGH
+- Fasting hyperglycemia flag from GLU_LBXGLU
 
 ## Causal Model Summary
 
@@ -79,9 +92,10 @@ Estimation path:
 1. identify effect using DoWhy
 2. estimate with backdoor linear regression
 3. run refutations:
-  - random common cause
-  - placebo treatment refuter
-  - data subset refuter
+
+- random common cause
+- placebo treatment refuter
+- data subset refuter
 
 If DoWhy runtime compatibility fails and fallback is allowed, the API returns an association-style fallback estimate with warnings.
 
@@ -199,6 +213,33 @@ Request body:
 
 Returns per-target baseline metrics for Diabetes and Cancer.
 
+### POST /api/v1/biomarker-discovery
+
+Request body:
+
+```json
+{
+ "dataset": "nhanes_merged.csv",
+ "patient_record": {
+  "Diabetes": 1,
+  "DEMO_RIDAGEYR": 62,
+  "DEMO_RIAGENDR": 2,
+  "BMX_BMXBMI": 31.4,
+  "BMX_BMXWAIST": 101.2,
+  "DIQ_DID040": 56
+ },
+ "top_k": 8,
+ "force_retrain": false
+}
+```
+
+Returns:
+
+- cohort-level biomarker ranking
+- biomarker model metrics and artifact metadata
+- ChromaDB memory summary
+- patient assessment with confidence and follow-up questions when required fields are missing or confidence is low
+
 ## Rebuild NHANES Data
 
 To regenerate the merged dataset manually:
@@ -210,6 +251,25 @@ python api/fetch_nhanes.py
 
 The backend can also auto-build nhanes_merged.csv if it is missing.
 
+## Train The Biomarker Model
+
+To create or refresh the local biomarker artifact:
+
+```bash
+source .venv/bin/activate
+python api/train_biomarker_model.py --force
+```
+
+This command:
+
+- loads NHANES
+- applies the same feature and cleaning logic used at runtime
+- benchmarks HistGradientBoosting against XGBoost while preserving the artifact contract
+- trains the winning local tabular biomarker model
+- writes a versioned artifact plus ChromaDB retrieval memory under api/model_artifacts/
+
+The command output now includes both the selected model metrics and the benchmark summary.
+
 ## Common Workflow
 
 1. Start backend.
@@ -217,7 +277,8 @@ The backend can also auto-build nhanes_merged.csv if it is missing.
 3. Open the UI.
 4. Choose dataset and preview rows.
 5. Run causal analysis and review estimate plus refutations.
-6. Compare with predictive baseline metrics.
+6. Run the biomarker model with a patient-style record and review its biomarker ranking, confidence, and follow-up questions.
+7. Compare with predictive baseline metrics.
 
 ## Notes and Interpretation
 

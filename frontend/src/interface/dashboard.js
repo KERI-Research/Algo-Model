@@ -11,11 +11,41 @@
 
 import React, { useEffect, useState } from "react";
 import {
+	fetchBiomarkerDiscovery,
 	fetchDatasetCatalog,
 	fetchDatasetPreview,
 	fetchModelResults,
 	fetchPredictiveBaseline,
 } from "./service";
+
+const INITIAL_PATIENT_FORM = {
+	Diabetes: "",
+	DEMO_RIDAGEYR: "",
+	DEMO_RIAGENDR: "",
+	BMX_BMXBMI: "",
+	BMX_BMXWAIST: "",
+	DIQ_DID040: "",
+	GHB_LBXGH: "",
+	GLU_LBXGLU: "",
+	INS_LBXIN: "",
+};
+
+const PATIENT_FIELD_ALIASES = {
+	age: "DEMO_RIDAGEYR",
+	age_years: "DEMO_RIDAGEYR",
+	sex: "DEMO_RIAGENDR",
+	gender: "DEMO_RIAGENDR",
+	bmi: "BMX_BMXBMI",
+	waist: "BMX_BMXWAIST",
+	waist_circumference: "BMX_BMXWAIST",
+	diabetes: "Diabetes",
+	diabetes_onset_age: "DIQ_DID040",
+	hba1c: "GHB_LBXGH",
+	a1c: "GHB_LBXGH",
+	glucose: "GLU_LBXGLU",
+	fasting_glucose: "GLU_LBXGLU",
+	insulin: "INS_LBXIN",
+};
 
 const CausalDashboard = () => {
 	const [datasets, setDatasets] = useState([]);
@@ -29,6 +59,11 @@ const CausalDashboard = () => {
 	const [previewError, setPreviewError] = useState(null);
 	const [strictCausalMode, setStrictCausalMode] = useState(false);
 	const [predictiveResults, setPredictiveResults] = useState(null);
+	const [biomarkerResults, setBiomarkerResults] = useState(null);
+	const [biomarkerLoading, setBiomarkerLoading] = useState(false);
+	const [biomarkerError, setBiomarkerError] = useState(null);
+	const [patientForm, setPatientForm] = useState(INITIAL_PATIENT_FORM);
+	const [uploadStatus, setUploadStatus] = useState(null);
 
 	useEffect(() => {
 		const loadDatasets = async () => {
@@ -174,6 +209,14 @@ const CausalDashboard = () => {
 		return numericValue.toFixed(3);
 	};
 
+	const formatModelLabel = (modelName) =>
+		String(modelName)
+			.replaceAll("_", " ")
+			.replaceAll(" v1", "")
+			.replace(/\b\w/g, (character) =>
+				character.toUpperCase(),
+			);
+
 	const modeLabel = (result) => {
 		if (!result) {
 			return "Unknown mode";
@@ -221,6 +264,207 @@ const CausalDashboard = () => {
 		return `${treatment} -> ${outcome}: when ${treatment} is present, ${outcome} is estimated to be ${absPoints}% points less likely.`;
 	};
 
+	const handlePatientFieldChange = (field, value) => {
+		setPatientForm((current) => ({
+			...current,
+			[field]: value,
+		}));
+	};
+
+	const buildPatientRecord = () => {
+		const payload = {};
+		Object.entries(patientForm).forEach(([field, rawValue]) => {
+			if (rawValue === "") {
+				return;
+			}
+
+			const numericValue = Number(rawValue);
+			payload[field] = Number.isNaN(numericValue)
+				? rawValue
+				: numericValue;
+		});
+		return payload;
+	};
+
+	const normalizeFieldName = (field) =>
+		PATIENT_FIELD_ALIASES[String(field).trim().toLowerCase()] ||
+		String(field).trim();
+
+	const normalizeFieldValue = (field, value) => {
+		if (value === null || value === undefined) {
+			return "";
+		}
+
+		const textValue = String(value).trim();
+		if (textValue === "") {
+			return "";
+		}
+
+		if (field === "DEMO_RIAGENDR") {
+			const lowered = textValue.toLowerCase();
+			if (lowered === "male") {
+				return "1";
+			}
+			if (lowered === "female") {
+				return "2";
+			}
+		}
+
+		if (field === "Diabetes") {
+			const lowered = textValue.toLowerCase();
+			if (["yes", "true", "positive"].includes(lowered)) {
+				return "1";
+			}
+			if (["no", "false", "negative"].includes(lowered)) {
+				return "0";
+			}
+		}
+
+		return textValue;
+	};
+
+	const parseCsvLine = (line) => {
+		const values = [];
+		let current = "";
+		let inQuotes = false;
+
+		for (let index = 0; index < line.length; index += 1) {
+			const character = line[index];
+			if (character === '"') {
+				if (inQuotes && line[index + 1] === '"') {
+					current += '"';
+					index += 1;
+				} else {
+					inQuotes = !inQuotes;
+				}
+				continue;
+			}
+
+			if (character === "," && !inQuotes) {
+				values.push(current);
+				current = "";
+				continue;
+			}
+
+			current += character;
+		}
+
+		values.push(current);
+		return values;
+	};
+
+	const parseUploadedRecord = (rawText, fileName) => {
+		const trimmed = rawText.trim();
+		if (!trimmed) {
+			throw new Error("Uploaded file is empty.");
+		}
+
+		const lowerName = fileName.toLowerCase();
+		if (
+			lowerName.endsWith(".json") ||
+			trimmed.startsWith("{") ||
+			trimmed.startsWith("[")
+		) {
+			const parsed = JSON.parse(trimmed);
+			if (Array.isArray(parsed)) {
+				if (
+					parsed.length === 0 ||
+					typeof parsed[0] !== "object"
+				) {
+					throw new Error(
+						"JSON array upload must contain at least one object record.",
+					);
+				}
+				return parsed[0];
+			}
+			if (typeof parsed !== "object") {
+				throw new Error(
+					"JSON upload must be an object or an array of objects.",
+				);
+			}
+			return parsed;
+		}
+
+		const lines = trimmed.split(/\r?\n/).filter(Boolean);
+		if (lines.length < 2) {
+			throw new Error(
+				"CSV upload must include a header row and at least one data row.",
+			);
+		}
+
+		const headers = parseCsvLine(lines[0]).map((header) =>
+			header.trim(),
+		);
+		const values = parseCsvLine(lines[1]);
+		const record = {};
+		headers.forEach((header, index) => {
+			record[header] = values[index] ?? "";
+		});
+		return record;
+	};
+
+	const applyUploadedRecord = (record) => {
+		setPatientForm((current) => {
+			const next = { ...current };
+			Object.entries(record).forEach(([field, value]) => {
+				const normalizedField =
+					normalizeFieldName(field);
+				if (!(normalizedField in next)) {
+					return;
+				}
+				next[normalizedField] = normalizeFieldValue(
+					normalizedField,
+					value,
+				);
+			});
+			return next;
+		});
+	};
+
+	const handlePatientUpload = async (event) => {
+		const file = event.target.files?.[0];
+		if (!file) {
+			return;
+		}
+
+		setUploadStatus(null);
+		setBiomarkerError(null);
+		try {
+			const rawText = await file.text();
+			const record = parseUploadedRecord(rawText, file.name);
+			applyUploadedRecord(record);
+			setUploadStatus(
+				`Loaded patient record from ${file.name}. Recognized fields were mapped into the biomarker form.`,
+			);
+		} catch (uploadError) {
+			setUploadStatus(null);
+			setBiomarkerError(uploadError.message);
+		} finally {
+			event.target.value = "";
+		}
+	};
+
+	const runBiomarkerDiscovery = async (forceRetrain = false) => {
+		setBiomarkerLoading(true);
+		setBiomarkerError(null);
+		try {
+			const result = await fetchBiomarkerDiscovery(
+				selectedDataset,
+				{
+					patientRecord: buildPatientRecord(),
+					topK: 8,
+					forceRetrain,
+				},
+			);
+			setBiomarkerResults(result);
+		} catch (biomarkerRequestError) {
+			setBiomarkerError(biomarkerRequestError.message);
+			setBiomarkerResults(null);
+		} finally {
+			setBiomarkerLoading(false);
+		}
+	};
+
 	return (
 		<div className="app-shell">
 			<div
@@ -239,9 +483,10 @@ const CausalDashboard = () => {
 					<h1>Causal Inference Engine</h1>
 					<p className="hero-copy">
 						Choose a dataset, inspect sample
-						rows, then execute a causal run
-						with transparent estimates and
-						refutation checks.
+						rows, then run causal analysis
+						alongside a biomarker discovery
+						workflow for local NHANES risk
+						scoring.
 					</p>
 				</section>
 
@@ -527,9 +772,600 @@ const CausalDashboard = () => {
 								</div>
 							)}
 						</article>
+
+						<article className="panel biomarker-input-panel">
+							<div className="panel-header">
+								<div>
+									<h2>
+										Biomarker
+										Probe
+									</h2>
+									<p>
+										Enter
+										a
+										patient-style
+										record.
+										Missing
+										required
+										fields
+										trigger
+										mandatory
+										follow-up
+										questions;
+										optional
+										fields
+										are
+										only
+										requested
+										when
+										confidence
+										is
+										too
+										low.
+									</p>
+								</div>
+								{biomarkerLoading && (
+									<span className="status">
+										Running
+										biomarker
+										model...
+									</span>
+								)}
+							</div>
+							<label className="upload-control">
+								<span>
+									Upload
+									CSV or
+									JSON
+									record
+								</span>
+								<input
+									type="file"
+									accept=".csv,.json,application/json,text/csv"
+									onChange={
+										handlePatientUpload
+									}
+								/>
+							</label>
+							{uploadStatus && (
+								<p className="alert alert-success">
+									{
+										uploadStatus
+									}
+								</p>
+							)}
+							<div className="patient-form-grid">
+								<label>
+									<span>
+										Diabetes
+									</span>
+									<select
+										value={
+											patientForm.Diabetes
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"Diabetes",
+												event
+													.target
+													.value,
+											)
+										}
+									>
+										<option value="">
+											Unknown
+										</option>
+										<option value="1">
+											Yes
+										</option>
+										<option value="0">
+											No
+										</option>
+									</select>
+								</label>
+								<label>
+									<span>
+										Age
+									</span>
+									<input
+										type="number"
+										value={
+											patientForm.DEMO_RIDAGEYR
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"DEMO_RIDAGEYR",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										Sex
+										Code
+									</span>
+									<select
+										value={
+											patientForm.DEMO_RIAGENDR
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"DEMO_RIAGENDR",
+												event
+													.target
+													.value,
+											)
+										}
+									>
+										<option value="">
+											Unknown
+										</option>
+										<option value="1">
+											Male
+										</option>
+										<option value="2">
+											Female
+										</option>
+									</select>
+								</label>
+								<label>
+									<span>
+										BMI
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.BMX_BMXBMI
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"BMX_BMXBMI",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										Waist
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.BMX_BMXWAIST
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"BMX_BMXWAIST",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										Diabetes
+										Onset
+										Age
+									</span>
+									<input
+										type="number"
+										value={
+											patientForm.DIQ_DID040
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"DIQ_DID040",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										HbA1c
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.GHB_LBXGH
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"GHB_LBXGH",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										Fasting
+										Glucose
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.GLU_LBXGLU
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"GLU_LBXGLU",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										Insulin
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.INS_LBXIN
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"INS_LBXIN",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+							</div>
+							<div className="controls-row">
+								<button
+									type="button"
+									onClick={() =>
+										runBiomarkerDiscovery(
+											false,
+										)
+									}
+									disabled={
+										biomarkerLoading
+									}
+								>
+									{biomarkerLoading
+										? "Running biomarker model..."
+										: "Run Biomarker Model"}
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={() =>
+										runBiomarkerDiscovery(
+											true,
+										)
+									}
+									disabled={
+										biomarkerLoading
+									}
+								>
+									Retrain
+									Artifact
+								</button>
+							</div>
+							{biomarkerError && (
+								<p className="alert alert-error">
+									Biomarker
+									error:{" "}
+									{
+										biomarkerError
+									}
+								</p>
+							)}
+						</article>
 					</div>
 
 					<div className="right-column">
+						{biomarkerResults && (
+							<article className="panel biomarker-result-panel">
+								<h2>
+									Biomarker
+									Discovery
+								</h2>
+								<p className="meta-text">
+									Local
+									tabular
+									model
+									trained
+									on
+									NHANES
+									with
+									ChromaDB-backed
+									case
+									retrieval.
+								</p>
+								<div className="metric-grid">
+									<div className="metric-item">
+										<span>
+											AUROC
+										</span>
+										<strong>
+											{formatMetric(
+												biomarkerResults
+													.metrics
+													.auroc,
+											)}
+										</strong>
+									</div>
+									<div className="metric-item">
+										<span>
+											AUPRC
+										</span>
+										<strong>
+											{formatMetric(
+												biomarkerResults
+													.metrics
+													.auprc,
+											)}
+										</strong>
+									</div>
+									<div className="metric-item">
+										<span>
+											Cases
+											in
+											Memory
+										</span>
+										<strong>
+											{
+												biomarkerResults
+													.memory
+													.stored_cases
+											}
+										</strong>
+									</div>
+									<div className="metric-item">
+										<span>
+											Rows
+											Used
+										</span>
+										<strong>
+											{
+												biomarkerResults
+													.cohort_summary
+													.rows_used
+											}
+										</strong>
+									</div>
+								</div>
+
+								{Object.keys(
+									biomarkerResults.benchmarks ||
+										{},
+								).length >
+									0 && (
+									<div className="biomarker-list">
+										<p className="section-label">
+											Model
+											Benchmarks
+										</p>
+										<div className="direction-card-grid">
+											{Object.entries(
+												biomarkerResults.benchmarks,
+											).map(
+												([
+													modelName,
+													metrics,
+												]) => (
+													<div
+														key={
+															modelName
+														}
+														className="direction-card"
+													>
+														<p className="section-label">
+															{formatModelLabel(
+																modelName,
+															)}
+														</p>
+														<p
+															className={
+																modelName ===
+																biomarkerResults.model
+																	? "mode-badge mode-causal"
+																	: "mode-badge mode-neutral"
+															}
+														>
+															{modelName ===
+															biomarkerResults.model
+																? "Selected model"
+																: "Benchmark candidate"}
+														</p>
+														<div className="metric-grid">
+															<div className="metric-item">
+																<span>
+																	AUROC
+																</span>
+																<strong>
+																	{formatMetric(
+																		metrics.auroc,
+																	)}
+																</strong>
+															</div>
+															<div className="metric-item">
+																<span>
+																	AUPRC
+																</span>
+																<strong>
+																	{formatMetric(
+																		metrics.auprc,
+																	)}
+																</strong>
+															</div>
+														</div>
+													</div>
+												),
+											)}
+										</div>
+									</div>
+								)}
+
+								<div className="biomarker-list">
+									<p className="section-label">
+										Top
+										Biomarkers
+									</p>
+									{biomarkerResults.biomarker_ranking.map(
+										(
+											item,
+										) => (
+											<div
+												key={
+													item.feature
+												}
+												className="biomarker-item"
+											>
+												<div>
+													<strong>
+														{
+															item.feature
+														}
+													</strong>
+													<p className="meta-text">
+														{item.direction.replaceAll(
+															"_",
+															" ",
+														)}
+													</p>
+												</div>
+												<div className="biomarker-stats">
+													<span>
+														Importance{" "}
+														{formatMetric(
+															item.importance,
+														)}
+													</span>
+													<span>
+														Shift{" "}
+														{formatMetric(
+															item.mean_shift,
+														)}
+													</span>
+												</div>
+											</div>
+										),
+									)}
+								</div>
+
+								{biomarkerResults.patient_assessment && (
+									<div className="patient-assessment">
+										<p className="section-label">
+											Patient
+											Assessment
+										</p>
+										<p className="meta-text">
+											Status:{" "}
+											{
+												biomarkerResults
+													.patient_assessment
+													.status
+											}
+										</p>
+										{biomarkerResults
+											.patient_assessment
+											.cancer_risk_probability !==
+											undefined && (
+											<p className="ate-value biomarker-score">
+												{(
+													biomarkerResults
+														.patient_assessment
+														.cancer_risk_probability *
+													100
+												).toFixed(
+													1,
+												)}
+
+												%
+											</p>
+										)}
+										<p className="meta-text">
+											Confidence:{" "}
+											{
+												biomarkerResults
+													.patient_assessment
+													.confidence_label
+											}
+										</p>
+										{biomarkerResults
+											.patient_assessment
+											.explanation && (
+											<p className="meta-text">
+												{
+													biomarkerResults
+														.patient_assessment
+														.explanation
+												}
+											</p>
+										)}
+										{biomarkerResults
+											.patient_assessment
+											.follow_up_questions
+											?.length >
+											0 && (
+											<div className="follow-up-list">
+												{biomarkerResults.patient_assessment.follow_up_questions.map(
+													(
+														question,
+													) => (
+														<p
+															key={
+																question
+															}
+															className="alert alert-warning compact-alert"
+														>
+															{
+																question
+															}
+														</p>
+													),
+												)}
+											</div>
+										)}
+									</div>
+								)}
+							</article>
+						)}
+
 						{directionResults && (
 							<article className="panel result-panel">
 								<h2>

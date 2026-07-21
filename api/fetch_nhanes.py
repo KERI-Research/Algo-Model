@@ -26,9 +26,26 @@ NHANES_FILES = {
     "BMX": "BMX_J.xpt",
     "DIQ": "DIQ_J.xpt",
     "MCQ": "MCQ_J.xpt",
+    "GHB": "GHB_J.xpt",
+    "GLU": "GLU_J.xpt",
+    "INS": "INS_J.xpt",
+    "TRIGLY": "TRIGLY_J.xpt",
+    "HDL": "HDL_J.xpt",
+    "TCHOL": "TCHOL_J.xpt",
+    "HSCRP": "HSCRP_J.xpt",
 }
 
 MODEL_COLUMNS = {"Diabetes", "Cancer", "Obesity"}
+BIOMARKER_COLUMNS = {
+    "GHB_LBXGH",
+    "GLU_LBXGLU",
+    "INS_LBXIN",
+    "TRIGLY_LBXTR",
+    "TRIGLY_LBDLDL",
+    "HDL_LBDHDD",
+    "TCHOL_LBXTC",
+    "HSCRP_LBXHSCRP",
+}
 
 
 def download_xpt(url: str) -> bytes:
@@ -102,6 +119,21 @@ def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     if "Cancer" not in prepared.columns and "MCQ_MCQ220" in prepared.columns:
         prepared["Cancer"] = _coerce_binary(prepared["MCQ_MCQ220"])
 
+    if {"GLU_LBXGLU", "INS_LBXIN"}.issubset(prepared.columns):
+        glucose = pd.to_numeric(prepared["GLU_LBXGLU"], errors="coerce")
+        insulin = pd.to_numeric(prepared["INS_LBXIN"], errors="coerce")
+        prepared["homa_ir"] = (glucose * insulin) / 405.0
+
+    if "GHB_LBXGH" in prepared.columns:
+        a1c = pd.to_numeric(prepared["GHB_LBXGH"], errors="coerce")
+        prepared["elevated_hba1c"] = pd.NA
+        prepared.loc[a1c.notna(), "elevated_hba1c"] = (a1c[a1c.notna()] >= 6.5).astype(int)
+
+    if "GLU_LBXGLU" in prepared.columns:
+        glucose = pd.to_numeric(prepared["GLU_LBXGLU"], errors="coerce")
+        prepared["fasting_hyperglycemia"] = pd.NA
+        prepared.loc[glucose.notna(), "fasting_hyperglycemia"] = (glucose[glucose.notna()] >= 126).astype(int)
+
     return prepared
 
 
@@ -135,7 +167,8 @@ def dataset_is_ready(dataset_path: Path) -> bool:
     except Exception:
         return False
 
-    return MODEL_COLUMNS.issubset(set(columns))
+    required = MODEL_COLUMNS | BIOMARKER_COLUMNS
+    return required.issubset(set(columns))
 
 
 def ensure_nhanes_dataset(force: bool = False) -> Path:
