@@ -20,7 +20,7 @@ The former supervised DiaPan-XGB artifact remains invalidated.
 ## Appropriate benchmark tasks
 
 | Task | Metric |
-|---|---|
+| --- | --- |
 | Masked-feature reconstruction | Validation MSE |
 | Representation stability | Embedding similarity across repeated corruption |
 | Anomaly ranking | AUROC/AUPRC only against independently defined anomaly labels |
@@ -40,7 +40,7 @@ Do not compare:
 ## Candidate Hugging Face comparators
 
 | Candidate | Use |
-|---|---|
+| --- | --- |
 | AutoGluon TabPFN Mix | Frozen-representation or linear-probe comparator |
 | Prior-Labs TabPFN | Generic tabular representation/classification comparator |
 | Variational autoencoder | Probabilistic reconstruction baseline |

@@ -19,7 +19,7 @@ data.
 ## Self-supervised artifact
 
 | Item | Result |
-|---|---:|
+| --- | ---: |
 | Unlabelled training rows | 50,000 |
 | Raw features | 25 |
 | Latent dimensions | 16 |
@@ -28,7 +28,7 @@ data.
 Post-hoc cross-sectional association checks:
 
 | Label | AUROC | AUPRC | Interpretation |
-|---|---:|---:|---|
+| --- | ---: | ---: | --- |
 | Any-cancer prevalence | 0.699 | 0.169 | Representation association only |
 | Type 2 diabetes proxy | 0.923 | 0.675 | Current-state association only |
 | Type 1 proxy | 0.909 | 0.135 | Unvalidated research proxy |
@@ -53,7 +53,7 @@ quoted, benchmarked, published or used for inference.
 The corrected `nhanes_multicycle_v2.csv` contains:
 
 | Definition | Positive cases |
-|---|---:|
+| --- | ---: |
 | Pancreatic cancer across the pooled population | 19 |
 | Pancreatic cancer among participants with diabetes | 7 |
 | Usable diabetic positives after required-field cleaning | 6 |
@@ -78,7 +78,7 @@ MetaboGuard now:
 ## Priority A variables now available
 
 | Variable | MetaboGuard field | Coverage in pooled cohort |
-|---|---|---:|
+| --- | --- | ---: |
 | Smoking status | `smoking_status` | 59,745 |
 | Current smoker | `current_smoker` | 59,745 |
 | Alcohol status | `alcohol_status` | 51,467 |
@@ -99,7 +99,7 @@ usable positive diabetic pancreatic-cancer cases.
 ## Is higher better?
 
 | Output | Meaning | Direction |
-|---|---|---|
+| --- | --- | --- |
 | AUROC | Ranking discrimination | Higher is better; 0.5 is random |
 | AUPRC | Precision-recall performance | Higher is better; compare with prevalence |
 | AUPRC lift | AUPRC divided by prevalence | Higher is better; 1× is baseline |

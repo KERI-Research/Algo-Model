@@ -64,7 +64,7 @@ Reference percentiles are empirical percentiles from the training cohort.
 Suggested research-only bands:
 
 | Percentile | Label | Interpretation |
-|---|---|---|
+| --- | --- | --- |
 | <90 | Within reference range | No model warning; not evidence disease is absent |
 | 90-95 | Mild deviation | Consider data quality and routine review |
 | 95-99 | Elevated deviation | Clinician-reviewed follow-up research |
@@ -122,7 +122,7 @@ Prohibited:
 ### Dataset capability states
 
 | State | Allowed outputs |
-|---|---|
+| --- | --- |
 | Cross-sectional only | representation, deviation score, association checks |
 | Repeated measurements without outcomes | trajectory embeddings, no disease risk |
 | Longitudinal with incident outcomes | eligible multi-horizon risk heads |

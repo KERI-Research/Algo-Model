@@ -19,7 +19,7 @@ Two validated risk models benchmark what is achievable. The ENDPAC score, valida
 ## 2. Candidate Metabolic Biomarkers
 
 | Biomarker | Key finding | Source |
-|---|---|---|
+| --- | --- | --- |
 | HbA1c | Highest vs. lowest category OR 2.42 (1.33–4.39); association strongest within 2 years of diabetes diagnosis (OR 3.41) and attenuates with longer follow-up (OR 1.45) | [EPIC cohort, Diabetologia](https://link.springer.com/article/10.1007/s00125-011-2316-0) |
 | C-peptide | Nonfasting C-peptide, highest vs. lowest quartile, OR 4.24 (1.30–13.8, p-trend<0.001); fasting insulin showed no association | [Michaud et al. 2007](https://pubmed.ncbi.nlm.nih.gov/17905943/) |
 | HOMA-IR / insulin resistance | T2D >5 years duration: RR 1.5–2×; in a >550,000-person Korean cohort, insulin resistance alone (without diagnosed diabetes) carried 33% attributable risk for pancreatic cancer mortality | [Toledo et al., review](https://pmc.ncbi.nlm.nih.gov/articles/PMC8178512/) |
@@ -76,7 +76,7 @@ The proxy-derived `diabetes_subtype` (T1 vs. T2, inferred from age-at-diagnosis 
 ## Decision-to-Evidence Table
 
 | MetaboGuard design decision | Supporting/qualifying evidence | Recommendation |
-|---|---|---|
+| --- | --- | --- |
 | Include `diabetes_subtype`, `recent_diabetes_onset`, `diabetes_duration_years` as features | NOD carries 2–5× higher HR than long-standing diabetes ([Lee et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36548964/); [Song et al. 2015](https://pmc.ncbi.nlm.nih.gov/articles/PMC4519136/)) | Keep; duration-binned (not continuous) encoding may better reflect the non-monotonic risk curve seen in PanScan data |
 | Include HbA1c as a feature | OR 2.42 highest vs. lowest category, strongest within 2 years of diagnosis ([EPIC cohort](https://link.springer.com/article/10.1007/s00125-011-2316-0)) | Keep; consider interaction term with diabetes duration |
 | Include weight-loss features | Strongest behavioral signal found (OR up to 77.82 for ≥10% loss) ([Wigmore et al.](https://pubmed.ncbi.nlm.nih.gov/33835301/)) | Keep and prioritize; likely MetaboGuard's highest-value engineered feature |

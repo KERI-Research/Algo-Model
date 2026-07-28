@@ -39,7 +39,7 @@ diabetics.
 ### Candidate variables
 
 | Paper variable | MetaboGuard mapping | Current status | Recommendation |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Age at T2DM diagnosis | `DIQ_DID040` | Available | Keep; one of the final predictors |
 | Sex | `DEMO_RIAGENDR` | Available | Keep as categorical |
 | BMI | `BMX_BMXBMI` | Available | Keep; test nonlinear effects |
@@ -86,7 +86,7 @@ serial glucose/BMI trajectories or reliable pancreatic-symptom coverage.
 ### Full 22-variable candidate set
 
 | Category | Variables |
-|---|---|
+| --- | --- |
 | Demographic/lifestyle | age, sex, ethnicity, smoking, alcohol |
 | Anthropometric/body composition | BMI, hip circumference, whole-body fat mass, left-leg impedance, right-arm fat mass, left-arm fat mass, trunk fat mass |
 | Functional/health status | usual walking pace; long-standing illness, disability or infirmity |
@@ -125,7 +125,7 @@ These should be addressed first because they are routine and potentially
 obtainable from NHANES:
 
 | Variable | Reason | Expected work |
-|---|---|---|
+| --- | --- | --- |
 | Smoking status | Final predictor in the 2025 model | Add SMQ files across cycles |
 | Alcohol status | Included in the 2026 final model | Add ALQ files across cycles |
 | Haemoglobin | Used in both candidate sets | Add CBC files and harmonise units |

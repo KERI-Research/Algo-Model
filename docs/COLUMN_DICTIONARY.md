@@ -7,7 +7,7 @@ is `model_artifacts/huggingface/metaboguard-risk-xgboost/feature_schema.json`.
 ## Outcomes and identifiers
 
 | Column | Meaning | Values / units | Is higher better? |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `global_participant_id` | Stable pooled identifier | `survey_cycle:SEQN` | Not applicable |
 | `SEQN` | NHANES participant identifier inside a cycle | Integer | Not applicable |
 | `survey_cycle` | NHANES collection period | Text, e.g. `2017-March2020` | Not applicable |
@@ -22,7 +22,7 @@ is `model_artifacts/huggingface/metaboguard-risk-xgboost/feature_schema.json`.
 ## Survey design
 
 | Column | Meaning | Use |
-|---|---|---|
+| --- | --- | --- |
 | `DEMO_SDMVPSU` | Masked variance pseudo-primary sampling unit | Survey variance estimation |
 | `DEMO_SDMVSTRA` | Masked variance stratum | Survey variance estimation |
 | `combined_mec_weight_1999_2020` | Combined examination weight | Descriptive examined-sample population estimates only |
@@ -36,7 +36,7 @@ train the prediction model.
 ## Demographics and body measurements
 
 | Column | Meaning | Values / units | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `DEMO_RIDAGEYR` | Age | Years | Higher age was associated with higher risk; not inherently “worse” |
 | `DEMO_RIAGENDR` | NHANES sex code | 1 male, 2 female | Categorical; higher is meaningless |
 | `DEMO_RIDRETH3` | Race/ethnicity category | NHANES code | Categorical; higher is meaningless |
@@ -47,7 +47,7 @@ train the prediction model.
 ## Diabetes history
 
 | Column | Meaning | Values / units | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `DIQ_DID040` | Reported age at diabetes diagnosis | Years | Lower means earlier onset |
 | `DIQ_DIQ160` | Prediabetes questionnaire response | NHANES code | Categorical |
 | `DIQ_DIQ170` | Diabetes-risk questionnaire response | NHANES code | Categorical |
@@ -60,7 +60,7 @@ train the prediction model.
 ## Glycaemic and metabolic laboratories
 
 | Column | Meaning | Values / units | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `GHB_LBXGH` | Glycated haemoglobin, HbA1c | Percent | Higher means poorer average glycaemic control |
 | `GLU_LBXGLU` | Fasting plasma glucose | mg/dL | Higher means higher fasting glucose |
 | `INS_LBXIN` | Fasting insulin | µU/mL | Interpret with glucose; higher is not automatically better/worse |
@@ -72,7 +72,7 @@ train the prediction model.
 ## Lipids and inflammation
 
 | Column | Meaning | Values / units | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `TRIGLY_LBXTR` | Triglycerides | mg/dL | Higher is generally metabolically adverse |
 | `TRIGLY_LBDLDL` | LDL cholesterol | mg/dL | Higher is generally metabolically adverse |
 | `HDL_LBDHDD` | HDL cholesterol | mg/dL | Higher is generally metabolically favourable |
@@ -82,7 +82,7 @@ train the prediction model.
 ## Paper-supported Priority A additions
 
 | Column | Meaning | Values / units | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `smoking_status` | Harmonised smoking category | 0 never, 1 former, 2 current | Categorical; current smoking was higher risk in the cited study |
 | `current_smoker` | Current smoking flag | 1 yes, 0 no | 1 means current smoking |
 | `alcohol_status` | Harmonised alcohol category | 0 never/low, 1 ever, 2 current quantified use | Categorical |
@@ -98,7 +98,7 @@ train the prediction model.
 ## Weight history
 
 | Column | Meaning | Formula / values | Direction |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `weight_loss_1yr_lb` | Reported one-year weight change | Weight 1 year ago − current weight | Positive means weight loss |
 | `significant_weight_loss_flag` | Recent loss of at least 10 lb | 1 yes, 0 no | 1 indicates substantial recent loss |
 | `weight_loss_10yr_lb` | Reported ten-year weight change | Weight 10 years ago − current weight | Positive means long-term weight loss |
@@ -108,7 +108,7 @@ These variables do not distinguish intentional from unintentional weight loss.
 ## Interaction and trajectory-proxy features
 
 | Column | Formula | Interpretation |
-|---|---|---|
+| --- | --- | --- |
 | `age_bmi_interaction` | Age × BMI | Combined age/adiposity pattern |
 | `waist_bmi_interaction` | Waist × BMI | Combined central/general adiposity |
 | `hba1c_age_interaction` | HbA1c × age | Whether glycaemic signal differs with age |
@@ -122,7 +122,7 @@ Importance means the combination aided ranking.
 ## TCGA-only columns
 
 | Column | Meaning | Model role |
-|---|---|---|
+| --- | --- | --- |
 | `tcga_cancer_type` | TCGA tumour abbreviation | Prognosis models only |
 | `tcga_stage_ordinal` | Encoded AJCC stage | Prognosis feature |
 | `tcga_grade_ordinal` | Encoded histological grade | Prognosis feature |

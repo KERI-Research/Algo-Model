@@ -34,7 +34,7 @@ unlabelled adult NHANES rows.
 Current post-hoc checks are:
 
 | Label | AUROC | AUPRC | Status |
-|---|---:|---:|---|
+| --- | ---: | ---: | --- |
 | Any-cancer prevalence | 0.699 | 0.169 | Cross-sectional association only |
 | Type 2 diabetes proxy | 0.923 | 0.675 | Cross-sectional association only |
 | Type 1 proxy | 0.909 | 0.135 | Unvalidated research-only proxy |
@@ -90,7 +90,7 @@ with earlier cycles after the pandemic-era collection gap
 ### Resulting cohort
 
 | Quantity | Count |
-|---|---:|
+| --- | ---: |
 | Total pooled participants | 107,622 |
 | Diabetes-labelled | 101,532 |
 | Diabetes-positive | 7,359 |
@@ -166,7 +166,7 @@ cases survive required-field cleaning, so no pancreatic-risk model is fitted.
 ## Feature decisions
 
 | Feature | Reason for inclusion | Qualification |
-|---|---|---|
+| --- | --- | --- |
 | `recent_diabetes_onset`, `diabetes_duration_years` | New-onset risk is materially higher and decays with duration | Age at diagnosis is self-reported |
 | `GHB_LBXGH`, HbA1c interactions | Higher HbA1c is associated with pancreatic-cancer risk, especially near diabetes onset ([EPIC](https://link.springer.com/article/10.1007/s00125-011-2316-0)) | One measurement per participant |
 | `INS_LBXIN`, `homa_ir` | Represents insulin resistance/metabolic dysfunction | Fasting-subsample coverage only |

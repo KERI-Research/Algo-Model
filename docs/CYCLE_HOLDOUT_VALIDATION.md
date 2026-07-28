@@ -15,7 +15,7 @@ from that benchmark must not be quoted or used.
 ## Corrected-event audit
 
 | Target | Positive cases |
-|---|---:|
+| --- | ---: |
 | Correct pancreatic cancer across pooled NHANES | 19 |
 | Correct pancreatic cancer among diabetics | 7 |
 | Usable diabetic positives after cleaning | 6 |
