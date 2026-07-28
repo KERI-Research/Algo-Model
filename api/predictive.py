@@ -34,9 +34,10 @@ def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     if "Cancer" not in prepared.columns and "MCQ_MCQ220" in prepared.columns:
         prepared["Cancer"] = _coerce_binary(prepared["MCQ_MCQ220"])
 
-    missing = CORE_COLUMNS - set(prepared.columns)
-    if missing:
-        raise ValueError("Dataset is missing required columns: " + ", ".join(sorted(missing)))
+    # Cancer is the only strictly-required column. Diabetes/Obesity are best-effort:
+    # they may be entirely absent on datasets such as TCGA-CDR.
+    if "Cancer" not in prepared.columns:
+        raise ValueError("Dataset is missing required column: Cancer")
 
     return prepared
 
@@ -165,7 +166,7 @@ def _classification_metrics(y_true: np.ndarray, y_prob: np.ndarray, threshold: f
     }
 
 
-def _candidate_features_for_target(target: str) -> list[str]:
+def _candidate_features_for_target(target: str, columns: set[str]) -> list[str]:
     shared = [
         "Obesity",
         "DEMO_RIDAGEYR",
@@ -176,11 +177,25 @@ def _candidate_features_for_target(target: str) -> list[str]:
         "ALQ_ALQ101",
     ]
 
+    # TCGA-specific features. tcga_followup_days/event and tcga_pfi_days/event
+    # are deliberately excluded — the 5-year mortality and progression labels
+    # are derived from them (data leakage).
+    tcga_extras = [
+        c for c in (
+            "tcga_stage_ordinal",
+            "tcga_grade_ordinal",
+            "tcga_tumor_status",
+            "tcga_treatment_response",
+        )
+        if c in columns
+    ]
+    tcga_type_flags = sorted(c for c in columns if c.startswith("tcga_type_"))
+
     if target == "Diabetes":
         return ["Cancer", *shared]
 
     if target == "Cancer":
-        return ["Diabetes", *shared]
+        return ["Diabetes", *shared, *tcga_extras, *tcga_type_flags]
 
     return shared
 
@@ -193,7 +208,11 @@ def _build_target_model(df: pd.DataFrame, target: str) -> dict[str, object]:
     if target not in df.columns:
         raise ValueError(f"Target column '{target}' is unavailable.")
 
-    candidate_features = [column for column in _candidate_features_for_target(target) if column in df.columns]
+    candidate_features = [
+        column
+        for column in _candidate_features_for_target(target, set(df.columns))
+        if column in df.columns and df[column].notna().any()
+    ]
     candidate_features = [column for column in candidate_features if column != target]
 
     if not candidate_features:
@@ -252,19 +271,29 @@ def _build_target_model(df: pd.DataFrame, target: str) -> dict[str, object]:
     }
 
 
+def _try_build(prepared: pd.DataFrame, target: str) -> dict[str, object] | dict[str, str]:
+    if target not in prepared.columns or not prepared[target].notna().any():
+        return {"status": "skipped", "reason": f"target column '{target}' unavailable in this dataset"}
+    try:
+        return _build_target_model(prepared, target)
+    except ValueError as error:
+        return {"status": "skipped", "reason": str(error)}
+
+
 def execute_predictive_baseline(data_path: str) -> dict[str, object]:
     df = pd.read_csv(data_path)
     prepared = _prepare_dataframe(df)
 
-    diabetes_result = _build_target_model(prepared, "Diabetes")
-    cancer_result = _build_target_model(prepared, "Cancer")
+    diabetes_result = _try_build(prepared, "Diabetes")
+    cancer_result = _try_build(prepared, "Cancer")
 
     return {
         "model": "logistic_regression_gradient_descent",
         "notes": [
-            "Cross-sectional NHANES baseline with fixed 80/20 stratified split.",
+            "Cross-sectional baseline with fixed 80/20 stratified split.",
             "Use AUROC/AUPRC/recall/balanced_accuracy for imbalanced-outcome evaluation.",
             "This is predictive risk modeling and does not establish causality.",
+            "Targets are skipped when the dataset does not carry that label (e.g. Diabetes on TCGA-CDR).",
         ],
         "results": {
             "diabetes": diabetes_result,

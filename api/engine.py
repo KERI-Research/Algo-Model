@@ -123,16 +123,15 @@ def _prepare_model_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         cancer = pd.to_numeric(prepared["MCQ_MCQ220"], errors="coerce")
         prepared["Cancer"] = np.where(cancer == 1, 1, np.where(cancer == 2, 0, np.nan))
 
-    required_columns = {"Diabetes", "Cancer", "Obesity"}
-    missing_columns = required_columns - set(prepared.columns)
-    if missing_columns:
-        raise ValueError(
-            "Dataset is missing required columns: " + ", ".join(sorted(missing_columns))
-        )
+    if "Cancer" not in prepared.columns:
+        raise ValueError("Dataset is missing required column: Cancer")
 
-    model_df = prepared[["Diabetes", "Cancer", "Obesity"]].apply(pd.to_numeric, errors="coerce")
-    model_df = model_df.dropna(subset=["Diabetes", "Cancer", "Obesity"])
-    model_df = model_df.astype({"Diabetes": "int64", "Cancer": "int64", "Obesity": "int64"})
+    # Diabetes / Obesity are best-effort. If either is entirely absent, the caller
+    # will fall back to a simplified graph excluding it.
+    cols = [c for c in ("Diabetes", "Cancer", "Obesity") if c in prepared.columns]
+    model_df = prepared[cols].apply(pd.to_numeric, errors="coerce")
+    model_df = model_df.dropna(subset=cols)
+    model_df = model_df.astype({col: "int64" for col in cols})
     return model_df
 
 
@@ -204,7 +203,8 @@ def execute_pipeline(
 
     if treatment not in df.columns or outcome not in df.columns:
         raise ValueError(
-            f"Requested treatment/outcome columns are unavailable. treatment={treatment}, outcome={outcome}"
+            f"Requested treatment/outcome columns are unavailable in this dataset. "
+            f"treatment={treatment}, outcome={outcome}, present={sorted(df.columns.tolist())}"
         )
     
     causal_graph = """

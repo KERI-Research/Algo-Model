@@ -16,7 +16,7 @@ os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
 from chromadb import PersistentClient
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
-from sklearn.metrics import average_precision_score, roc_auc_score
+from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -27,8 +27,12 @@ except Exception:  # pragma: no cover - optional at import time during partial i
 
 
 ARTIFACT_VERSION = "v1"
-MODEL_NAME = "hist_gradient_boosting_biomarker_v1"
-ALTERNATE_MODEL_NAME = "xgboost_biomarker_v1"
+MODEL_NAME = "diapan_hist_gradient_boosting_v1"
+ALTERNATE_MODEL_NAME = "diapan_xgboost_v1"
+# Default (NHANES) required/optional field sets. When training on TCGA-CDR (or
+# any dataset where these NHANES-specific columns are absent or all-NaN),
+# _resolve_field_sets() below narrows both lists to the columns that actually
+# carry signal in the given dataframe.
 REQUIRED_FIELDS = [
     "Diabetes",
     "DEMO_RIDAGEYR",
@@ -39,6 +43,20 @@ OPTIONAL_HIGH_IMPACT_FIELDS = [
     "GHB_LBXGH",
     "GLU_LBXGLU",
     "INS_LBXIN",
+    "CPEP_LBXCPSI",
+]
+# NOTE: tcga_followup_days/event and tcga_pfi_days/event are DELIBERATELY
+# excluded here — the training labels (5y mortality, 5y progression) are
+# derived from them and including them would trivially leak (AUROC ~1.0).
+# tcga_treatment_response captures response-to-first-course-of-therapy and is
+# measured AFTER initial diagnosis; it is a strong prognostic signal but is
+# post-diagnostic, so downstream users should treat model output as
+# "prognostic given response so far" rather than "pre-treatment prediction."
+TCGA_EXTRA_FEATURES = [
+    "tcga_stage_ordinal",
+    "tcga_grade_ordinal",
+    "tcga_tumor_status",
+    "tcga_treatment_response",
 ]
 SENTINEL_VALUES = {7, 9, 77, 99, 777, 999, 6666, 7777, 9999, 99999}
 BASE_FEATURES = [
@@ -68,6 +86,18 @@ BASE_FEATURES = [
     "recent_diabetes_onset",
     "age_bmi_interaction",
     "waist_bmi_interaction",
+    # Brief-aligned pancreatic-risk features
+    "diabetes_subtype",
+    "weight_loss_1yr_lb",
+    "significant_weight_loss_flag",
+    "weight_loss_10yr_lb",
+    # Repeated-cross-sectional trajectory proxies from nhanes_multicycle.csv.
+    # These are not within-patient slopes and must not be described as such.
+    "survey_cycle_index",
+    "hba1c_cycle_age_sex_z",
+    "hba1c_age_interaction",
+    "hba1c_diabetes_duration_interaction",
+    "hba1c_weight_loss_interaction",
 ]
 
 
@@ -137,9 +167,17 @@ def _prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return prepared
 
 
-def _artifact_paths(data_path: str | Path) -> BiomarkerArtifactPaths:
+def _artifact_paths(
+    data_path: str | Path,
+    target: str = "Cancer",
+    cohort_filter: str | None = None,
+) -> BiomarkerArtifactPaths:
     dataset_name = Path(data_path).stem
-    base_dir = Path(__file__).resolve().parent / "model_artifacts" / dataset_name
+    # Keep default target's artifact path stable for backward compatibility
+    suffix = "" if target == "Cancer" else f"_{target.lower()}"
+    if cohort_filter:
+        suffix += f"__{cohort_filter}"
+    base_dir = Path(__file__).resolve().parent / "model_artifacts" / f"{dataset_name}{suffix}"
     base_dir.mkdir(parents=True, exist_ok=True)
     return BiomarkerArtifactPaths(
         model_path=base_dir / f"biomarker_{ARTIFACT_VERSION}.joblib",
@@ -148,16 +186,50 @@ def _artifact_paths(data_path: str | Path) -> BiomarkerArtifactPaths:
 
 
 def _select_features(prepared: pd.DataFrame) -> list[str]:
-    return [feature for feature in BASE_FEATURES if feature in prepared.columns]
+    features = [feature for feature in BASE_FEATURES if feature in prepared.columns]
+    # Include TCGA-native features when present
+    for feature in TCGA_EXTRA_FEATURES:
+        if feature in prepared.columns and feature not in features:
+            features.append(feature)
+    # Include auto-generated TCGA cancer-type one-hot flags
+    for column in prepared.columns:
+        if column.startswith("tcga_type_") and column not in features:
+            features.append(column)
+    # Drop features that are entirely NaN for this dataset
+    features = [f for f in features if prepared[f].notna().any()]
+    return features
 
 
-def _clean_training_frame(prepared: pd.DataFrame, features: list[str]) -> pd.DataFrame:
-    model_df = prepared[["Cancer", *features]].copy()
+def _resolve_field_sets(prepared: pd.DataFrame) -> tuple[list[str], list[str]]:
+    """Narrow REQUIRED / OPTIONAL fields to columns that carry data in this frame."""
+    required = [f for f in REQUIRED_FIELDS if f in prepared.columns and prepared[f].notna().any()]
+    optional = [f for f in OPTIONAL_HIGH_IMPACT_FIELDS if f in prepared.columns and prepared[f].notna().any()]
+
+    # TCGA: promote high-impact optional features into the "optional but
+    # tracked" list but do NOT force dropna on them — they are commonly sparse
+    # (grade is missing for ~40% of patients, tumor_status ~10%, etc.).
+    for feature in ("tcga_stage_ordinal", "tcga_grade_ordinal", "tcga_tumor_status", "tcga_treatment_response"):
+        if feature in prepared.columns and prepared[feature].notna().any():
+            if feature not in optional:
+                optional.append(feature)
+
+    # Ensure at least one required field exists so training does not silently
+    # keep NaN-only rows.
+    if not required:
+        for candidate in ("DEMO_RIDAGEYR", "tcga_stage_ordinal"):
+            if candidate in prepared.columns and prepared[candidate].notna().any():
+                required = [candidate]
+                break
+    return required, optional
+
+
+def _clean_training_frame(prepared: pd.DataFrame, features: list[str], target: str = "Cancer") -> pd.DataFrame:
+    model_df = prepared[[target, *features]].copy()
     for column in model_df.columns:
         model_df[column] = pd.to_numeric(model_df[column], errors="coerce")
 
-    model_df = model_df[(model_df["Cancer"] == 0) | (model_df["Cancer"] == 1)]
-    model_df = model_df.dropna(subset=["Cancer"])
+    model_df = model_df[(model_df[target] == 0) | (model_df[target] == 1)]
+    model_df = model_df.dropna(subset=[target])
     return model_df
 
 
@@ -171,6 +243,36 @@ def _safe_auprc(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     if len(np.unique(y_true)) < 2:
         return 0.0
     return float(average_precision_score(y_true, y_prob))
+
+
+def _stratified_bootstrap_ci(
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
+    metric_fn: Any,
+    repeats: int = 500,
+    seed: int = 42,
+) -> list[float]:
+    """Deterministic stratified bootstrap 95% CI for rare-event metrics.
+
+    Positive and negative test indices are sampled separately so each bootstrap
+    replicate remains evaluable even when the held-out positive count is small.
+    This interval reflects test-sample uncertainty only; it does not account for
+    model-selection, survey-design or outcome-misclassification uncertainty.
+    """
+    pos = np.flatnonzero(y_true == 1)
+    neg = np.flatnonzero(y_true == 0)
+    if len(pos) < 2 or len(neg) < 2:
+        return [float("nan"), float("nan")]
+    rng = np.random.default_rng(seed)
+    values: list[float] = []
+    for _ in range(repeats):
+        sampled = np.concatenate(
+            [rng.choice(pos, size=len(pos), replace=True),
+             rng.choice(neg, size=len(neg), replace=True)]
+        )
+        values.append(float(metric_fn(y_true[sampled], y_prob[sampled])))
+    low, high = np.quantile(values, [0.025, 0.975])
+    return [round(float(low), 6), round(float(high), 6)]
 
 
 def _rank_biomarkers(
@@ -201,7 +303,7 @@ def _rank_biomarkers(
                 "feature": column,
                 "importance": round(float(importances.importances_mean[index]), 6),
                 "stability": round(float(importances.importances_std[index]), 6),
-                "direction": "higher_in_cancer" if direction > 0 else "lower_in_cancer",
+                "direction": "higher_in_positive" if direction > 0 else "lower_in_positive",
                 "mean_shift": round(float(direction), 6),
             }
         )
@@ -210,14 +312,17 @@ def _rank_biomarkers(
     return rankings
 
 
-def _build_case_document(row: pd.Series, features: list[str]) -> str:
+def _build_case_document(row: pd.Series, features: list[str], target: str = "Cancer") -> str:
     fragments = [f"SEQN={int(row['SEQN'])}" if pd.notna(row.get("SEQN")) else "SEQN=unknown"]
     for feature in features[:8]:
         value = row.get(feature)
         if pd.notna(value):
             fragments.append(f"{feature}={round(float(value), 3)}")
-    fragments.append(f"Cancer={int(row['Cancer'])}")
-    fragments.append(f"Diabetes={int(row.get('Diabetes', 0)) if pd.notna(row.get('Diabetes')) else 'unknown'}")
+    fragments.append(f"{target}={int(row[target])}")
+    diabetes_value = row.get("Diabetes") if "Diabetes" in row.index else None
+    fragments.append(
+        f"Diabetes={int(diabetes_value) if diabetes_value is not None and pd.notna(diabetes_value) else 'unknown'}"
+    )
     return "; ".join(fragments)
 
 
@@ -226,6 +331,8 @@ def _store_training_memory(
     features: list[str],
     scaler: StandardScaler,
     chroma_path: Path,
+    target: str = "Cancer",
+    medians: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     if chroma_path.exists():
         shutil.rmtree(chroma_path)
@@ -233,24 +340,31 @@ def _store_training_memory(
     client = PersistentClient(path=str(chroma_path))
     collection = client.get_or_create_collection(name="biomarker_cases")
 
-    selected_columns = [*features, "Cancer"]
-    if "Diabetes" not in features:
+    selected_columns = [*features, target]
+    if "Diabetes" in prepared.columns and "Diabetes" not in features and "Diabetes" != target:
         selected_columns.append("Diabetes")
     memory_df = prepared[selected_columns].copy()
     if "SEQN" in prepared.columns:
         memory_df.insert(0, "SEQN", prepared["SEQN"])
-    memory_df = memory_df.dropna(subset=["Cancer"])
+    memory_df = memory_df.dropna(subset=[target])
+    if medians:
+        memory_df = memory_df.fillna(pd.Series(medians))
     memory_df = memory_df.fillna(memory_df.median(numeric_only=True))
     memory_df = memory_df.head(600)
 
     feature_matrix = memory_df[features].astype(float)
     embeddings = scaler.transform(feature_matrix).tolist()
     ids = [f"case-{index}" for index in range(len(memory_df))]
-    documents = [_build_case_document(row, features) for _, row in memory_df.iterrows()]
+    documents = [_build_case_document(row, features, target=target) for _, row in memory_df.iterrows()]
     metadatas = [
         {
-            "cancer": int(row["Cancer"]),
-            "diabetes": int(row["Diabetes"]) if pd.notna(row.get("Diabetes")) else -1,
+            "target_name": target,
+            "target_value": int(row[target]),
+            "diabetes": (
+                int(row["Diabetes"])
+                if "Diabetes" in memory_df.columns and pd.notna(row.get("Diabetes"))
+                else -1
+            ),
         }
         for _, row in memory_df.iterrows()
     ]
@@ -259,7 +373,13 @@ def _store_training_memory(
     return {"collection": "biomarker_cases", "stored_cases": len(memory_df)}
 
 
-def _build_candidate_models() -> list[tuple[str, Any]]:
+def _build_candidate_models(positive_rate: float = 0.5) -> list[tuple[str, Any]]:
+    """Build model candidates. When positive class is rare (positive_rate < 0.1),
+    apply class-weight balancing so models don't collapse to the majority class."""
+    is_rare = positive_rate < 0.1 and positive_rate > 0.0
+    class_weight = "balanced" if is_rare else None
+    scale_pos_weight = (1.0 - positive_rate) / positive_rate if is_rare else 1.0
+
     candidates: list[tuple[str, Any]] = [
         (
             MODEL_NAME,
@@ -269,6 +389,7 @@ def _build_candidate_models() -> list[tuple[str, Any]]:
                 max_iter=240,
                 learning_rate=0.05,
                 min_samples_leaf=20,
+                class_weight=class_weight,
             ),
         )
     ]
@@ -287,6 +408,7 @@ def _build_candidate_models() -> list[tuple[str, Any]]:
                     objective="binary:logistic",
                     eval_metric="logloss",
                     random_state=42,
+                    scale_pos_weight=scale_pos_weight,
                 ),
             )
         )
@@ -299,6 +421,7 @@ def _fit_and_score_models(
     y_train: np.ndarray,
     x_test: pd.DataFrame,
     y_test: np.ndarray,
+    positive_rate: float = 0.5,
 ) -> tuple[str, Any, dict[str, dict[str, float]], np.ndarray]:
     benchmark_metrics: dict[str, dict[str, float]] = {}
     best_name = ""
@@ -306,7 +429,7 @@ def _fit_and_score_models(
     best_probabilities: np.ndarray | None = None
     best_score = (-1.0, -1.0)
 
-    for model_name, model in _build_candidate_models():
+    for model_name, model in _build_candidate_models(positive_rate=positive_rate):
         model.fit(x_train, y_train)
         probabilities = model.predict_proba(x_test)[:, 1]
         metrics = {
@@ -327,27 +450,52 @@ def _fit_and_score_models(
     return best_name, best_model, benchmark_metrics, best_probabilities
 
 
-def train_biomarker_model(data_path: str, force: bool = False) -> dict[str, Any]:
-    paths = _artifact_paths(data_path)
+def train_biomarker_model(
+    data_path: str,
+    force: bool = False,
+    target: str = "Cancer",
+    cohort_filter: str | None = None,
+) -> dict[str, Any]:
+    """
+    Train a biomarker classifier for ``target`` on the dataset at ``data_path``.
+
+    ``cohort_filter`` optionally restricts the training rows before splitting.
+    Currently supported: 'diabetics_only' — keep only rows where Diabetes == 1.
+    This is used for the pancreatic-in-diabetics risk-stratification model per
+    the DiaPan brief.
+    """
+    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
     if paths.model_path.exists() and not force:
         return joblib.load(paths.model_path)
 
     df = pd.read_csv(data_path)
     prepared = _prepare_dataframe(df)
+    if cohort_filter == "diabetics_only":
+        if "Diabetes" not in prepared.columns:
+            raise ValueError("'diabetics_only' cohort filter requires a Diabetes column.")
+        before = len(prepared)
+        prepared = prepared[pd.to_numeric(prepared["Diabetes"], errors="coerce") == 1].copy()
+        print(f"cohort_filter=diabetics_only reduced {before} -> {len(prepared)} rows")
     features = _select_features(prepared)
+    # Never let the target leak into itself as a feature
+    features = [f for f in features if f != target]
     if not features:
         raise ValueError("No biomarker features were available in the dataset.")
+    if target not in prepared.columns or not prepared[target].notna().any():
+        raise ValueError(f"Target column '{target}' is unavailable or all-NaN in this dataset.")
 
-    model_df = _clean_training_frame(prepared, features)
-    model_df = model_df.dropna(subset=REQUIRED_FIELDS)
+    required_fields, optional_fields = _resolve_field_sets(prepared)
+    model_df = _clean_training_frame(prepared, features, target=target)
+    if required_fields:
+        model_df = model_df.dropna(subset=required_fields)
     if len(model_df) < 120:
-        raise ValueError("Insufficient rows available for biomarker training after cleaning.")
+        raise ValueError(
+            f"Insufficient rows available for biomarker training after cleaning "
+            f"(got {len(model_df)} rows, required_fields={required_fields})."
+        )
 
     x = model_df[features].copy()
-    y = model_df["Cancer"].to_numpy(dtype=int)
-
-    numeric_medians = x.median(numeric_only=True)
-    x = x.fillna(numeric_medians)
+    y = model_df[target].to_numpy(dtype=int)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x,
@@ -356,18 +504,32 @@ def train_biomarker_model(data_path: str, force: bool = False) -> dict[str, Any]
         random_state=42,
         stratify=y,
     )
+    # Learn imputation statistics on training rows only. Computing medians
+    # before the split would expose the held-out feature distribution.
+    numeric_medians = x_train.median(numeric_only=True)
+    x_train = x_train.fillna(numeric_medians)
+    x_test = x_test.fillna(numeric_medians)
 
+    positive_rate = float(y.mean())
     model_name, model, benchmark_metrics, test_prob = _fit_and_score_models(
         x_train,
         y_train,
         x_test,
         y_test,
+        positive_rate=positive_rate,
     )
     biomarker_ranking = _rank_biomarkers(model, x_test, y_test)
 
     scaler = StandardScaler()
-    scaler.fit(x[features])
-    memory_summary = _store_training_memory(model_df, features, scaler, paths.chroma_path)
+    scaler.fit(x_train[features])
+    memory_summary = _store_training_memory(
+        model_df,
+        features,
+        scaler,
+        paths.chroma_path,
+        target=target,
+        medians=numeric_medians.to_dict(),
+    )
 
     artifact = {
         "model": model,
@@ -375,24 +537,43 @@ def train_biomarker_model(data_path: str, force: bool = False) -> dict[str, Any]
         "artifact_version": ARTIFACT_VERSION,
         "created_at": datetime.now(UTC).isoformat(),
         "features": features,
-        "required_fields": REQUIRED_FIELDS,
-        "optional_high_impact_fields": OPTIONAL_HIGH_IMPACT_FIELDS,
+        "required_fields": required_fields,
+        "optional_high_impact_fields": optional_fields,
         "medians": numeric_medians.to_dict(),
         "retrieval_scaler": scaler,
         "metrics": {
             "auroc": round(_safe_auc(y_test, test_prob), 6),
             "auprc": round(_safe_auprc(y_test, test_prob), 6),
+            "auroc_ci_95": _stratified_bootstrap_ci(
+                y_test, test_prob, roc_auc_score
+            ),
+            "auprc_ci_95": _stratified_bootstrap_ci(
+                y_test, test_prob, average_precision_score
+            ),
+            "brier_score": round(float(brier_score_loss(y_test, test_prob)), 6),
             "positive_rate": round(float(y.mean()), 6),
+            "test_positive_rate": round(float(y_test.mean()), 6),
+            "auprc_lift_over_prevalence": round(
+                float(_safe_auprc(y_test, test_prob) / max(y_test.mean(), 1e-12)), 6
+            ),
             "train_rows": int(len(x_train)),
             "test_rows": int(len(x_test)),
+            "test_positives": int((y_test == 1).sum()),
+            "test_negatives": int((y_test == 0).sum()),
         },
         "benchmarks": benchmark_metrics,
         "biomarker_ranking": biomarker_ranking,
         "memory_summary": memory_summary,
+        "target": target,
+        "cohort_filter": cohort_filter,
         "cohort_summary": {
             "rows_used": int(len(model_df)),
-            "cancer_rate": round(float(model_df["Cancer"].mean()), 6),
-            "diabetes_rate": round(float(model_df["Diabetes"].mean()), 6),
+            "target_positive_rate": round(float(model_df[target].mean()), 6),
+            "diabetes_rate": (
+                round(float(model_df["Diabetes"].mean()), 6)
+                if "Diabetes" in model_df.columns and model_df["Diabetes"].notna().any()
+                else None
+            ),
             "available_features": len(features),
         },
     }
@@ -400,10 +581,10 @@ def train_biomarker_model(data_path: str, force: bool = False) -> dict[str, Any]
     return artifact
 
 
-def load_biomarker_model(data_path: str) -> dict[str, Any]:
-    paths = _artifact_paths(data_path)
+def load_biomarker_model(data_path: str, target: str = "Cancer", cohort_filter: str | None = None) -> dict[str, Any]:
+    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
     if not paths.model_path.exists():
-        return train_biomarker_model(data_path, force=True)
+        return train_biomarker_model(data_path, force=True, target=target, cohort_filter=cohort_filter)
     return joblib.load(paths.model_path)
 
 
@@ -520,9 +701,14 @@ def execute_biomarker_discovery(
     patient_record: dict[str, Any] | None = None,
     top_k: int = 8,
     force_retrain: bool = False,
+    target: str = "Cancer",
+    cohort_filter: str | None = None,
 ) -> dict[str, Any]:
-    artifact = train_biomarker_model(data_path, force=force_retrain) if force_retrain else load_biomarker_model(data_path)
-    paths = _artifact_paths(data_path)
+    if force_retrain:
+        artifact = train_biomarker_model(data_path, force=True, target=target, cohort_filter=cohort_filter)
+    else:
+        artifact = load_biomarker_model(data_path, target=target, cohort_filter=cohort_filter)
+    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
 
     response: dict[str, Any] = {
         "model": artifact["model_name"],

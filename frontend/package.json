@@ -1,20 +1,13 @@
 {
-	"displayName": "KERI",
-	"name": "keri",
+	"displayName": "DiaPan",
+	"name": "diapan",
 	"version": "0.0.1",
 	"private": true,
-	"homepage": ".",
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
-		"build:pages": "PUBLIC_URL=/dashboard react-scripts build",
 		"test": "react-scripts test",
-		"eject": "react-scripts eject",
-		"predeploy": "npm run build:pages",
-		"deploy": "gh-pages -d build"
-	},
-	"devDependencies": {
-		"gh-pages": "^6.3.0"
+		"eject": "react-scripts eject"
 	},
 	"dependencies": {
 		"react": "^18.3.1",

@@ -478,7 +478,7 @@ const CausalDashboard = () => {
 			<main className="dashboard-layout">
 				<section className="hero-panel">
 					<p className="eyebrow">
-						KERI RESEARCH CONSOLE
+						DiaPan RESEARCH CONSOLE
 					</p>
 					<h1>Causal Inference Engine</h1>
 					<p className="hero-copy">

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from biomarker import train_biomarker_model
 from fetch_nhanes import ensure_nhanes_dataset
+from fetch_tcga import ensure_tcga_cdr_dataset
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,6 +23,26 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Retrain even if an artifact already exists.",
     )
+    parser.add_argument(
+        "--target",
+        default="Cancer",
+        help=(
+            "Column to predict. Defaults to 'Cancer'. "
+            "Supported: 'Cancer' (any-site cancer / TCGA 5y mortality), "
+            "'PancreaticCancer' (NHANES pancreas-specific), "
+            "'Progression' (TCGA 5y PFI)."
+        ),
+    )
+    parser.add_argument(
+        "--cohort-filter",
+        default=None,
+        choices=[None, "diabetics_only"],
+        help=(
+            "Optional pre-training cohort filter. "
+            "'diabetics_only' restricts training rows to Diabetes == 1 for "
+            "pancreatic-cancer-in-diabetics risk stratification (per DiaPan brief)."
+        ),
+    )
     return parser
 
 
@@ -32,6 +53,9 @@ def resolve_training_path(dataset_name: str) -> Path:
 
     if dataset_path.name == "nhanes_merged.csv":
         return ensure_nhanes_dataset()
+
+    if dataset_path.name == "tcga_cdr.csv":
+        return ensure_tcga_cdr_dataset()
 
     api_dir = Path(__file__).resolve().parent
     project_root = api_dir.parent
@@ -50,10 +74,17 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
     dataset_path = resolve_training_path(args.dataset)
-    artifact = train_biomarker_model(str(dataset_path), force=args.force)
+    artifact = train_biomarker_model(
+        str(dataset_path),
+        force=args.force,
+        target=args.target,
+        cohort_filter=args.cohort_filter,
+    )
 
     summary = {
         "dataset": str(dataset_path),
+        "target": artifact.get("target", args.target),
+        "cohort_filter": artifact.get("cohort_filter", args.cohort_filter),
         "model": artifact["model_name"],
         "artifact_version": artifact["artifact_version"],
         "created_at": artifact["created_at"],

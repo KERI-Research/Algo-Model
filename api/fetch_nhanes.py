@@ -1,5 +1,5 @@
 """
-This script is intended to create the first trustworthy NHANES prototype for the KERI
+This script is intended to create the first trustworthy NHANES prototype for the DiaPan
 pipeline by pulling the 2017-2018 CDC public-use files for demographics, body measures,
 and medical conditions, then reconciling them into a single analysis-ready table keyed on
 SEQN. The goal is deliberately narrow, but the stance is deliberately skeptical: every
@@ -33,7 +33,12 @@ NHANES_FILES = {
     "HDL": "HDL_J.xpt",
     "TCHOL": "TCHOL_J.xpt",
     "HSCRP": "HSCRP_J.xpt",
+    "WHQ": "WHQ_J.xpt",  # Weight history: self-reported current + past weights
 }
+
+# NHANES MCQ230 self-reported "kind of cancer" codes. 39 = pancreas.
+# https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/MCQ_J.htm#MCQ230A
+PANCREAS_MCQ_CODE = 39
 
 MODEL_COLUMNS = {"Diabetes", "Cancer", "Obesity"}
 BIOMARKER_COLUMNS = {
@@ -105,6 +110,117 @@ def _coerce_binary(series: pd.Series) -> pd.Series:
     return numeric.map(lambda value: 1.0 if value == 1 else 0.0 if value == 2 else pd.NA)
 
 
+def _derive_pancreatic_cancer_label(prepared: pd.DataFrame) -> pd.Series:
+    """
+    Pancreatic-cancer label from NHANES self-report.
+
+    NHANES MCQ230A/B/C/D captures the type of cancer for each of up to four
+    lifetime cancer diagnoses. Code 39 == pancreas. We consider a participant
+    a positive if ANY of the four MCQ230 slots equals 39.
+
+    Returns a pd.Series with values 1.0 (pancreatic cancer reported), 0.0
+    (definitely no pancreatic cancer reported), or NaN (unknown — e.g. never
+    asked because MCQ220 says never had any cancer, or fields all missing).
+    """
+    slots = [f"MCQ_MCQ230{letter}" for letter in ("A", "B", "C", "D")]
+    present = [c for c in slots if c in prepared.columns]
+    if not present:
+        return pd.Series(pd.NA, index=prepared.index, dtype="Float64")
+
+    numeric = prepared[present].apply(pd.to_numeric, errors="coerce")
+    any_pancreas = (numeric == PANCREAS_MCQ_CODE).any(axis=1)
+
+    # Anyone with MCQ220 == 2 (never had cancer) is a clean negative for
+    # pancreatic cancer as well. Anyone with MCQ220 == 1 (had cancer) but no
+    # 39 in the MCQ230 slots is also a negative (they had a different cancer).
+    label = pd.Series(pd.NA, index=prepared.index, dtype="Float64")
+    if "MCQ_MCQ220" in prepared.columns:
+        cancer_any = pd.to_numeric(prepared["MCQ_MCQ220"], errors="coerce")
+        label.loc[cancer_any == 2] = 0.0
+        label.loc[cancer_any == 1] = 0.0
+    label.loc[any_pancreas] = 1.0
+    return label
+
+
+def _derive_diabetes_subtype(prepared: pd.DataFrame) -> pd.Series:
+    """
+    Approximate diabetes subtype (0 non-diabetic, 1 Type1-like, 2 Type2-like,
+    3 gestational-like, NaN unknown).
+
+    NHANES does not directly ask T1 vs T2. Proxy rules:
+    - DIQ_DIQ010 == 2 -> non-diabetic (0)
+    - DIQ_DIQ175X (self-report "type 1" flag, if present) -> 1
+    - Age at diagnosis (DID040) < 25 AND on insulin (DIQ050 == 1) -> 1
+    - Otherwise on insulin -> 2 (long-standing T2 that requires insulin)
+    - Diabetes during pregnancy only (DIQ175Q or DIQ175R) -> 3
+    - Any other diabetic -> 2 (default T2-like, the dominant population)
+    """
+    subtype = pd.Series(pd.NA, index=prepared.index, dtype="Float64")
+
+    if "DIQ_DIQ010" not in prepared.columns:
+        return subtype
+
+    dm = pd.to_numeric(prepared["DIQ_DIQ010"], errors="coerce")
+    subtype.loc[dm == 2] = 0.0  # non-diabetic
+    diabetic_mask = dm == 1
+
+    on_insulin = (
+        pd.to_numeric(prepared["DIQ_DIQ050"], errors="coerce") == 1
+        if "DIQ_DIQ050" in prepared.columns
+        else pd.Series(False, index=prepared.index)
+    )
+    onset_age = (
+        pd.to_numeric(prepared["DIQ_DID040"], errors="coerce")
+        if "DIQ_DID040" in prepared.columns
+        else pd.Series(pd.NA, index=prepared.index)
+    )
+
+    # Default T2 for anyone diabetic
+    subtype.loc[diabetic_mask] = 2.0
+    # Early-onset + insulin -> T1-like
+    t1_like = diabetic_mask & on_insulin & (onset_age < 25)
+    subtype.loc[t1_like] = 1.0
+
+    return subtype
+
+
+def _derive_weight_loss_features(prepared: pd.DataFrame) -> dict[str, pd.Series]:
+    """
+    Weight-change proxies from NHANES WHQ.
+
+    Pancreatic cancer often presents with unintentional weight loss. NHANES
+    does not have a direct "unintentional weight loss last year" question in
+    2017-18, so we compute a proxy:
+    - `weight_loss_1yr_lb` = WHD050 (weight 1 year ago) - WHD020 (current). Positive means lost.
+    - `significant_weight_loss_flag` = 1 if loss >= 10 lb, else 0.
+    - `weight_loss_10yr_lb` = WHD140 (weight 10y ago) - WHD020. Long-term trajectory.
+    """
+    features: dict[str, pd.Series] = {}
+    if "WHQ_WHD020" in prepared.columns and "WHQ_WHD050" in prepared.columns:
+        current = pd.to_numeric(prepared["WHQ_WHD020"], errors="coerce")
+        year_ago = pd.to_numeric(prepared["WHQ_WHD050"], errors="coerce")
+        # NHANES sentinel refuse/don't know codes: 7777, 9999
+        current = current.where(current < 700)
+        year_ago = year_ago.where(year_ago < 700)
+        loss = year_ago - current
+        features["weight_loss_1yr_lb"] = loss
+        features["significant_weight_loss_flag"] = pd.Series(
+            pd.NA, index=prepared.index, dtype="Float64"
+        )
+        features["significant_weight_loss_flag"].loc[loss.notna()] = (
+            loss[loss.notna()] >= 10
+        ).astype(int)
+
+    if "WHQ_WHD020" in prepared.columns and "WHQ_WHD140" in prepared.columns:
+        current = pd.to_numeric(prepared["WHQ_WHD020"], errors="coerce")
+        decade_ago = pd.to_numeric(prepared["WHQ_WHD140"], errors="coerce")
+        current = current.where(current < 700)
+        decade_ago = decade_ago.where(decade_ago < 700)
+        features["weight_loss_10yr_lb"] = decade_ago - current
+
+    return features
+
+
 def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     prepared = dataframe.copy()
 
@@ -118,6 +234,19 @@ def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     if "Cancer" not in prepared.columns and "MCQ_MCQ220" in prepared.columns:
         prepared["Cancer"] = _coerce_binary(prepared["MCQ_MCQ220"])
+
+    # Pancreatic-specific label (from MCQ230A/B/C/D == 39)
+    if "PancreaticCancer" not in prepared.columns:
+        prepared["PancreaticCancer"] = _derive_pancreatic_cancer_label(prepared)
+
+    # Diabetes subtype proxy
+    if "diabetes_subtype" not in prepared.columns:
+        prepared["diabetes_subtype"] = _derive_diabetes_subtype(prepared)
+
+    # Weight-loss features
+    for name, series in _derive_weight_loss_features(prepared).items():
+        if name not in prepared.columns:
+            prepared[name] = series
 
     if {"GLU_LBXGLU", "INS_LBXIN"}.issubset(prepared.columns):
         glucose = pd.to_numeric(prepared["GLU_LBXGLU"], errors="coerce")

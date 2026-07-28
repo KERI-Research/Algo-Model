@@ -12,9 +12,17 @@ from engine import CausalExecutionError, execute_pipeline
 from predictive import execute_predictive_baseline
 from pathlib import Path
 from fetch_nhanes import ensure_nhanes_dataset
+from fetch_tcga import ensure_tcga_cdr_dataset
 import pandas as pd
 
-app = FastAPI()
+app = FastAPI(
+    title="DiaPan API",
+    description=(
+        "Metabolic risk-stratification research API for diabetes and "
+        "pancreatic cancer. Developed within the KERI department."
+    ),
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,6 +48,12 @@ class BiomarkerRequest(BaseModel):
     patient_record: dict[str, object] | None = None
     top_k: int = 8
     force_retrain: bool = False
+    # Which label to predict. Default 'Cancer' preserves backward compatibility.
+    # NHANES also supports 'PancreaticCancer'. TCGA also supports 'Progression'.
+    target: str = "Cancer"
+    # Optional cohort filter, e.g. 'diabetics_only' for pancreatic risk
+    # stratification within diabetic patients (per the DiaPan brief).
+    cohort_filter: str | None = None
 
 
 def resolve_dataset_path(dataset_name: str) -> Path | None:
@@ -58,11 +72,17 @@ def resolve_dataset_path(dataset_name: str) -> Path | None:
         if path.exists() and path.is_file():
             return path
 
-    if Path(dataset_name).name == "nhanes_merged.csv":
+    dataset_leaf = Path(dataset_name).name
+    if dataset_leaf == "nhanes_merged.csv":
         ensure_nhanes_dataset()
-        for path in candidates:
-            if path.exists() and path.is_file():
-                return path
+    elif dataset_leaf == "tcga_cdr.csv":
+        ensure_tcga_cdr_dataset()
+    else:
+        return None
+
+    for path in candidates:
+        if path.exists() and path.is_file():
+            return path
 
     return None
 
@@ -81,15 +101,20 @@ def list_available_datasets() -> list[dict[str, str]]:
         for csv_path in dataset_dir.glob("*.csv"):
             dataset_paths.setdefault(csv_path.name, csv_path)
 
-    if not dataset_paths:
-        ensure_nhanes_dataset()
+    # Ensure both first-party datasets are materialized so they show up in the
+    # picker even on a fresh clone.
+    ensure_nhanes_dataset()
+    try:
+        ensure_tcga_cdr_dataset()
+    except Exception as error:
+        print(f"[warn] Could not materialize tcga_cdr.csv: {error}")
 
-        for dataset_dir in dataset_dirs:
-            if not dataset_dir.exists() or not dataset_dir.is_dir():
-                continue
+    for dataset_dir in dataset_dirs:
+        if not dataset_dir.exists() or not dataset_dir.is_dir():
+            continue
 
-            for csv_path in dataset_dir.glob("*.csv"):
-                dataset_paths.setdefault(csv_path.name, csv_path)
+        for csv_path in dataset_dir.glob("*.csv"):
+            dataset_paths.setdefault(csv_path.name, csv_path)
 
     return [
         {
@@ -216,6 +241,8 @@ async def biomarker_discovery(request: BiomarkerRequest):
             patient_record=request.patient_record,
             top_k=request.top_k,
             force_retrain=request.force_retrain,
+            target=request.target,
+            cohort_filter=request.cohort_filter,
         )
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error))
