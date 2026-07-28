@@ -32,7 +32,7 @@ by two open real-world datasets:
 ## Variables covered per the brief
 
 | Brief-required variable | Where in DiaPan | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Type of diabetes (T1 / T2 / gestational) | `diabetes_subtype` (derived) | Proxy from age-at-diagnosis and insulin use; NHANES does not directly ask T1 vs T2 |
 | Timing of onset (recent vs long-standing) | `recent_diabetes_onset` | 1 if diagnosed within last 3 years |
 | Duration since diagnosis | `diabetes_duration_years` | Current age − DIQ_DID040 |
@@ -78,7 +78,7 @@ python train_biomarker_model.py --dataset nhanes_multicycle.csv --force \
 Current pooled NHANES 1999-March 2020 benchmarks:
 
 | Cohort | Rows used | Test positives | AUROC (95% CI) | AUPRC (95% CI) | AUPRC lift |
-|---|---:|---:|---:|---:|---:|
+| --- | ---: | ---: | ---: | ---: | ---: |
 | General population | 52,891 | 55 | 0.679 (0.598-0.748) | 0.011 (0.008-0.020) | 2.14x |
 | **Diabetics only** | **6,473** | **8** | **0.641 (0.419-0.830)** | **0.135 (0.007-0.386)** | **21.81x** |
 
@@ -244,7 +244,7 @@ Artifacts land in `api/model_artifacts/tcga_cdr/` (mortality) and
 Current TCGA-CDR benchmarks (XGBoost vs HistGradientBoosting):
 
 | Target | Rows | Positive rate | AUROC | AUPRC |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 5-year all-cause mortality (`Cancer`) | 4,887 | 63.9 % | **0.894** | **0.936** |
 | 5-year progression (`Progression`) | 5,025 | 73.9 % | **0.912** | **0.966** |
 

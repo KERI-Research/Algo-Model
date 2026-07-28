@@ -1,4 +1,4 @@
-# Embed KERI Dashboard Into keri.ceberallab.org (GitHub Pages)
+# Embed KERI Dashboard Into keri.cerebrallab.org (GitHub Pages)
 
 This guide makes the React dashboard embeddable inside your existing website.
 
@@ -50,7 +50,7 @@ Use this HTML snippet in the site where you want the dashboard to appear:
   <p>Interactive causal and biomarker analysis interface.</p>
 
   <iframe
-    src="https://keri.ceberallab.org/dashboard/"
+    src="https://keri.cerebrallab.org/dashboard/"
     title="KERI Dashboard"
     loading="lazy"
     referrerpolicy="strict-origin-when-cross-origin"
@@ -76,5 +76,5 @@ Use this HTML snippet in the site where you want the dashboard to appear:
 ## Notes
 
 - The backend currently allows all origins, so the iframe can call the API from your site domain.
-- If you later lock down CORS, include `https://keri.ceberallab.org` in the allowlist.
+- If you later lock down CORS, include `https://keri.cerebrallab.org` in the allowlist.
 - If you choose a different subpath than `/dashboard`, update `build:pages` and iframe `src` together.
