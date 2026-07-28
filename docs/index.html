@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KERI Docs Hub</title>
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --panel: #ffffff;
+            --ink: #1f2937;
+            --muted: #6b7280;
+            --accent: #0f766e;
+            --accent-2: #0ea5a4;
+            --border: #dbe3ea;
+            --shadow: 0 18px 40px -28px rgba(3, 7, 18, 0.45);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 12% 18%, #dff5f2 0%, transparent 34%),
+                radial-gradient(circle at 84% 8%, #e5eefc 0%, transparent 26%),
+                linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+            font-family: "Avenir Next", "Segoe UI", sans-serif;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1rem 3rem;
+        }
+
+        .hero {
+            background: linear-gradient(130deg, #0f766e 0%, #0f766e 52%, #0ea5a4 100%);
+            color: #f8fffe;
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .hero h1 {
+            margin: 0 0 0.4rem;
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            letter-spacing: 0.2px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #dcf9f6;
+            max-width: 70ch;
+        }
+
+        .jump-box {
+            margin-top: 1rem;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 12px;
+            padding: 0.9rem;
+        }
+
+        .jump-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+        }
+
+        .jump-grid label {
+            font-weight: 600;
+            font-size: 0.93rem;
+            color: #f0fdfa;
+        }
+
+        input[type="search"],
+        select,
+        button {
+            width: 100%;
+            font: inherit;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.68rem 0.75rem;
+        }
+
+        input[type="search"],
+        select {
+            background: rgba(255, 255, 255, 0.95);
+            color: #134e4a;
+        }
+
+        input[type="search"]::placeholder {
+            color: #4b5563;
+        }
+
+        button {
+            background: #f8fffe;
+            color: #0f766e;
+            border-color: #b7ece7;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 140ms ease, box-shadow 140ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -16px rgba(2, 132, 199, 0.8);
+        }
+
+        .section-title {
+            margin: 1.7rem 0 0.7rem;
+            font-size: 1.1rem;
+            letter-spacing: 0.2px;
+            color: #0f172a;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: 0.9rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.95rem 1rem;
+            box-shadow: var(--shadow);
+            transition: transform 160ms ease, border-color 160ms ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #9fd8d3;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        .card p {
+            margin: 0.35rem 0 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .foot-note {
+            margin-top: 1.5rem;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        @media (min-width: 760px) {
+            .hero {
+                padding: 1.8rem;
+            }
+
+            .jump-grid {
+                grid-template-columns: 1fr 1fr auto;
+                align-items: end;
+            }
+
+            .jump-grid button {
+                min-width: 130px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <section class="hero">
+            <h1>KERI Documentation Hub</h1>
+            <p>
+                Central navigation for docs, code entry points, and project resources.
+                Use Quick Jump to open a specific file or page directly.
+            </p>
+
+            <div class="jump-box">
+                <div class="jump-grid">
+                    <div>
+                        <label for="jump-filter">Search file or page</label>
+                        <input id="jump-filter" type="search" placeholder="Try: methodology, api/main.py, dashboard...">
+                    </div>
+                    <div>
+                        <label for="jump-select">Jump to</label>
+                        <select id="jump-select"></select>
+                    </div>
+                    <button id="jump-button" type="button">Open</button>
+                </div>
+            </div>
+        </section>
+
+        <h2 class="section-title">Core Documentation</h2>
+        <section class="card-grid" aria-label="Core docs links">
+            <a class="card" href="README.html">
+                <h3>Project Overview</h3>
+                <p>Primary project summary and scope.</p>
+            </a>
+            <a class="card" href="WIKI.html">
+                <h3>Command Wiki</h3>
+                <p>Developer setup, run, and training commands.</p>
+            </a>
+            <a class="card" href="METHODOLOGY.html">
+                <h3>Methodology</h3>
+                <p>Modeling and analytical approach details.</p>
+            </a>
+            <a class="card" href="RESULTS_GUIDE.html">
+                <h3>Results Guide</h3>
+                <p>How to interpret outputs and reports.</p>
+            </a>
+            <a class="card" href="PREVENTION_MODEL_SPEC.html">
+                <h3>Prevention Spec</h3>
+                <p>Prevention model behavior and limits.</p>
+            </a>
+            <a class="card" href="RESEARCH_EVIDENCE.html">
+                <h3>Research Evidence</h3>
+                <p>Research references and support context.</p>
+            </a>
+            <a class="card" href="PAPER_VARIABLE_CATALOGUE.html">
+                <h3>Variable Catalogue</h3>
+                <p>Paper-linked variable candidate mapping.</p>
+            </a>
+            <a class="card" href="COLUMN_DICTIONARY.html">
+                <h3>Column Dictionary</h3>
+                <p>Feature-level field descriptions.</p>
+            </a>
+            <a class="card" href="CYCLE_HOLDOUT_VALIDATION.html">
+                <h3>Cycle Holdout Validation</h3>
+                <p>Validation strategy and metrics.</p>
+            </a>
+            <a class="card" href="HUGGINGFACE_BENCHMARKING.html">
+                <h3>Hugging Face Benchmarking</h3>
+                <p>Benchmark setup and usage guidance.</p>
+            </a>
+        </section>
+
+        <h2 class="section-title">Code Entry Points</h2>
+        <section class="card-grid" aria-label="Code links">
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/main.py">
+                <h3>API Server</h3>
+                <p>FastAPI endpoints and routing.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/engine.py">
+                <h3>Prediction Engine</h3>
+                <p>Core inference pipeline logic.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/train_self_supervised.py">
+                <h3>SSL Training</h3>
+                <p>Self-supervised model training script.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/train_biomarker_model.py">
+                <h3>Biomarker Training</h3>
+                <p>Supervised biomarker model training.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/score_prevention_record.py">
+                <h3>Prevention Scoring</h3>
+                <p>CLI scoring for prevention-safe outputs.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/blob/main/api/test_main_routes.py">
+                <h3>Backend Tests</h3>
+                <p>API route and behavior smoke tests.</p>
+            </a>
+        </section>
+
+        <h2 class="section-title">Site And Frontend</h2>
+        <section class="card-grid" aria-label="Frontend and site links">
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/tree/main/frontend">
+                <h3>Frontend App</h3>
+                <p>React app source and styles.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/tree/main/Org-Site/Keri-Project">
+                <h3>Org Site</h3>
+                <p>Public site pages and dashboard resources.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/tree/main/docs">
+                <h3>Docs Folder</h3>
+                <p>Browse full docs directory in GitHub.</p>
+            </a>
+            <a class="card" href="https://github.com/KERI-Research/Algo-Model/tree/main/data">
+                <h3>Data Folder</h3>
+                <p>Build reports and reference datasets.</p>
+            </a>
+        </section>
+
+        <p class="foot-note">
+            Tip: this page is intended to be the GitHub Pages start page when using the docs/ folder as the publishing
+            source.
+        </p>
+    </main>
+
+    <script>
+        const jumpItems = [
+            { label: "Docs: README", url: "README.html" },
+            { label: "Docs: WIKI", url: "WIKI.html" },
+            { label: "Docs: METHODOLOGY", url: "METHODOLOGY.html" },
+            { label: "Docs: RESULTS_GUIDE", url: "RESULTS_GUIDE.html" },
+            { label: "Docs: PREVENTION_MODEL_SPEC", url: "PREVENTION_MODEL_SPEC.html" },
+            { label: "Docs: RESEARCH_EVIDENCE", url: "RESEARCH_EVIDENCE.html" },
+            { label: "Docs: PAPER_VARIABLE_CATALOGUE", url: "PAPER_VARIABLE_CATALOGUE.html" },
+            { label: "Docs: COLUMN_DICTIONARY", url: "COLUMN_DICTIONARY.html" },
+            { label: "Docs: CYCLE_HOLDOUT_VALIDATION", url: "CYCLE_HOLDOUT_VALIDATION.html" },
+            { label: "Docs: HUGGINGFACE_BENCHMARKING", url: "HUGGINGFACE_BENCHMARKING.html" },
+            { label: "Code: api/main.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/main.py" },
+            { label: "Code: api/engine.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/engine.py" },
+            { label: "Code: api/train_self_supervised.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/train_self_supervised.py" },
+            { label: "Code: api/train_biomarker_model.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/train_biomarker_model.py" },
+            { label: "Code: api/score_prevention_record.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/score_prevention_record.py" },
+            { label: "Code: api/test_main_routes.py", url: "https://github.com/KERI-Research/Algo-Model/blob/main/api/test_main_routes.py" },
+            { label: "Folder: frontend/", url: "https://github.com/KERI-Research/Algo-Model/tree/main/frontend" },
+            { label: "Folder: Org-Site/Keri-Project/", url: "https://github.com/KERI-Research/Algo-Model/tree/main/Org-Site/Keri-Project" },
+            { label: "Folder: data/", url: "https://github.com/KERI-Research/Algo-Model/tree/main/data" },
+            { label: "Folder: docs/", url: "https://github.com/KERI-Research/Algo-Model/tree/main/docs" },
+            { label: "Top: Repository Root", url: "https://github.com/KERI-Research/Algo-Model" }
+        ];
+
+        const filterInput = document.getElementById("jump-filter");
+        const select = document.getElementById("jump-select");
+        const openButton = document.getElementById("jump-button");
+
+        function renderOptions(query) {
+            const term = query.trim().toLowerCase();
+            const filtered = jumpItems.filter((item) => item.label.toLowerCase().includes(term));
+
+            select.innerHTML = "";
+            if (!filtered.length) {
+                const noResult = document.createElement("option");
+                noResult.textContent = "No matches";
+                noResult.value = "";
+                select.appendChild(noResult);
+                return;
+            }
+
+            filtered.forEach((item) => {
+                const option = document.createElement("option");
+                option.value = item.url;
+                option.textContent = item.label;
+                select.appendChild(option);
+            });
+        }
+
+        function openSelection() {
+            const target = select.value;
+            if (!target) {
+                return;
+            }
+            window.location.href = target;
+        }
+
+        filterInput.addEventListener("input", (event) => {
+            renderOptions(event.target.value);
+        });
+
+        openButton.addEventListener("click", openSelection);
+
+        select.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                openSelection();
+            }
+        });
+
+        renderOptions("");
+    </script>
+</body>
+
+</html>

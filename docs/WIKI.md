@@ -2,6 +2,8 @@
 
 This page collects the main commands used in this repository.
 
+Return to the docs navigation hub: [KERI Documentation Hub](index.html)
+
 ## 1) Environment Setup (Backend)
 
 From the project root:
