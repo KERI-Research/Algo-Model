@@ -1,5 +1,5 @@
 """
-This script is intended to create the first trustworthy NHANES prototype for the DiaPan
+This script is intended to create the first trustworthy NHANES prototype for the MetaboGuard
 pipeline by pulling the 2017-2018 CDC public-use files for demographics, body measures,
 and medical conditions, then reconciling them into a single analysis-ready table keyed on
 SEQN. The goal is deliberately narrow, but the stance is deliberately skeptical: every
@@ -17,6 +17,7 @@ from io import BytesIO
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+import numpy as np
 import pandas as pd
 
 
@@ -34,11 +35,15 @@ NHANES_FILES = {
     "TCHOL": "TCHOL_J.xpt",
     "HSCRP": "HSCRP_J.xpt",
     "WHQ": "WHQ_J.xpt",  # Weight history: self-reported current + past weights
+    "SMQ": "SMQ_J.xpt",
+    "ALQ": "ALQ_J.xpt",
+    "CBC": "CBC_J.xpt",
+    "BIOPRO": "BIOPRO_J.xpt",
 }
 
-# NHANES MCQ230 self-reported "kind of cancer" codes. 39 = pancreas.
-# https://wwwn.cdc.gov/Nchs/Nhanes/2017-2018/MCQ_J.htm#MCQ230A
-PANCREAS_MCQ_CODE = 39
+# Official NHANES MCQ230 coding: 29 = Pancreas (pancreatic); 39 = Other.
+# https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/MCQ_J.htm
+PANCREAS_MCQ_CODE = 29
 
 MODEL_COLUMNS = {"Diabetes", "Cancer", "Obesity"}
 BIOMARKER_COLUMNS = {
@@ -50,6 +55,11 @@ BIOMARKER_COLUMNS = {
     "HDL_LBDHDD",
     "TCHOL_LBXTC",
     "HSCRP_LBXHSCRP",
+    "CBC_LBXHGB",
+    "CBC_LBXPLTSI",
+    "BIOPRO_LBXSATSI",
+    "BIOPRO_LBXSAPSI",
+    "BIOPRO_LBXSCR",
 }
 
 
@@ -115,8 +125,8 @@ def _derive_pancreatic_cancer_label(prepared: pd.DataFrame) -> pd.Series:
     Pancreatic-cancer label from NHANES self-report.
 
     NHANES MCQ230A/B/C/D captures the type of cancer for each of up to four
-    lifetime cancer diagnoses. Code 39 == pancreas. We consider a participant
-    a positive if ANY of the four MCQ230 slots equals 39.
+    lifetime cancer diagnoses. Code 29 == pancreas. We consider a participant
+    a positive if ANY of the four MCQ230 slots equals 29.
 
     Returns a pd.Series with values 1.0 (pancreatic cancer reported), 0.0
     (definitely no pancreatic cancer reported), or NaN (unknown — e.g. never
@@ -132,7 +142,7 @@ def _derive_pancreatic_cancer_label(prepared: pd.DataFrame) -> pd.Series:
 
     # Anyone with MCQ220 == 2 (never had cancer) is a clean negative for
     # pancreatic cancer as well. Anyone with MCQ220 == 1 (had cancer) but no
-    # 39 in the MCQ230 slots is also a negative (they had a different cancer).
+    # 29 in the MCQ230 slots is also a negative (they had a different cancer).
     label = pd.Series(pd.NA, index=prepared.index, dtype="Float64")
     if "MCQ_MCQ220" in prepared.columns:
         cancer_any = pd.to_numeric(prepared["MCQ_MCQ220"], errors="coerce")
@@ -235,7 +245,7 @@ def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     if "Cancer" not in prepared.columns and "MCQ_MCQ220" in prepared.columns:
         prepared["Cancer"] = _coerce_binary(prepared["MCQ_MCQ220"])
 
-    # Pancreatic-specific label (from MCQ230A/B/C/D == 39)
+    # Pancreatic-specific label (from MCQ230A/B/C/D == 29)
     if "PancreaticCancer" not in prepared.columns:
         prepared["PancreaticCancer"] = _derive_pancreatic_cancer_label(prepared)
 
@@ -257,6 +267,25 @@ def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
         a1c = pd.to_numeric(prepared["GHB_LBXGH"], errors="coerce")
         prepared["elevated_hba1c"] = pd.NA
         prepared.loc[a1c.notna(), "elevated_hba1c"] = (a1c[a1c.notna()] >= 6.5).astype(int)
+        prepared["hba1c_reciprocal_100"] = np.where(a1c > 0, 100.0 / a1c, np.nan)
+        prepared["hba1c_squared"] = a1c ** 2
+
+    if {"SMQ_SMQ020", "SMQ_SMQ040"}.issubset(prepared.columns):
+        ever = pd.to_numeric(prepared["SMQ_SMQ020"], errors="coerce")
+        now = pd.to_numeric(prepared["SMQ_SMQ040"], errors="coerce")
+        status = pd.Series(pd.NA, index=prepared.index, dtype="Float64")
+        status.loc[ever == 2] = 0.0
+        status.loc[(ever == 1) & (now == 3)] = 1.0
+        status.loc[(ever == 1) & now.isin([1, 2])] = 2.0
+        prepared["smoking_status"] = status
+        prepared["current_smoker"] = pd.NA
+        prepared.loc[status.notna(), "current_smoker"] = (status[status.notna()] == 2).astype(int)
+
+    if "ALQ_ALQ130" in prepared.columns:
+        drinks = pd.to_numeric(prepared["ALQ_ALQ130"], errors="coerce").where(lambda value: value < 100)
+        prepared["average_drinks_per_day"] = drinks
+        prepared["alcohol_status"] = pd.NA
+        prepared.loc[drinks.notna(), "alcohol_status"] = (drinks[drinks.notna()] > 0).astype(int) * 2
 
     if "GLU_LBXGLU" in prepared.columns:
         glucose = pd.to_numeric(prepared["GLU_LBXGLU"], errors="coerce")
@@ -268,8 +297,8 @@ def prepare_model_ready_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 def write_outputs(dataframe: pd.DataFrame) -> tuple[Path, Path]:
     project_root = Path(__file__).resolve().parent.parent
-    root_output = project_root / "data" / "nhanes_merged.csv"
-    api_output = project_root / "api" / "nhanes_data" / "nhanes_merged.csv"
+    root_output = project_root / "data" / "nhanes_merged_v2.csv"
+    api_output = project_root / "api" / "nhanes_data" / "nhanes_merged_v2.csv"
 
     root_output.parent.mkdir(parents=True, exist_ok=True)
     api_output.parent.mkdir(parents=True, exist_ok=True)
@@ -302,7 +331,7 @@ def dataset_is_ready(dataset_path: Path) -> bool:
 
 def ensure_nhanes_dataset(force: bool = False) -> Path:
     project_root = Path(__file__).resolve().parent.parent
-    api_output = project_root / "api" / "nhanes_data" / "nhanes_merged.csv"
+    api_output = project_root / "api" / "nhanes_data" / "nhanes_merged_v2.csv"
 
     if force or not dataset_is_ready(api_output):
         build_dataset()

@@ -1,39 +1,36 @@
 {
-	"displayName": "DiaPan",
-	"name": "diapan",
-	"version": "0.0.1",
-	"private": true,
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"build:pages": "PUBLIC_URL=/dashboard react-scripts build",
-		"sync:org-site": "rm -rf ../Org-Site/Keri-Project/dashboard && mkdir -p ../Org-Site/Keri-Project/dashboard && cp -R build/. ../Org-Site/Keri-Project/dashboard/",
-		"publish:org-site": "npm run build:pages && npm run sync:org-site",
-		"test": "react-scripts test",
-		"eject": "react-scripts eject"
-	},
-	"dependencies": {
-		"react": "^18.3.1",
-		"react-dom": "^18.3.1",
-		"react-scripts": "5.0.1",
-		"web-vitals": "^2.1.4"
-	},
-	"eslintConfig": {
-		"extends": [
-			"react-app",
-			"react-app/jest"
-		]
-	},
-	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 1 chrome version",
-			"last 1 firefox version",
-			"last 1 safari version"
-		]
-	}
+  "displayName": "MetaboGuard",
+  "name": "metaboguard",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }

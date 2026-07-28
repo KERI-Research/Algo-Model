@@ -40,7 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Optional pre-training cohort filter. "
             "'diabetics_only' restricts training rows to Diabetes == 1 for "
-            "pancreatic-cancer-in-diabetics risk stratification (per DiaPan brief)."
+            "pancreatic-cancer-in-diabetics risk stratification (per MetaboGuard brief)."
         ),
     )
     return parser
@@ -51,7 +51,7 @@ def resolve_training_path(dataset_name: str) -> Path:
     if dataset_path.exists() and dataset_path.is_file():
         return dataset_path
 
-    if dataset_path.name == "nhanes_merged.csv":
+    if dataset_path.name == "nhanes_merged_v2.csv":
         return ensure_nhanes_dataset()
 
     if dataset_path.name == "tcga_cdr.csv":

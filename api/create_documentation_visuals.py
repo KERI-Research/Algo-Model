@@ -1,4 +1,4 @@
-"""Generate accessible documentation visuals for DiaPan."""
+"""Generate accessible documentation visuals for MetaboGuard."""
 
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ def style() -> None:
 
 def performance_comparison() -> None:
     random = {"AUROC": 0.641317, "AUPRC": 0.134717}
-    temporal = REPORT["pooled_out_of_cycle"]["clinical_only"]["diapan_xgboost_v1"]
+    temporal = REPORT["pooled_out_of_cycle"]["clinical_only"]["metaboguard_xgboost_v1"]
     values = {
         "AUROC": [random["AUROC"], temporal["auroc"]],
         "AUPRC": [random["AUPRC"], temporal["auprc"]],
@@ -92,7 +92,7 @@ def performance_comparison() -> None:
 def cycle_stability() -> None:
     folds = [
         row for row in REPORT["folds"]
-        if row["variant"] == "clinical_only" and row["model"] == "diapan_xgboost_v1"
+        if row["variant"] == "clinical_only" and row["model"] == "metaboguard_xgboost_v1"
     ]
     cycles = [row["held_out_cycle"] for row in folds]
     auroc = [row["auroc"] for row in folds]
@@ -142,7 +142,7 @@ def pipeline_diagram() -> None:
     ax.set_ylim(0, 5.4)
     ax.axis("off")
     ax.set_title(
-        "DiaPan research pipeline: from open cohorts to comparable benchmark outputs",
+        "MetaboGuard research pipeline: from open cohorts to comparable benchmark outputs",
         loc="left",
         fontsize=16,
         pad=14,
@@ -180,7 +180,7 @@ def pipeline_diagram() -> None:
         "pre-diagnosis metabolic training data.",
         ha="center", va="center", fontsize=10, color=MUTED,
     )
-    fig.savefig(ASSETS / "diapan-pipeline-overview.png", dpi=180, bbox_inches="tight")
+    fig.savefig(ASSETS / "metaboguard-pipeline-overview.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 
 

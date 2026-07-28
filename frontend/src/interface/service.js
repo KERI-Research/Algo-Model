@@ -147,3 +147,42 @@ export const fetchBiomarkerDiscovery = async (datasetName, options = {}) => {
 
 	return await response.json();
 };
+
+export const fetchPreventionCapabilities = async (datasetName) => {
+	const response = await fetch(
+		`${API_BASE_URL}/api/v1/prevention-capabilities`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ dataset: datasetName }),
+		},
+	);
+	if (!response.ok) {
+		throw await buildApiError(
+			response,
+			"Failed to evaluate prevention capabilities",
+		);
+	}
+	return await response.json();
+};
+
+export const fetchPreventionScore = async (
+	patientRecord,
+	artifact = "nhanes_multicycle_v2",
+) => {
+	const response = await fetch(`${API_BASE_URL}/api/v1/prevention-score`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			patient_record: patientRecord,
+			artifact,
+		}),
+	});
+	if (!response.ok) {
+		throw await buildApiError(
+			response,
+			"Metabolic deviation scoring failed",
+		);
+	}
+	return await response.json();
+};

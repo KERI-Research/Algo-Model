@@ -3,12 +3,12 @@ TCGA-CDR Fetch and Harmonization
 ================================
 Downloads the TCGA Pan-Cancer Clinical Data Resource (Liu et al., 2018, Cell)
 supplemental table S1 from the NCI GDC and reshapes it into a CSV that is
-compatible with the existing DiaPan pipeline (biomarker.py, predictive.py,
+compatible with the existing MetaboGuard pipeline (biomarker.py, predictive.py,
 engine.py) by projecting TCGA fields onto NHANES-shaped columns.
 
 Target definition
 -----------------
-`Cancer` in DiaPan is repurposed for the TCGA cohort as "died within 5 years of
+`Cancer` in MetaboGuard is repurposed for the TCGA cohort as "died within 5 years of
 initial pathologic diagnosis" (5-year overall mortality). This is the standard
 5-year overall survival endpoint flipped so 1 = event, 0 = censored-alive.
 
@@ -215,7 +215,7 @@ def build_tcga_cdr_frame(source_frame: pd.DataFrame) -> pd.DataFrame:
     df["SEQN"] = np.arange(1, len(df) + 1, dtype=int)
     df["tcga_patient_barcode"] = df["bcr_patient_barcode"].astype(str)
 
-    # NHANES-shaped columns DiaPan expects but TCGA does not carry
+    # NHANES-shaped columns MetaboGuard expects but TCGA does not carry
     df["Diabetes"] = np.nan
     df["Obesity"] = np.nan
     df["BMX_BMXBMI"] = np.nan

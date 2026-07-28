@@ -1,126 +1,133 @@
-# DiaPan Results and Terminology Guide
+# MetaboGuard Results and Terminology Guide
 
-## The short version
+## Current status
 
-DiaPan is a **research ranking model**, not a clinical diagnostic test. It asks:
+MetaboGuard has a valid **self-supervised representation/deviation artifact**,
+but does **not currently have a validated future cancer or diabetes risk
+model**.
 
-> Among people with diabetes in NHANES, can metabolic and demographic features
-> rank self-reported pancreatic-cancer cases above non-cases?
+The current artifact may be used to:
 
-The most credible benchmark is leave-one-survey-cycle-out validation, because
-every person is tested by a model that did not train on their survey era.
+- generate latent metabolic representations;
+- calculate deviation percentiles;
+- identify measurements contributing to reconstruction deviation;
+- benchmark unsupervised tabular representations.
 
-![DiaPan research pipeline](assets/diapan-pipeline-overview.png)
+It must not be described as predicting future development from current NHANES
+data.
+
+## Self-supervised artifact
+
+| Item | Result |
+|---|---:|
+| Unlabelled training rows | 50,000 |
+| Raw features | 25 |
+| Latent dimensions | 16 |
+| Validation reconstruction loss | 0.0565 |
+
+Post-hoc cross-sectional association checks:
+
+| Label | AUROC | AUPRC | Interpretation |
+|---|---:|---:|---|
+| Any-cancer prevalence | 0.699 | 0.169 | Representation association only |
+| Type 2 diabetes proxy | 0.923 | 0.675 | Current-state association only |
+| Type 1 proxy | 0.909 | 0.135 | Unvalidated research proxy |
+
+These values are not development-risk performance.
+
+## Pancreatic model invalidation
+
+An audit against the official NHANES codebook found that the first pooled
+dataset used MCQ230 code 39 as pancreatic cancer. The official coding is:
+
+- **29 = Pancreas (pancreatic)**
+- **39 = Other**
+
+The former metrics and `MetaboGuard-XGB v1` artifact are invalid and must not be
+quoted, benchmarked, published or used for inference.
+
+![Outcome code audit](assets/outcome-code-audit.png)
+
+## Corrected cohort
+
+The corrected `nhanes_multicycle_v2.csv` contains:
+
+| Definition | Positive cases |
+|---|---:|
+| Pancreatic cancer across the pooled population | 19 |
+| Pancreatic cancer among participants with diabetes | 7 |
+| Usable diabetic positives after required-field cleaning | 6 |
+| Pancreatic cancer diagnosed 0-3 years after diabetes | 2 |
+
+These event counts are too small for train/test splitting, calibration,
+temporal validation or model comparison.
+
+![MetaboGuard v2 safety-gated pipeline](assets/metaboguard-v2-pipeline-overview.png)
+
+## Safety behaviour
+
+MetaboGuard now:
+
+1. Excludes `nhanes_multicycle.csv` and `nhanes_merged.csv` from API discovery.
+2. Uses the versioned corrected datasets ending in `_v2.csv`.
+3. Requires at least 20 usable positive and 20 usable negative cases.
+4. Stores a SHA-256 dataset signature in every new artifact.
+5. Retrains or refuses inference when the dataset signature changes.
+6. Blocks public model export when the corrected cohort is underpowered.
+
+## Priority A variables now available
+
+| Variable | MetaboGuard field | Coverage in pooled cohort |
+|---|---|---:|
+| Smoking status | `smoking_status` | 59,745 |
+| Current smoker | `current_smoker` | 59,745 |
+| Alcohol status | `alcohol_status` | 51,467 |
+| Average drinks/day | `average_drinks_per_day` | 34,282 |
+| Haemoglobin | `CBC_LBXHGB` | 87,554 |
+| Platelet count | `CBC_LBXPLTSI` | 87,552 |
+| ALT | `BIOPRO_LBXSATSI` | 67,442 |
+| Alkaline phosphatase | `BIOPRO_LBXSAPSI` | 67,536 |
+| Creatinine | `BIOPRO_LBXSCR` | 67,542 |
+| Reciprocal HbA1c term | `hba1c_reciprocal_100` | 68,644 |
+| Squared HbA1c term | `hba1c_squared` | 68,644 |
+
+These variables improve the feature schema but cannot compensate for only six
+usable positive diabetic pancreatic-cancer cases.
+
+![Priority A variable coverage](assets/priority-a-variable-coverage.png)
 
 ## Is higher better?
 
-| Output | Meaning | Is higher better? |
-| --- | --- | --- |
-| **AUROC** | Ranking discrimination across all thresholds | **Yes.** 0.5 is random; 1.0 is perfect ranking |
-| **AUPRC** | Precision-recall performance for the rare positive class | **Yes**, but compare it with prevalence |
-| **AUPRC lift** | AUPRC divided by positive-class prevalence | **Yes.** 1× means no improvement over prevalence |
-| **Brier score** | Mean squared error of probability-like scores | **No. Lower is better.** 0 is perfect |
-| **Research risk score** | Relative model-assigned pancreatic-cancer risk | Higher means higher relative model score, **not absolute clinical probability** |
-| **Feature importance** | How much a feature helped model performance | Larger magnitude means more influence; it does not imply causality |
-| **Mean shift** | Positive-class mean minus negative-class mean | Positive means higher among cases; negative means lower among cases |
-| **95% confidence interval** | Range produced by repeated resampling | Narrower is more precise; it is not a performance score |
+| Output | Meaning | Direction |
+|---|---|---|
+| AUROC | Ranking discrimination | Higher is better; 0.5 is random |
+| AUPRC | Precision-recall performance | Higher is better; compare with prevalence |
+| AUPRC lift | AUPRC divided by prevalence | Higher is better; 1× is baseline |
+| Brier score | Squared probability error | Lower is better |
+| Feature importance | Model dependence on a feature | Larger means more influence, not causality |
 
-## Which result should be quoted?
+No corrected pancreatic-risk values are currently reported for these metrics.
 
-Use the **clinical-only XGBoost cycle-held-out result**:
+## What is still valid
 
-- AUROC: **0.643** (cycle-bootstrap 95% CI 0.561-0.703)
-- AUPRC: **0.0128** (0.0084-0.0289)
-- AUPRC lift: **2.03×**
-- Brier score: **0.0123**
-- Validation positives: **41**
+- TCGA-CDR prognosis experiments remain separate and are unaffected by the
+  NHANES site-code correction.
+- NHANES diabetes and any-cancer descriptive analyses remain available.
+- The corrected v2 datasets and variable-coverage audit are valid.
+- The paper-derived genetic, protein and metabolite candidate catalogues remain
+  valid research inputs.
 
-Do not quote the random 80/20 AUPRC of 0.135 as generalisation performance.
-Random splitting mixes survey periods and produces a much more optimistic
-precision-recall result.
+## Required next dataset
 
-![Random versus temporal validation](assets/random-vs-temporal-performance.png)
+The brief requires a cohort containing:
 
-## Why AUROC and AUPRC tell different stories
+- a sufficiently large incident pancreatic-cancer endpoint;
+- exact diabetes and cancer diagnosis dates;
+- at least 20 positive cases for exploratory fitting, preferably far more;
+- repeated HbA1c, glucose, BMI and weight measurements;
+- smoking and routine blood tests;
+- ideally genotype, CA19-9 and/or the prioritised serum proteins.
 
-Pancreatic cancer is extremely rare in the diabetic cohort: prevalence is
-approximately 0.0063, or 0.63%. A model can rank cases reasonably well
-(moderate AUROC) while still producing many false positives (low AUPRC).
-
-An AUPRC of 0.0128 looks small, but it is about twice the prevalence baseline.
-That means the model enriches cases relative to random selection, but the yield
-is still too low for clinical use.
-
-## Model benchmark
-
-All models below use the same clinical-only features and leave-one-cycle-out
-folds.
-
-| Model | AUROC | AUPRC | Lift | Brier | Interpretation |
-| --- | ---: | ---: | ---: | ---: | --- |
-| **XGBoost** | **0.643** | 0.0128 | 2.03× | 0.0123 | Best ranking discrimination; selected artifact |
-| HistGradientBoosting | 0.635 | 0.0119 | 1.88× | Similar but slightly weaker ranking |
-| Random Forest | 0.629 | 0.0184 | 2.91× | Better AUPRC and Brier, lower AUROC |
-| Balanced Logistic Regression | 0.601 | **0.0347** | **5.49×** | Highest AUPRC but Brier 0.1996 shows badly distorted probability scores |
-
-There is no universally best model. XGBoost is selected because the project
-prioritises stable ranking discrimination and its probability error is much
-lower than balanced Logistic Regression. Random Forest remains a credible
-alternative for future calibration work.
-
-## Survey-cycle stability
-
-![Cycle-held-out performance](assets/cycle-held-out-stability.png)
-
-The number in parentheses above each AUROC point is the number of pancreatic
-cancer positives in that held-out cycle. Cycles with one to five positive cases
-produce unstable estimates. Large differences between cycles indicate temporal
-dataset shift and measurement heterogeneity.
-
-## Core terminology
-
-| Term | Plain-English meaning |
-| --- | --- |
-| **Positive case** | Participant whose self-reported cancer site includes pancreas code 39 |
-| **Negative case** | Participant with a known cancer-history response but no pancreatic site |
-| **Prevalence** | Fraction of labelled participants who are positive |
-| **Training fold** | Cycles used to learn imputation values and model parameters |
-| **Held-out cycle** | Entire survey period excluded from training and used only for testing |
-| **Temporal validation** | Testing on a different data-collection period |
-| **Imputation** | Replacing a missing value with the training-set median |
-| **Class weighting** | Penalising mistakes on rare positive cases more heavily |
-| **Discrimination** | Ability to rank positives above negatives |
-| **Calibration** | Agreement between predicted probabilities and observed frequency |
-| **Data leakage** | Test or outcome information entering model training |
-| **Reverse causation** | Cancer may have already affected metabolism before NHANES measurement |
-| **Trajectory proxy** | Cross-sectional interaction that approximates temporal context, not repeated measurements of one person |
-| **Fold** | One train/test iteration in cross-validation |
-
-## Feature direction is not causation
-
-If a feature is marked `higher_in_positive`, its mean was higher among positive
-cases in that test sample. This does not mean increasing the feature causes
-pancreatic cancer. The relationship may reflect age, existing disease,
-treatment, missingness, measurement changes or confounding.
-
-Interaction columns such as `hba1c_age_interaction` have no simple clinical
-unit. Their importance means the combination helped prediction, not that the
-product itself is a recognised biomarker.
-
-## What the model score does not mean
-
-A score of 0.02 does **not** mean a patient has a 2% clinically validated chance
-of pancreatic cancer. Class weighting, rare outcomes and temporal drift mean
-the score should currently be used only to rank research records under an
-identical pipeline.
-
-No diagnosis, reassurance, referral or treatment decision should be based on
-the score.
-
-## Related documentation
-
-- `COLUMN_DICTIONARY.md`: raw and derived column meanings
-- `METHODOLOGY.md`: study design and decision rationale
-- `CYCLE_HOLDOUT_VALIDATION.md`: every temporal fold
-- `RESEARCH_EVIDENCE.md`: source-cited literature review
-- `model_artifacts/huggingface/diapan-risk-xgboost/README.md`: public model card
+UK Biobank or an equivalent linked clinical/genetic cohort is required for the
+primary MetaboGuard model. NHANES should remain a feature-engineering and
+population-context dataset.

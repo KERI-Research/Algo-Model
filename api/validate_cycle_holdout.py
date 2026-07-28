@@ -1,4 +1,4 @@
-"""Leave-one-NHANES-cycle-out temporal validation for DiaPan.
+"""Leave-one-NHANES-cycle-out temporal validation for MetaboGuard.
 
 Each survey cycle is held out in turn. All preprocessing statistics and model
 parameters are learned using the remaining cycles only. Two feature variants
@@ -43,7 +43,7 @@ TEMPORAL_PROXY_FEATURES = {
 
 
 def _benchmark_models(positive_rate: float) -> list[tuple[str, Any]]:
-    """Classical baselines plus DiaPan's two boosted-tree candidates."""
+    """Classical baselines plus MetaboGuard's two boosted-tree candidates."""
     models: list[tuple[str, Any]] = [
         (
             "logistic_regression_balanced",
@@ -144,7 +144,11 @@ def _evaluate_configuration(
         test = test.dropna(subset=[target])
         train = train[train[target].isin([0, 1])]
         test = test[test[target].isin([0, 1])]
-        if train[target].nunique() < 2 or test[target].nunique() < 2:
+        # Training requires both classes. Keep single-class test cycles in the
+        # pooled out-of-cycle predictions; excluding zero-event cycles would
+        # bias prevalence and AUPRC upward. Fold AUROC is NaN when one class is
+        # absent, which is the honest result.
+        if train[target].nunique() < 2 or test.empty:
             continue
 
         x_train = train[features].apply(pd.to_numeric, errors="coerce")
@@ -222,12 +226,15 @@ def validate(
         all_folds.extend(folds)
         pooled[variant] = result
 
+    positive_cases = int((frame[target] == 1).sum())
     return {
         "dataset": str(dataset),
         "target": target,
         "cohort_filter": cohort_filter,
         "validation_design": "leave-one-survey-cycle-out",
         "preprocessing": "training-cycle medians only",
+        "usable_positive_cases": positive_cases,
+        "power_status": "underpowered" if positive_cases < 20 else "exploratory",
         "variants": {name: values for name, values in variants.items()},
         "folds": [asdict(fold) for fold in all_folds],
         "pooled_out_of_cycle": pooled,
@@ -242,7 +249,7 @@ def validate(
 
 def _markdown(report: dict[str, Any]) -> str:
     lines = [
-        "# DiaPan Cycle-Held-Out Temporal Validation",
+        "# MetaboGuard Cycle-Held-Out Temporal Validation",
         "",
         "## Purpose",
         "",
@@ -269,6 +276,13 @@ def _markdown(report: dict[str, Any]) -> str:
         "AUPRC (cycle-bootstrap 95% CI) | AUPRC lift | Brier |",
         "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
+    if report.get("power_status") == "underpowered":
+        lines[3:3] = [
+            "",
+            "> **Do not use as a model-performance claim.** The corrected target "
+            f"contains only {report.get('usable_positive_cases', 0)} usable positive "
+            "cases. Results below are diagnostic pipeline checks only.",
+        ]
     for variant, models in report["pooled_out_of_cycle"].items():
         for model, metric in models.items():
             lines.append(
@@ -312,7 +326,7 @@ def _markdown(report: dict[str, Any]) -> str:
         "```bash",
         "cd api",
         "python validate_cycle_holdout.py \\",
-        "  --dataset ../data/nhanes_multicycle.csv \\",
+        "  --dataset ../data/nhanes_multicycle_v2.csv \\",
         "  --target PancreaticCancer \\",
         "  --cohort-filter diabetics_only",
         "```",
@@ -323,21 +337,31 @@ def _markdown(report: dict[str, Any]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", default="../data/nhanes_multicycle.csv")
+    parser.add_argument("--dataset", default="../data/nhanes_multicycle_v2.csv")
     parser.add_argument("--target", default="PancreaticCancer")
     parser.add_argument(
         "--cohort-filter",
         default="diabetics_only",
         choices=["diabetics_only", "none"],
     )
+    parser.add_argument("--json-output", default=None)
+    parser.add_argument("--markdown-output", default=None)
     args = parser.parse_args()
     dataset = Path(args.dataset).resolve()
     cohort_filter = None if args.cohort_filter == "none" else args.cohort_filter
     report = validate(dataset, target=args.target, cohort_filter=cohort_filter)
 
     project_root = Path(__file__).resolve().parent.parent
-    json_path = project_root / "data" / "cycle_holdout_validation.json"
-    markdown_path = project_root / "docs" / "CYCLE_HOLDOUT_VALIDATION.md"
+    json_path = (
+        Path(args.json_output).resolve()
+        if args.json_output
+        else project_root / "data" / "cycle_holdout_validation_v2.json"
+    )
+    markdown_path = (
+        Path(args.markdown_output).resolve()
+        if args.markdown_output
+        else project_root / "docs" / "CYCLE_HOLDOUT_VALIDATION_V2.md"
+    )
     json_path.parent.mkdir(parents=True, exist_ok=True)
     markdown_path.parent.mkdir(parents=True, exist_ok=True)
     json_path.write_text(json.dumps(report, indent=2))

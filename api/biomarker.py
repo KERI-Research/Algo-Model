@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -27,8 +28,9 @@ except Exception:  # pragma: no cover - optional at import time during partial i
 
 
 ARTIFACT_VERSION = "v1"
-MODEL_NAME = "diapan_hist_gradient_boosting_v1"
-ALTERNATE_MODEL_NAME = "diapan_xgboost_v1"
+MODEL_NAME = "metaboguard_hist_gradient_boosting_v1"
+ALTERNATE_MODEL_NAME = "metaboguard_xgboost_v1"
+MIN_POSITIVE_CASES = 20
 # Default (NHANES) required/optional field sets. When training on TCGA-CDR (or
 # any dataset where these NHANES-specific columns are absent or all-NaN),
 # _resolve_field_sets() below narrows both lists to the columns that actually
@@ -79,9 +81,21 @@ BASE_FEATURES = [
     "HDL_LBDHDD",
     "TCHOL_LBXTC",
     "HSCRP_LBXHSCRP",
+    # Paper-supported Priority A clinical variables
+    "smoking_status",
+    "current_smoker",
+    "alcohol_status",
+    "average_drinks_per_day",
+    "CBC_LBXHGB",
+    "CBC_LBXPLTSI",
+    "BIOPRO_LBXSATSI",
+    "BIOPRO_LBXSAPSI",
+    "BIOPRO_LBXSCR",
     "homa_ir",
     "elevated_hba1c",
     "fasting_hyperglycemia",
+    "hba1c_reciprocal_100",
+    "hba1c_squared",
     "diabetes_duration_years",
     "recent_diabetes_onset",
     "age_bmi_interaction",
@@ -91,7 +105,7 @@ BASE_FEATURES = [
     "weight_loss_1yr_lb",
     "significant_weight_loss_flag",
     "weight_loss_10yr_lb",
-    # Repeated-cross-sectional trajectory proxies from nhanes_multicycle.csv.
+    # Repeated-cross-sectional trajectory proxies from nhanes_multicycle_v2.csv.
     # These are not within-patient slopes and must not be described as such.
     "survey_cycle_index",
     "hba1c_cycle_age_sex_z",
@@ -105,6 +119,15 @@ BASE_FEATURES = [
 class BiomarkerArtifactPaths:
     model_path: Path
     chroma_path: Path
+
+
+def _dataset_signature(data_path: str | Path) -> str:
+    """SHA-256 used to invalidate artifacts when the source CSV changes."""
+    digest = hashlib.sha256()
+    with Path(data_path).open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _coerce_binary(series: pd.Series) -> pd.Series:
@@ -171,6 +194,7 @@ def _artifact_paths(
     data_path: str | Path,
     target: str = "Cancer",
     cohort_filter: str | None = None,
+    create: bool = True,
 ) -> BiomarkerArtifactPaths:
     dataset_name = Path(data_path).stem
     # Keep default target's artifact path stable for backward compatibility
@@ -178,7 +202,8 @@ def _artifact_paths(
     if cohort_filter:
         suffix += f"__{cohort_filter}"
     base_dir = Path(__file__).resolve().parent / "model_artifacts" / f"{dataset_name}{suffix}"
-    base_dir.mkdir(parents=True, exist_ok=True)
+    if create:
+        base_dir.mkdir(parents=True, exist_ok=True)
     return BiomarkerArtifactPaths(
         model_path=base_dir / f"biomarker_{ARTIFACT_VERSION}.joblib",
         chroma_path=base_dir / "chroma",
@@ -462,9 +487,11 @@ def train_biomarker_model(
     ``cohort_filter`` optionally restricts the training rows before splitting.
     Currently supported: 'diabetics_only' — keep only rows where Diabetes == 1.
     This is used for the pancreatic-in-diabetics risk-stratification model per
-    the DiaPan brief.
+    the MetaboGuard brief.
     """
-    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
+    paths = _artifact_paths(
+        data_path, target=target, cohort_filter=cohort_filter, create=False
+    )
     if paths.model_path.exists() and not force:
         return joblib.load(paths.model_path)
 
@@ -493,6 +520,24 @@ def train_biomarker_model(
             f"Insufficient rows available for biomarker training after cleaning "
             f"(got {len(model_df)} rows, required_fields={required_fields})."
         )
+
+    positive_cases = int((model_df[target] == 1).sum())
+    negative_cases = int((model_df[target] == 0).sum())
+    if positive_cases < MIN_POSITIVE_CASES:
+        raise ValueError(
+            f"Target '{target}' has only {positive_cases} usable positive cases; "
+            f"MetaboGuard requires at least {MIN_POSITIVE_CASES} before fitting a "
+            "publishable classifier. Use cohort description only or acquire a "
+            "larger incident pancreatic-cancer dataset."
+        )
+    if negative_cases < MIN_POSITIVE_CASES:
+        raise ValueError(
+            f"Target '{target}' has only {negative_cases} usable negative cases; "
+            f"at least {MIN_POSITIVE_CASES} are required."
+        )
+    paths = _artifact_paths(
+        data_path, target=target, cohort_filter=cohort_filter, create=True
+    )
 
     x = model_df[features].copy()
     y = model_df[target].to_numpy(dtype=int)
@@ -566,6 +611,7 @@ def train_biomarker_model(
         "memory_summary": memory_summary,
         "target": target,
         "cohort_filter": cohort_filter,
+        "dataset_signature": _dataset_signature(data_path),
         "cohort_summary": {
             "rows_used": int(len(model_df)),
             "target_positive_rate": round(float(model_df[target].mean()), 6),
@@ -582,10 +628,25 @@ def train_biomarker_model(
 
 
 def load_biomarker_model(data_path: str, target: str = "Cancer", cohort_filter: str | None = None) -> dict[str, Any]:
-    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
+    paths = _artifact_paths(
+        data_path, target=target, cohort_filter=cohort_filter, create=False
+    )
     if not paths.model_path.exists():
         return train_biomarker_model(data_path, force=True, target=target, cohort_filter=cohort_filter)
-    return joblib.load(paths.model_path)
+    artifact = joblib.load(paths.model_path)
+    expected_signature = _dataset_signature(data_path)
+    if (
+        artifact.get("dataset_signature") != expected_signature
+        or artifact.get("target", "Cancer") != target
+        or artifact.get("cohort_filter") != cohort_filter
+    ):
+        return train_biomarker_model(
+            data_path,
+            force=True,
+            target=target,
+            cohort_filter=cohort_filter,
+        )
+    return artifact
 
 
 def _normalize_patient_record(record: dict[str, Any], artifact: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -609,7 +670,12 @@ def _normalize_patient_record(record: dict[str, Any], artifact: dict[str, Any]) 
 
 
 def _query_similar_cases(data_path: str, artifact: dict[str, Any], patient_features: pd.DataFrame) -> list[dict[str, Any]]:
-    paths = _artifact_paths(data_path)
+    paths = _artifact_paths(
+        data_path,
+        target=artifact.get("target", "Cancer"),
+        cohort_filter=artifact.get("cohort_filter"),
+        create=False,
+    )
     if not paths.chroma_path.exists():
         return []
     client = PersistentClient(path=str(paths.chroma_path))
@@ -708,7 +774,9 @@ def execute_biomarker_discovery(
         artifact = train_biomarker_model(data_path, force=True, target=target, cohort_filter=cohort_filter)
     else:
         artifact = load_biomarker_model(data_path, target=target, cohort_filter=cohort_filter)
-    paths = _artifact_paths(data_path, target=target, cohort_filter=cohort_filter)
+    paths = _artifact_paths(
+        data_path, target=target, cohort_filter=cohort_filter, create=False
+    )
 
     response: dict[str, Any] = {
         "model": artifact["model_name"],

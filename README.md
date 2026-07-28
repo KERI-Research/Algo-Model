@@ -1,524 +1,232 @@
-# DiaPan
+# MetaboGuard
 
-**AI-Driven Discovery of Metabolic Biomarkers Linking Diabetes and Pancreatic
-Cancer for Early Detection.**
+**Self-supervised metabolic early-warning research for cancer and diabetes
+prevention.**
 
 Developed within the **KERI department**.
 
-DiaPan investigates whether combinations of clinical, biochemical and behavioural
-data can surface early warning patterns for pancreatic cancer inside the large
-population of patients with diabetes. Rather than relying on any single
-biomarker, the pipeline builds risk-stratification models across multiple
-variables so that subtle metabolic trajectories become tractable.
+## Intended use
 
-The project has a Python FastAPI backend and a React frontend, and is backed
-by two open real-world datasets:
+MetaboGuard learns common metabolic patterns from clinical and behavioural
+data, then identifies patient profiles that differ from the training reference.
+Its intended role is to support clinician-reviewed monitoring and prevention
+research.
 
-- **NHANES 1999–March 2020** (pooled population surveys — diabetes prevalence, HbA1c,
-  glucose, insulin, lipids, hs-CRP, self-reported cancer history including
-  pancreatic-cancer site code, self-reported weight history)
-- **TCGA-CDR** (11,160 real cancer patients across 33 types, including 133
-  pancreatic adenocarcinoma cases)
+MetaboGuard is intended to help answer:
 
-## Research goals from the brief
+- Is this metabolic profile unusually different from comparable records?
+- Which measurements contribute most to that deviation?
+- Does the learned representation contain cross-sectional signal associated
+  with cancer or diabetes?
+- Which follow-up measurements might a clinician consider reviewing?
 
-1. **Detect subtle metabolic signals** of pancreatic cancer that emerge from
-   combinations of variables, not isolated markers.
-2. **Stratify risk within diabetics** — which diabetic patients are the
-   highest-risk for pancreatic cancer?
-3. **Turn insights into practical tooling** — an API endpoint that scores a
-   patient record and returns explainable biomarker rankings.
+## Not intended for
 
-## Variables covered per the brief
+MetaboGuard must not:
 
-| Brief-required variable | Where in DiaPan | Notes |
-| --- | --- | --- |
-| Type of diabetes (T1 / T2 / gestational) | `diabetes_subtype` (derived) | Proxy from age-at-diagnosis and insulin use; NHANES does not directly ask T1 vs T2 |
-| Timing of onset (recent vs long-standing) | `recent_diabetes_onset` | 1 if diagnosed within last 3 years |
-| Duration since diagnosis | `diabetes_duration_years` | Current age − DIQ_DID040 |
-| HbA1c levels | `GHB_LBXGH`, `elevated_hba1c` | HbA1c ≥ 6.5 flagged |
-| C-peptide | `CPEP_LBXCPSI` | Measured in 1999-2004 fasting files only; 9,501 pooled non-null records |
-| Insulin | `INS_LBXIN`, `homa_ir` | HOMA-IR = glucose × insulin / 405 |
-| CA 19-9 | **Not available** | NHANES does not carry CA 19-9; would require MIMIC/UK Biobank |
-| Age | `DEMO_RIDAGEYR` | |
-| Sex | `DEMO_RIAGENDR` | |
-| Weight loss | `weight_loss_1yr_lb`, `significant_weight_loss_flag` (≥10 lb), `weight_loss_10yr_lb` | Derived from NHANES WHQ WHD020 / WHD050 / WHD140 |
-| Obesity | `Obesity`, `BMX_BMXBMI`, `BMX_BMXWAIST` | BMI ≥ 30 |
+- diagnose cancer or diabetes;
+- estimate a future disease probability from cross-sectional NHANES data;
+- recommend treatment;
+- reassure a patient that disease is absent;
+- present Type 1 diabetes risk without validated autoimmune biomarkers;
+- replace clinical judgement, screening guidelines or confirmatory testing.
 
-## What This Project Does
+## Architecture
 
-1. **Dataset discovery**: list available CSV datasets.
-2. **Dataset preview**: inspect columns and sample rows before analysis.
-3. **Causal analysis** (`/api/v1/analyze`): estimate directional effects (e.g.
-   Diabetes → Cancer) with DoWhy refutation checks.
-4. **Predictive baseline** (`/api/v1/predictive-baseline`): logistic-regression
-   baseline with imbalance-aware metrics.
-5. **Biomarker discovery** (`/api/v1/biomarker-discovery`): train a local
-   HistGradientBoosting / XGBoost model against a chosen target (`Cancer`,
-   `PancreaticCancer`, or TCGA `Progression`), optionally restrict to a
-   sub-cohort (`cohort_filter=diabetics_only`), rank cohort-level biomarkers,
-   score patient records, and request missing fields when confidence is low.
+### Self-supervised representation
 
-## Pancreatic-cancer-in-diabetics risk stratification (brief’s core question)
+`metaboguard_ssl_v1` is a denoising tabular autoencoder trained without disease
+labels. It uses masked-feature reconstruction to learn a 16-dimensional latent
+representation from metabolic, demographic, behavioural, CBC and biochemistry
+variables.
 
-The target `PancreaticCancer` is derived from NHANES `MCQ_MCQ230A/B/C/D`
-(self-reported cancer site, code 39 = pancreas). Two models are supported:
+Outputs:
 
-```bash
-cd api
-# 1) Screening in the general population — baseline, expected to be weak
-python train_biomarker_model.py --dataset nhanes_multicycle.csv --force \
-    --target PancreaticCancer
+- `metabolic_deviation_score`
+- reference percentile
+- 16-dimensional latent representation
+- five highest reconstruction-deviation features
 
-# 2) Risk stratification within diabetic patients (the brief's key ask)
-python train_biomarker_model.py --dataset nhanes_multicycle.csv --force \
-    --target PancreaticCancer --cohort-filter diabetics_only
-```
+A higher deviation score means “more unusual relative to the training
+reference.” It does not mean higher validated cancer or diabetes probability.
 
-Current pooled NHANES 1999-March 2020 benchmarks:
+### Post-hoc research heads
 
-| Cohort | Rows used | Test positives | AUROC (95% CI) | AUPRC (95% CI) | AUPRC lift |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| General population | 52,891 | 55 | 0.679 (0.598-0.748) | 0.011 (0.008-0.020) | 2.14x |
-| **Diabetics only** | **6,473** | **8** | **0.641 (0.419-0.830)** | **0.135 (0.007-0.386)** | **21.81x** |
+Frozen embeddings are evaluated against:
 
-Pooling expands the cohort to 107,622 participants, 318 pancreatic-cancer
-positives overall and 50 among labelled diabetics. The diabetics-only model
-shows a 21.81x AUPRC lift over prevalence, but its confidence intervals remain
-wide because the held-out fold contains only eight positives. This is promising
-enrichment with high uncertainty, not validated early detection.
+- any-cancer prevalence;
+- Type 2 diabetes proxy;
+- Type 1 diabetes proxy, research-only.
 
-### Temporal generalisation
+Labels are used only after representation training. Current checks are
+cross-sectional association tests and do not measure future disease
+development.
 
-Random splits mix participants from every survey era and can overstate
-performance. `api/validate_cycle_holdout.py` therefore holds out each NHANES
-cycle in turn and learns imputation statistics only from the remaining cycles.
+### Future longitudinal risk heads
 
-The preferred clinical-only XGBoost benchmark achieves out-of-cycle AUROC
-**0.643** (cycle-bootstrap 95% CI 0.561-0.703), AUPRC **0.0128**
-(0.0084-0.0289) and 2.03x lift over prevalence. This is substantially weaker
-than the random-split AUPRC of 0.135, so the random-split result is treated as
-optimistic. See `docs/CYCLE_HOLDOUT_VALIDATION.md` for every fold.
+When patient-level longitudinal outcomes become available, MetaboGuard will
+select supported horizons based on available event counts. Candidate horizons
+are 1, 3 and 5 years, but a horizon is enabled only when it contains at least
+50 events and 50 eligible non-events.
 
-Top biomarkers in the diabetics-only model (per permutation importance,
-five-figure precision):
+## Current artifact
 
-- `waist_bmi_interaction` (central adiposity)
-- `weight_loss_1yr_lb` (lower in positives — hint of the brief's weight-loss
-  red flag)
-- `TCHOL_LBXTC` (total cholesterol)
-- `DEMO_RIDAGEYR` (age)
-- `DEMO_RIDRETH3` (ethnicity)
+| Property | Value |
+| --- | ---: |
+| Dataset | `nhanes_multicycle_v2.csv` |
+| Adult rows available | 89,472 |
+| Unlabelled training rows | 50,000 |
+| Raw input features | 25 |
+| Transformed dimensions | 55 |
+| Latent dimensions | 16 |
+| Training epochs | 25 |
+| Validation reconstruction loss | 0.0565 |
 
-## Prognosis in confirmed pancreatic cancer (TCGA-PAAD)
+Cross-sectional association checks:
 
-TCGA-CDR contains 133 pancreatic adenocarcinoma (PAAD) patients. 5-year
-mortality is 92 % — too imbalanced for a standalone PAAD-only classifier
-with honest metrics. PAAD is instead included in the multi-cancer TCGA
-models (`--target Cancer` and `--target Progression`), where the
-`tcga_type_PAAD` one-hot flag ranks among the top biomarkers.
+| Check | Positives | AUROC | AUPRC | Warning |
+| --- | ---: | ---: | ---: | --- |
+| Any-cancer prevalence | 5,584 | 0.699 | 0.169 | Not future cancer development |
+| Type 2 diabetes proxy | 7,067 | 0.923 | 0.675 | Not future diabetes development |
+| Type 1 proxy | 177 | 0.909 | 0.135 | Unvalidated, research-only proxy |
 
-## Honest limitations
+Diagnosis age and insulin-use variables that define the Type 1 proxy were
+excluded from the encoder to prevent direct label leakage.
 
-- **No true patient trajectories.** Multi-cycle NHANES is implemented, but it
-  remains repeated cross-sectional data. Engineered HbA1c/cycle interactions
-  are cohort-level proxies, not within-patient changes.
-- **CA 19-9 is absent.** C-peptide is available only in 1999-2004 fasting
-  files. A longitudinal clinical cohort is still required for serial CA19-9
-  and metabolic lead-time curves.
-- **Diabetes subtype is a proxy.** NHANES doesn't ask T1 vs T2 directly.
-- **Rare positive class.** Pooling yields 318 pancreatic-cancer positives, but
-  only eight positives appear in the diabetics-only held-out fold.
+## Dataset roles
 
-Full evidence and decision rationale:
+### NHANES v2
 
-- [`docs/RESULTS_GUIDE.md`](docs/RESULTS_GUIDE.md) — plain-English metric
-  meanings, “higher/lower is better”, diagrams and model comparison
-- [`docs/COLUMN_DICTIONARY.md`](docs/COLUMN_DICTIONARY.md) — raw and derived
-  column meanings, units and direction
-- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — implemented design, weighting,
-  harmonisation, evaluation and results
-- [`docs/RESEARCH_EVIDENCE.md`](docs/RESEARCH_EVIDENCE.md) — source-cited
-  literature review and decision-to-evidence table
-- [`docs/CYCLE_HOLDOUT_VALIDATION.md`](docs/CYCLE_HOLDOUT_VALIDATION.md) —
-  temporal transportability results for every survey cycle
-- [`docs/HUGGINGFACE_BENCHMARKING.md`](docs/HUGGINGFACE_BENCHMARKING.md) —
-  compatible Hub candidates and fair-comparison contract
-- `data/nhanes_multicycle_build_report.json` — machine-readable source manifest,
-  coverage audit and weight formula
-- `data/cycle_holdout_validation.json` — machine-readable fold predictions and
-  pooled out-of-cycle metrics
+Used for self-supervised metabolic representation and cross-sectional
+association analysis. The pooled dataset includes:
 
-Public-ready model artifact:
+- glucose, HbA1c, insulin and partial-cycle C-peptide;
+- lipids and hs-CRP;
+- BMI, waist and weight-change proxies;
+- smoking and alcohol;
+- haemoglobin and platelets;
+- ALT, alkaline phosphatase and creatinine.
 
-```text
-model_artifacts/huggingface/diapan-risk-xgboost/
-```
+NHANES is repeated cross-sectional data. It cannot establish individual
+biomarker trajectories or future disease development.
 
-The folder contains the final XGBoost model, model card, feature schema,
-inference helper, sample input and model-agnostic benchmarking script. It is
-ready to upload to Hugging Face but has not been published.
+### TCGA-CDR
 
-## Project Structure
+Used only for cancer-context and prognosis research among already diagnosed
+patients. Tumour stage, treatment response and survival fields are prohibited
+from preventive early-warning scoring.
 
-```text
-DiaPan/
- api/
-  main.py                # FastAPI routes
-  engine.py              # DAG + causal inference execution
-  predictive.py          # Predictive baseline model
-  biomarker.py           # Biomarker discovery, local artifact loading, ChromaDB retrieval
-  train_biomarker_model.py # Offline training CLI for the biomarker model
-  fetch_nhanes.py        # NHANES download/merge/build pipeline
-  fetch_tcga.py          # TCGA-CDR download and harmonization
-  nhanes_data/
-   nhanes_merged.csv
-   tcga_cdr.csv
- data/
-  nhanes_merged.csv
-  tcga_cdr.csv
- frontend/
-  src/
-  package.json
- resources/
-  Model Understanding.tex
- requirements.txt
-```
+### Future linked cohort
 
-## Data Pipeline (TCGA-CDR)
+Development-risk validation requires:
 
-The TCGA-CDR builder pulls the TCGA Pan-Cancer Clinical Data Resource
-(Liu et al., *Cell* 2018) supplemental table from the NCI GDC and reshapes it
-into a DiaPan-compatible CSV keyed on a synthetic SEQN column.
+- repeated patient measurements;
+- exact diabetes and cancer diagnosis dates;
+- incident disease outcomes;
+- sufficient events at each proposed horizon;
+- Type 1 autoantibodies and C-peptide;
+- genetics only after appropriate approval.
 
-Source: `TCGA-CDR-SupplementalTableS1.xlsx` from
-`https://api.gdc.cancer.gov/data/1b5f413e-a8d1-4d10-92eb-7c4ae739ed81` — 11,160
-patients across 33 cancer types, open access, no login or DUA required.
+## Type 1 diabetes policy
 
-Two prediction targets are derived from the CDR survival columns:
+Type 1 output is research-only until the project has:
 
-- `Cancer` → **5-year all-cause mortality**: `1` if the patient died within 5
-  years of initial pathologic diagnosis, `0` if alive with at least 5 years of
-  follow-up, dropped otherwise. 4,996 labelled patients (3,193 events / 1,803
-  survivors).
-- `Progression` → **5-year progression-free-interval event** (built from
-  `PFI` and `PFI.time` in the same way). 5,120 labelled patients
-  (3,779 events / 1,341 progression-free).
+- islet autoantibodies such as GAD, IA-2, ZnT8 or IAA;
+- clinically appropriate C-peptide;
+- family history;
+- longitudinal glucose/HbA1c;
+- approved genetic-risk inputs where permitted.
 
-Harmonized feature columns (TCGA → NHANES-shaped where possible):
+The current age-at-diagnosis/insulin-use subtype is an exploratory proxy and
+must never be shown as a patient-facing Type 1 warning.
 
-- `age_at_initial_pathologic_diagnosis` → `DEMO_RIDAGEYR`
-- `gender` (MALE/FEMALE) → `DEMO_RIAGENDR` (1/2)
-- `race` → `DEMO_RIDRETH3` (integer coded)
-- `ajcc_pathologic_tumor_stage` → `tcga_stage_ordinal` (0..4)
-- `histological_grade` → `tcga_grade_ordinal` (1..4, high/low collapsed)
-- `tumor_status` → `tcga_tumor_status` (1 with tumor, 0 tumor free)
-- `treatment_outcome_first_course` → `tcga_treatment_response`
-  (0 progressive … 3 complete remission) — **post-treatment**, so downstream
-  users should treat model output as "prognostic given first-line response"
-  rather than pre-treatment prediction
-- `type` (cancer type) → `tcga_cancer_type` + 33 one-hot `tcga_type_*` flags
-- `OS`/`OS.time`/`PFI`/`PFI.time` → `tcga_event`, `tcga_followup_days`,
-  `tcga_pfi_event`, `tcga_pfi_days` **(metadata only, deliberately excluded
-  from model features to prevent label leakage)**
+## Corrected cancer outcome
 
-Build the dataset:
+Official NHANES MCQ230 coding defines:
+
+- code 29: Pancreas
+- code 39: Other
+
+The corrected pancreatic cohort contains only 19 cases overall, 7 among
+diabetics and 2 meeting a three-year NODM-PC definition. Supervised
+pancreatic-risk training is blocked below 20 usable positives. The earlier
+DiaPan-XGB artifact is invalidated.
+
+## Installation
+
+Core API and NumPy inference:
 
 ```bash
-python api/fetch_tcga.py
-```
-
-Train the biomarker model:
-
-```bash
-cd api
-# 5-year mortality (default target)
-python train_biomarker_model.py --dataset tcga_cdr.csv --force
-# 5-year disease progression
-python train_biomarker_model.py --dataset tcga_cdr.csv --force --target Progression
-```
-
-Artifacts land in `api/model_artifacts/tcga_cdr/` (mortality) and
-`api/model_artifacts/tcga_cdr_progression/` (progression) so both can coexist.
-
-Current TCGA-CDR benchmarks (XGBoost vs HistGradientBoosting):
-
-| Target | Rows | Positive rate | AUROC | AUPRC |
-| --- | --- | --- | --- | --- |
-| 5-year all-cause mortality (`Cancer`) | 4,887 | 63.9 % | **0.894** | **0.936** |
-| 5-year progression (`Progression`) | 5,025 | 73.9 % | **0.912** | **0.966** |
-
-Top biomarkers on both targets: `tcga_tumor_status`, `tcga_treatment_response`,
-`tcga_type_GBM` (glioblastoma), `DEMO_RIDAGEYR` (age), `tcga_stage_ordinal`.
-
-## Data Pipeline (NHANES)
-
-The NHANES builder script pulls 2017-2018 public files and merges them by participant key SEQN:
-
-- DEMO (demographics)
-- BMX (body measurements)
-- DIQ (diabetes questionnaire)
-- MCQ (medical conditions questionnaire)
-- GHB (glycohemoglobin / HbA1c)
-- GLU (fasting glucose)
-- INS (fasting insulin)
-- TRIGLY (triglycerides and LDL)
-- HDL (HDL cholesterol)
-- TCHOL (total cholesterol)
-- HSCRP (high-sensitivity C-reactive protein)
-
-The merged file is written to both:
-
-- data/nhanes_merged.csv
-- api/nhanes_data/nhanes_merged.csv
-
-The pipeline also derives model-ready binary columns when possible:
-
-- Obesity from BMX_BMXBMI (BMI >= 30)
-- Diabetes from DIQ_DIQ010
-- Cancer from MCQ_MCQ220
-- HOMA-IR proxy from fasting glucose and insulin
-- Elevated HbA1c flag from GHB_LBXGH
-- Fasting hyperglycemia flag from GLU_LBXGLU
-
-## Causal Model Summary
-
-The causal engine is designed for the NHANES dataset. It prepares a minimal
-model dataframe with:
-
-- Obesity
-- Diabetes
-- Cancer
-
-On TCGA-CDR the causal analysis is not applicable (no diabetes labels); the
-`/api/v1/analyze` endpoint will return a clear error if invoked against
-`tcga_cdr.csv`. Use TCGA-CDR with `/api/v1/biomarker-discovery` and
-`/api/v1/predictive-baseline` instead.
-
-It then evaluates a DAG with these structural assumptions:
-
-- Obesity -> Diabetes
-- Obesity -> Cancer
-- treatment -> outcome (dynamic, based on request)
-
-Default request direction is Diabetes -> Cancer.
-
-Estimation path:
-
-1. identify effect using DoWhy
-2. estimate with backdoor linear regression
-3. run refutations:
-
-- random common cause
-- placebo treatment refuter
-- data subset refuter
-
-If DoWhy runtime compatibility fails and fallback is allowed, the API returns an association-style fallback estimate with warnings.
-
-## Predictive Baseline Summary
-
-The predictive module builds two binary classifiers (one for Diabetes, one for Cancer) using a lightweight custom logistic regression implementation.
-
-It uses:
-
-- fixed stratified 80/20 split
-- standardization based on training set
-- gradient descent optimization with L2 regularization
-
-Reported metrics include:
-
-- AUROC
-- AUPRC
-- recall
-- precision
-- F1
-- balanced accuracy
-- specificity
-- Brier score
-
-This predictive baseline is explicitly non-causal and is intended as a benchmark.
-
-## Backend Setup
-
-From the project root:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run backend API:
+Self-supervised training:
+
+```bash
+pip install -r requirements-ssl.txt
+```
+
+## Training
 
 ```bash
 cd api
-uvicorn main:app --reload
+
+python train_self_supervised.py \
+  --dataset ../data/nhanes_multicycle_v2.csv \
+  --epochs 25 \
+  --latent-dim 16
 ```
 
-Backend default URL:
-
-- <http://localhost:8000>
-
-## Frontend Setup
-
-In a second terminal:
+## Scoring
 
 ```bash
-cd frontend
-npm install
-npm start
+python score_prevention_record.py \
+  --artifact ../model_artifacts/metaboguard_ssl/nhanes_multicycle_v2 \
+  --input ../metaboguard_sample_input.json
 ```
 
-Frontend default URL (React dev server):
-
-- <http://localhost:3000>
-
-Optional API URL override for frontend:
+## API
 
 ```bash
-export REACT_APP_API_URL=http://localhost:8000
+uvicorn main:app --reload --port 8000
 ```
 
-## API Endpoints
+Relevant endpoints:
 
-### GET /api/v1/datasets
+- `GET /api/v1/datasets`
+- `POST /api/v1/prevention-capabilities`
+- `POST /api/v1/prevention-score`
+- `POST /api/v1/analyze`
+- `POST /api/v1/predictive-baseline`
+- `POST /api/v1/biomarker-discovery`
 
-Lists discovered CSV datasets.
+The prevention endpoint returns a deviation score and clinical warning. It does
+not provide a diagnosis or future-risk claim.
 
-### POST /api/v1/dataset-preview
+## Research safeguards
 
-Request body:
+- Prevention-safe feature allowlist
+- Explicit post-diagnosis feature denylist
+- Dataset capability detection
+- Adaptive horizon eligibility checks
+- Training-only preprocessing for supervised validation
+- Minimum event thresholds
+- Dataset fingerprints for supervised artifacts
+- Public-export blocking for invalid/underpowered models
+- Research-only Type 1 proxy
 
-```json
-{
- "dataset": "nhanes_merged.csv"
-}
-```
+## Documentation
 
-Returns dataset name, column list, and a sample preview.
+- [`docs/PREVENTION_MODEL_SPEC.md`](docs/PREVENTION_MODEL_SPEC.md)
+- [`docs/RESULTS_GUIDE.md`](docs/RESULTS_GUIDE.md)
+- [`docs/COLUMN_DICTIONARY.md`](docs/COLUMN_DICTIONARY.md)
+- [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md)
+- [`docs/PAPER_VARIABLE_CATALOGUE.md`](docs/PAPER_VARIABLE_CATALOGUE.md)
+- [`docs/RESEARCH_EVIDENCE.md`](docs/RESEARCH_EVIDENCE.md)
+- [`docs/HUGGINGFACE_BENCHMARKING.md`](docs/HUGGINGFACE_BENCHMARKING.md)
+- [`docs/CYCLE_HOLDOUT_VALIDATION.md`](docs/CYCLE_HOLDOUT_VALIDATION.md)
 
-### POST /api/v1/analyze
+## Research sources
 
-Request body:
-
-```json
-{
- "dataset": "nhanes_merged.csv",
- "treatment": "Diabetes",
- "outcome": "Cancer",
- "allow_fallback": true
-}
-```
-
-Returns:
-
-- estimate
-- refutation estimates
-- execution mode (dowhy_causal or fallback_association)
-- warnings and error context (if any)
-
-### POST /api/v1/predictive-baseline
-
-Request body:
-
-```json
-{
- "dataset": "nhanes_merged.csv"
-}
-```
-
-Returns per-target baseline metrics for Diabetes and Cancer.
-
-### POST /api/v1/biomarker-discovery
-
-Request body:
-
-```json
-{
- "dataset": "nhanes_merged.csv",
- "patient_record": {
-  "Diabetes": 1,
-  "DEMO_RIDAGEYR": 62,
-  "DEMO_RIAGENDR": 2,
-  "BMX_BMXBMI": 31.4,
-  "BMX_BMXWAIST": 101.2,
-  "DIQ_DID040": 56
- },
- "top_k": 8,
- "force_retrain": false
-}
-```
-
-Returns:
-
-- cohort-level biomarker ranking
-- biomarker model metrics and artifact metadata
-- ChromaDB memory summary
-- patient assessment with confidence and follow-up questions when required fields are missing or confidence is low
-
-## Rebuild NHANES Data
-
-To regenerate the merged dataset manually:
-
-```bash
-source .venv/bin/activate
-python api/fetch_nhanes.py
-```
-
-The backend can also auto-build nhanes_merged.csv if it is missing.
-
-## Train The Biomarker Model
-
-To create or refresh the local biomarker artifact:
-
-```bash
-source .venv/bin/activate
-python api/train_biomarker_model.py --force
-```
-
-This command:
-
-- loads NHANES
-- applies the same feature and cleaning logic used at runtime
-- benchmarks HistGradientBoosting against XGBoost while preserving the artifact contract
-- trains the winning local tabular biomarker model
-- writes a versioned artifact plus ChromaDB retrieval memory under api/model_artifacts/
-
-The command output now includes both the selected model metrics and the benchmark summary.
-
-## Common Workflow
-
-1. Start backend.
-2. Start frontend.
-3. Open the UI.
-4. Choose dataset and preview rows.
-5. Run causal analysis and review estimate plus refutations.
-6. Run the biomarker model with a patient-style record and review its biomarker ranking, confidence, and follow-up questions.
-7. Compare with predictive baseline metrics.
-
-## Notes and Interpretation
-
-- Causal output quality depends on the DAG assumptions and data quality.
-- Fallback mode is useful for availability but should be interpreted as descriptive association, not a fully identified causal effect.
-- Predictive performance does not imply causality.
-
-## Troubleshooting
-
-Backend import/runtime issues:
-
-- Ensure the virtual environment is active.
-- Reinstall requirements:
-
-```bash
-pip install -r requirements.txt --upgrade
-```
-
-Frontend cannot reach backend:
-
-- Confirm backend is running on port 8000.
-- Set REACT_APP_API_URL explicitly before npm start.
-
-Missing dataset errors:
-
-- Ensure nhanes_merged.csv exists under data/ or api/nhanes_data/.
-- Rebuild with python api/fetch_nhanes.py.
+- [Zhou et al. 2025: genetic and clinical NODM-PC model](https://doi.org/10.1186/s12916-025-04048-4)
+- [Yang et al. 2026: clinical CatBoost and multi-omics integration](https://doi.org/10.1186/s12967-026-07767-1)

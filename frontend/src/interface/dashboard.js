@@ -1,7 +1,8 @@
 /**
- * Causal Inference Dashboard Interface
- * ====================================
- * This component establishes the primary user interface for the causal inference pipeline.
+ * MetaboGuard Preventive Research Dashboard
+ * ==========================================
+ * This component establishes the primary interface for self-supervised metabolic
+ * deviation research, while retaining causal and supervised comparison tools.
  * Taking a forward-thinking view, this is designed to be data-agnostic—whether it's fed
  * NHANES today or UK Biobank tomorrow, the UI dynamically renders the assumed DAG,
  * the Average Treatment Effect (ATE), and the refutation stress-test results.
@@ -15,6 +16,7 @@ import {
 	fetchDatasetCatalog,
 	fetchDatasetPreview,
 	fetchModelResults,
+	fetchPreventionCapabilities,
 	fetchPredictiveBaseline,
 } from "./service";
 
@@ -50,7 +52,7 @@ const PATIENT_FIELD_ALIASES = {
 const CausalDashboard = () => {
 	const [datasets, setDatasets] = useState([]);
 	const [selectedDataset, setSelectedDataset] =
-		useState("nhanes_merged.csv");
+		useState("nhanes_multicycle_v2.csv");
 	const [datasetPreview, setDatasetPreview] = useState(null);
 	const [directionResults, setDirectionResults] = useState(null);
 	const [loading, setLoading] = useState(false);
@@ -64,6 +66,7 @@ const CausalDashboard = () => {
 	const [biomarkerError, setBiomarkerError] = useState(null);
 	const [patientForm, setPatientForm] = useState(INITIAL_PATIENT_FORM);
 	const [uploadStatus, setUploadStatus] = useState(null);
+	const [preventionCapabilities, setPreventionCapabilities] = useState(null);
 
 	useEffect(() => {
 		const loadDatasets = async () => {
@@ -122,6 +125,24 @@ const CausalDashboard = () => {
 		};
 
 		loadPreview();
+	}, [selectedDataset]);
+
+	useEffect(() => {
+		const loadCapabilities = async () => {
+			if (!selectedDataset) {
+				return;
+			}
+			try {
+				const result =
+					await fetchPreventionCapabilities(
+						selectedDataset,
+					);
+				setPreventionCapabilities(result);
+			} catch {
+				setPreventionCapabilities(null);
+			}
+		};
+		loadCapabilities();
 	}, [selectedDataset]);
 
 	const runAnalysis = async () => {
@@ -478,16 +499,42 @@ const CausalDashboard = () => {
 			<main className="dashboard-layout">
 				<section className="hero-panel">
 					<p className="eyebrow">
-						DiaPan RESEARCH CONSOLE
+						MetaboGuard RESEARCH CONSOLE
 					</p>
-					<h1>Causal Inference Engine</h1>
-					<p className="hero-copy">
-						Choose a dataset, inspect sample
-						rows, then run causal analysis
-						alongside a biomarker discovery
-						workflow for local NHANES risk
-						scoring.
-					</p>
+						<h1>
+							Preventive Metabolic
+							Early-Warning Research
+						</h1>
+						<p className="hero-copy">
+							Learn unlabelled metabolic
+							patterns, identify unusual
+							profiles, and test whether the
+							representation contains
+							cross-sectional cancer or
+							diabetes signal.
+						</p>
+						<p className="alert alert-warning compact-alert">
+							Research-only clinician review.
+							Deviation scores do not diagnose
+							cancer or diabetes and are not
+							validated future-risk
+							probabilities.
+						</p>
+						{preventionCapabilities?.capabilities && (
+							<p className="alert compact-alert">
+								Dataset capability:{" "}
+								{
+									preventionCapabilities
+										.capabilities
+										.supported_output
+								}
+								.{" "}
+								{
+									preventionCapabilities
+										.capabilities.warning
+								}
+							</p>
+						)}
 				</section>
 
 				<section className="content-grid">
@@ -525,8 +572,8 @@ const CausalDashboard = () => {
 								>
 									{datasets.length ===
 									0 ? (
-										<option value="nhanes_merged.csv">
-											nhanes_merged.csv
+											<option value="nhanes_multicycle_v2.csv">
+												nhanes_multicycle_v2.csv
 										</option>
 									) : (
 										datasets.map(

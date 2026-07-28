@@ -1,4 +1,4 @@
-"""Export DiaPan's final research model as a public Hugging Face-ready artifact."""
+"""Export MetaboGuard's final research model as a public Hugging Face-ready artifact."""
 
 from __future__ import annotations
 
@@ -34,9 +34,20 @@ FEATURE_DESCRIPTIONS = {
     "HDL_LBDHDD": ("HDL cholesterol, mg/dL", "Higher is generally favourable metabolically"),
     "TCHOL_LBXTC": ("Total cholesterol, mg/dL", "Neither universally better nor worse in this research model"),
     "HSCRP_LBXHSCRP": ("High-sensitivity C-reactive protein", "Higher indicates inflammation; evidence for PDAC is weak"),
+    "smoking_status": ("Smoking category: 0 never, 1 former, 2 current", "Categorical; current smoking was higher risk in the cited NODM study"),
+    "current_smoker": ("Current smoking flag", "1 means current smoking"),
+    "alcohol_status": ("Harmonised alcohol status: 0 never/low, 1 ever, 2 current quantified use", "Categorical; higher is not inherently better"),
+    "average_drinks_per_day": ("Reported average drinks on drinking days", "Higher indicates greater intake"),
+    "CBC_LBXHGB": ("Haemoglobin concentration", "No universal better direction for pancreatic risk"),
+    "CBC_LBXPLTSI": ("Platelet count", "No universal better direction for pancreatic risk"),
+    "BIOPRO_LBXSATSI": ("Alanine aminotransferase, ALT", "Higher may indicate liver injury"),
+    "BIOPRO_LBXSAPSI": ("Alkaline phosphatase", "Higher may indicate hepatobiliary or bone processes"),
+    "BIOPRO_LBXSCR": ("Serum creatinine", "Higher generally indicates lower renal filtration"),
     "homa_ir": ("HOMA-IR proxy: glucose x insulin / 405", "Higher indicates greater insulin resistance"),
     "elevated_hba1c": ("HbA1c >= 6.5 flag", "1 indicates diabetic-range HbA1c"),
     "fasting_hyperglycemia": ("Fasting glucose >= 126 flag", "1 indicates diabetic-range fasting glucose"),
+    "hba1c_reciprocal_100": ("100 divided by HbA1c; fractional-polynomial sensitivity term", "Lower values correspond to higher HbA1c"),
+    "hba1c_squared": ("HbA1c squared", "Nonlinear model term"),
     "diabetes_duration_years": ("Current age minus reported diagnosis age", "Risk is duration-dependent, not simply monotonic"),
     "recent_diabetes_onset": ("Diabetes duration <= 3 years", "1 is a recognised risk-enrichment signal"),
     "age_bmi_interaction": ("Age multiplied by BMI", "Interaction; no standalone clinical unit"),
@@ -51,7 +62,7 @@ FEATURE_DESCRIPTIONS = {
 }
 
 
-INFERENCE_SOURCE = '''"""Inference helper for the DiaPan pancreatic-risk research model."""
+INFERENCE_SOURCE = '''"""Inference helper for the MetaboGuard pancreatic-risk research model."""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -59,7 +70,7 @@ import joblib
 import pandas as pd
 
 
-class DiaPanRiskModel:
+class MetaboGuardRiskModel:
     def __init__(self, artifact_dir: str | Path | None = None):
         root = Path(artifact_dir or Path(__file__).resolve().parent)
         self.artifact = joblib.load(root / "model.joblib")
@@ -91,14 +102,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     data = json.loads(Path(args.input).read_text())
     records = data if isinstance(data, list) else [data]
-    print(json.dumps(DiaPanRiskModel().predict(records), indent=2))
+    print(json.dumps(MetaboGuardRiskModel().predict(records), indent=2))
 '''
 
 
 BENCHMARK_SOURCE = '''"""Evaluate prediction CSVs from any external/Hugging Face model.
 
 Required columns: global_participant_id, probability. The command joins these
-against DiaPan's labelled diabetic cohort and reports model-comparable metrics.
+against MetaboGuard's labelled diabetic cohort and reports model-comparable metrics.
 """
 from __future__ import annotations
 import argparse, json
@@ -107,7 +118,7 @@ from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_s
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--predictions", required=True)
-parser.add_argument("--labels", required=True, help="Path to nhanes_multicycle.csv")
+parser.add_argument("--labels", required=True, help="Path to nhanes_multicycle_v2.csv")
 args = parser.parse_args()
 pred = pd.read_csv(args.predictions)
 labels = pd.read_csv(args.labels, low_memory=False)
@@ -139,11 +150,18 @@ def export(dataset: Path, benchmark_report: Path, output: Path) -> Path:
     ]
     x = frame[features].apply(pd.to_numeric, errors="coerce")
     y = frame["PancreaticCancer"].astype(int).to_numpy()
+    positive_cases = int(y.sum())
+    if positive_cases < 20:
+        raise ValueError(
+            f"Refusing public model export: corrected PancreaticCancer target "
+            f"contains only {positive_cases} positive diabetic cases; at least "
+            "20 are required for an experimental artifact."
+        )
     medians = x.median(numeric_only=True)
     x = x.fillna(medians)
     positive_rate = float(y.mean())
     models = dict(_build_candidate_models(positive_rate=positive_rate))
-    model_name = "diapan_xgboost_v1"
+    model_name = "metaboguard_xgboost_v1"
     model = models[model_name]
     model.fit(x, y)
 
@@ -170,7 +188,7 @@ def export(dataset: Path, benchmark_report: Path, output: Path) -> Path:
     schema = {
         "target": {
             "name": "PancreaticCancer",
-            "positive": "Self-reported pancreatic cancer, MCQ230A-D code 39",
+            "positive": "Self-reported pancreatic cancer, MCQ230A-D code 29",
             "negative": "No pancreatic site reported",
         },
         "features": {
@@ -187,7 +205,7 @@ def export(dataset: Path, benchmark_report: Path, output: Path) -> Path:
         "pipeline_tag": "tabular-classification",
         "library_name": "xgboost",
         "license": "cc-by-4.0",
-        "model_name": "DiaPan-XGB v1",
+        "model_name": "MetaboGuard-XGB v1",
         "intended_use": "Research benchmarking and hypothesis generation only",
         "temporal_validation": metrics,
     }, indent=2))
@@ -225,13 +243,13 @@ tags:
   - research
 ---
 
-# DiaPan-XGB v1
+# MetaboGuard-XGB v1
 
 ## Model summary
 
 This research model ranks **self-reported prevalent pancreatic-cancer risk
 inside the NHANES diabetic cohort** using metabolic, demographic and
-behavioural features. It is exported from the DiaPan MSc research project for
+behavioural features. It is exported from the MetaboGuard MSc research project for
 reproducible benchmarking.
 
 **This is not a diagnostic device. A higher score is not a validated absolute
@@ -252,7 +270,7 @@ better" interpretation.
 
 - Source: pooled NHANES 1999-March 2020 repeated cross-sections
 - Filter: `Diabetes == 1`
-- Target: self-reported pancreatic cancer, `MCQ230A-D == 39`
+- Target: self-reported pancreatic cancer, `MCQ230A-D == 29`
 - Rows used for final fit: {len(frame):,}
 - Positive cases: {int(y.sum())}
 - Features: {len(features)}
@@ -282,9 +300,9 @@ python inference.py --input sample_input.json
 Python:
 
 ```python
-from inference import DiaPanRiskModel
+from inference import MetaboGuardRiskModel
 
-model = DiaPanRiskModel()
+model = MetaboGuardRiskModel()
 result = model.predict([{{"Diabetes": 1, "DEMO_RIDAGEYR": 62,
                          "GHB_LBXGH": 7.1, "weight_loss_1yr_lb": 12}}])
 ```
@@ -303,13 +321,13 @@ Evaluate with:
 ```bash
 python benchmark_predictions.py \
   --predictions external_predictions.csv \
-  --labels /path/to/nhanes_multicycle.csv
+  --labels /path/to/nhanes_multicycle_v2.csv
 ```
 
 Compatible generic Hugging Face candidates include
 [Prior-Labs TabPFN v2](https://hf.co/Prior-Labs/TabPFN-v2-clf) and
 [AutoGluon TabPFN Mix](https://hf.co/autogluon/tabpfn-mix-1.0-classifier).
-They must be retrained on the same DiaPan folds; their existing Hub metrics are
+They must be retrained on the same MetaboGuard folds; their existing Hub metrics are
 not directly comparable. Prior-Labs models use a custom license, while the
 AutoGluon model is Apache-2.0.
 
@@ -344,8 +362,8 @@ hypothesis generation.
 if __name__ == "__main__":
     root = Path(__file__).resolve().parent.parent
     path = export(
-        root / "data" / "nhanes_multicycle.csv",
-        root / "data" / "cycle_holdout_validation.json",
-        root / "model_artifacts" / "huggingface" / "diapan-risk-xgboost",
+        root / "data" / "nhanes_multicycle_v2.csv",
+        root / "data" / "cycle_holdout_validation_v2.json",
+        root / "model_artifacts" / "huggingface" / "metaboguard-risk-xgboost",
     )
     print(f"Exported {path}")

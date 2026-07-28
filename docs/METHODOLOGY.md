@@ -1,18 +1,50 @@
-# DiaPan Methodology and Research Decision Log
+# MetaboGuard Methodology and Research Decision Log
 
 ## Study question
 
-DiaPan asks whether combinations of metabolic, clinical and behavioural
-variables can stratify pancreatic-cancer risk among people with diabetes.
-The project is exploratory research software, not a diagnostic device.
+MetaboGuard asks whether self-supervised representations of metabolic,
+clinical and behavioural data can identify unusual patient profiles and
+support future clinician-reviewed prevention research across cancer and
+diabetes. The project is exploratory research software, not a diagnostic
+device.
 
 The biological rationale is the bidirectional, duration-dependent association
 between diabetes and pancreatic cancer. New-onset diabetes carries materially
 higher risk than long-standing diabetes, while risk attenuates with duration
 ([Lee et al. 2023](https://pubmed.ncbi.nlm.nih.gov/36548964/);
 [Song et al. 2015](https://pmc.ncbi.nlm.nih.gov/articles/PMC4519136/)).
-This supports explicit features for age at diabetes diagnosis, diabetes
-duration and recent onset rather than a single diabetes yes/no flag.
+This motivates continued pancreatic-cancer research, while the broadened
+pan-cancer scope uses cancer labels only for post-hoc representation checks
+until longitudinal incident outcomes become available.
+
+## Self-supervised modelling decision
+
+A pure unsupervised score cannot identify which disease will develop.
+MetaboGuard therefore uses a hybrid design:
+
+1. a denoising autoencoder learns representations without disease labels;
+2. reconstruction and latent-distance scores identify unusual profiles;
+3. frozen embeddings are tested with cross-sectional association heads;
+4. future disease-specific heads are allowed only with longitudinal outcomes.
+
+The current encoder uses 25 prevention-safe raw features, 55 transformed
+dimensions and a 16-dimensional latent space. It was trained on 50,000
+unlabelled adult NHANES rows.
+
+Current post-hoc checks are:
+
+| Label | AUROC | AUPRC | Status |
+|---|---:|---:|---|
+| Any-cancer prevalence | 0.699 | 0.169 | Cross-sectional association only |
+| Type 2 diabetes proxy | 0.923 | 0.675 | Cross-sectional association only |
+| Type 1 proxy | 0.909 | 0.135 | Unvalidated research-only proxy |
+
+Diagnosis age and insulin-use variables used to derive diabetes subtype were
+excluded from encoder inputs to avoid direct proxy-label leakage.
+
+The current dataset capability is
+`cross_sectional_representation_and_deviation_only`. It does not support future
+disease-development claims.
 
 ## Why NHANES and TCGA-CDR are used
 
@@ -28,7 +60,7 @@ The datasets answer different questions:
 
 Neither dataset contains serial, dated pre-diagnosis biomarker measurements.
 Pooling NHANES increases sample size but does not create patient-level
-longitudinal trajectories. DiaPan therefore names its engineered time features
+longitudinal trajectories. MetaboGuard therefore names its engineered time features
 **repeated-cross-sectional trajectory proxies**, not slopes or within-patient
 changes.
 
@@ -58,18 +90,19 @@ with earlier cycles after the pandemic-era collection gap
 ### Resulting cohort
 
 | Quantity | Count |
-| --- | ---: |
+|---|---:|
 | Total pooled participants | 107,622 |
 | Diabetes-labelled | 101,532 |
 | Diabetes-positive | 7,359 |
 | Pancreatic-cancer-labelled | 58,682 |
-| Pancreatic-cancer-positive | 318 |
-| Labelled diabetics | 7,204 |
-| Pancreatic-cancer-positive diabetics | 50 |
+| Correct pancreatic-cancer-positive | 19 |
+| Pancreatic-cancer-positive diabetics | 7 |
+| Usable positive diabetics after required-field cleaning | 6 |
+| Pancreatic cancer 0-3 years after diabetes | 2 |
 
 The exact source URL, filename, status, row count and retained columns for every
 component/cycle are recorded in
-`data/nhanes_multicycle_build_report.json`. Missing files are reported rather
+`data/nhanes_multicycle_v2_build_report.json`. Missing files are reported rather
 than silently converted into apparent biological missingness.
 
 ### Harmonisation
@@ -81,7 +114,7 @@ Early NHANES cycles bundled laboratory analytes in numbered files:
 - `LAB13` / `L13`: total cholesterol, HDL, triglycerides and LDL
 
 Later cycles use named files such as `GHB`, `GLU`, `INS`, `TRIGLY`, `HDL` and
-`TCHOL`. The builder maps these variants to one stable DiaPan schema. This is
+`TCHOL`. The builder maps these variants to one stable MetaboGuard schema. This is
 necessary because NHANES variable names, units and eligibility rules can
 change across cycles ([Nguyen et al. 2023](https://pmc.ncbi.nlm.nih.gov/articles/PMC9934713/)).
 
@@ -110,8 +143,9 @@ ignoring weights, strata and PSUs biases estimates and understates uncertainty
 
 ### Pancreatic cancer
 
-`PancreaticCancer` is derived from NHANES `MCQ230A-D`; code 39 means pancreas.
-A participant is positive if any reported cancer slot equals 39. Participants
+`PancreaticCancer` is derived from NHANES `MCQ230A-D`; official code 29 means
+pancreas and code 39 means Other. A participant is positive if any reported
+cancer slot equals 29. Participants
 with `MCQ220` equal to yes or no but no pancreatic site are negatives; unknown
 responses remain missing.
 
@@ -126,12 +160,13 @@ Label noise is therefore expected and is part of the uncertainty budget.
 `cohort_filter=diabetics_only` retains rows where `Diabetes == 1`. This directly
 matches the brief's intended use: prioritising people inside an already
 monitored diabetic population. The general-population model remains as a
-baseline, not the primary clinical framing.
+baseline, not the primary clinical framing. However, only six corrected positive
+cases survive required-field cleaning, so no pancreatic-risk model is fitted.
 
 ## Feature decisions
 
 | Feature | Reason for inclusion | Qualification |
-| --- | --- | --- |
+|---|---|---|
 | `recent_diabetes_onset`, `diabetes_duration_years` | New-onset risk is materially higher and decays with duration | Age at diagnosis is self-reported |
 | `GHB_LBXGH`, HbA1c interactions | Higher HbA1c is associated with pancreatic-cancer risk, especially near diabetes onset ([EPIC](https://link.springer.com/article/10.1007/s00125-011-2316-0)) | One measurement per participant |
 | `INS_LBXIN`, `homa_ir` | Represents insulin resistance/metabolic dysfunction | Fasting-subsample coverage only |
@@ -141,6 +176,11 @@ baseline, not the primary clinical framing.
 | hs-CRP | Retained for discovery completeness | Prior evidence is null/inconsistent ([Bao et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC3495286/)); should not be assumed causal |
 | `diabetes_subtype` | Exploratory distinction between early-onset insulin-treated and other diabetes | Unvalidated heuristic, not a clinical diagnosis |
 | `survey_cycle_index` | Allows the model to detect secular measurement/cohort shifts | A strong importance would be a warning for dataset drift, not a biomarker |
+| `smoking_status`, `current_smoker` | Smoking survived selection in the reviewed genetic model | Harmonised 0 never, 1 former, 2 current |
+| `alcohol_status`, `average_drinks_per_day` | Alcohol was selected by the reviewed CatBoost model | Questionnaire wording changed across cycles |
+| `CBC_LBXHGB`, `CBC_LBXPLTSI` | Haemoglobin and platelet count were paper candidates | Routine CBC; >81% pooled coverage |
+| `BIOPRO_LBXSATSI`, `BIOPRO_LBXSAPSI`, `BIOPRO_LBXSCR` | ALT, alkaline phosphatase and creatinine were paper candidates | Routine biochemistry; ~63% coverage |
+| `hba1c_reciprocal_100`, `hba1c_squared` | Supports nonlinear HbA1c sensitivity analysis | Derived terms; not separate biomarkers |
 
 `CA19-9` remains absent from NHANES. Published lead-time studies show useful
 pre-diagnosis performance, so this is a substantive data gap rather than a
@@ -191,62 +231,25 @@ replicate remains evaluable. It captures held-out sample uncertainty only; it
 does not include feature-selection, model-selection, survey-design or label
 misclassification uncertainty.
 
-## Current pooled results
+## Current model status
 
-| Cohort | Rows used | Test positives | AUROC (95% CI) | AUPRC (95% CI) | AUPRC lift |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| General population | 52,891 | 55 | 0.679 (0.598-0.748) | 0.011 (0.008-0.020) | 2.14x |
-| Diabetics only | 6,473 | 8 | 0.641 (0.419-0.830) | 0.135 (0.007-0.386) | 21.81x |
+There is no valid NHANES pancreatic-risk classifier. The former results used
+MCQ230 code 39, which means Other, and are invalidated.
 
-The diabetics-only point estimate is not statistically stable: only eight
-positive cases appear in the held-out fold and the confidence interval is
-wide. The correct conclusion is **promising enrichment with high uncertainty**,
-not validated early detection.
+The corrected v2 target has 19 positives overall, 7 among diabetics, 6 after
+required-field cleaning and only 2 meeting the exact three-year NODM-PC
+definition. MetaboGuard requires at least 20 usable positives and negatives before
+fitting. Dataset signatures prevent old artifacts from being reused after a
+CSV changes.
 
-The top diabetics-only features are:
-
-1. `hba1c_age_interaction`
-2. `TCHOL_LBXTC`
-3. `GHB_LBXGH`
-4. `age_bmi_interaction`
-5. `survey_cycle_index`
-
-`survey_cycle_index` appearing in the top five signals possible secular drift
-or measurement heterogeneity. A cycle-held-out validation is required before
-claiming generalisation.
-
-## Cycle-held-out temporal validation
-
-DiaPan now performs leave-one-survey-cycle-out validation through
-`api/validate_cycle_holdout.py`. Each cycle is treated as unseen test data in
-turn. Imputation medians and models are learned exclusively from the remaining
-cycles. This is an internal-external temporal validation design, consistent
-with guidance that clinical models should be evaluated in new settings and
-that performance heterogeneity should be examined rather than hidden behind
-one random split
-([BMJ evaluation guidance](https://pmc.ncbi.nlm.nih.gov/articles/PMC10772854/);
-[Nieboer et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC5708595/)).
-
-| Variant | Model | AUROC (cycle-bootstrap 95% CI) | AUPRC (95% CI) | Lift |
-| --- | --- | ---: | ---: | ---: |
-| Clinical only | HistGradientBoosting | 0.635 (0.582-0.685) | 0.0119 (0.0091-0.0246) | 1.88x |
-| Clinical only | XGBoost | **0.643 (0.561-0.703)** | 0.0128 (0.0084-0.0289) | 2.03x |
-| With cycle proxies | HistGradientBoosting | 0.609 (0.578-0.667) | 0.0115 (0.0095-0.0212) | 1.81x |
-| With cycle proxies | XGBoost | 0.630 (0.562-0.685) | **0.0137 (0.0083-0.0394)** | 2.17x |
-
-The out-of-cycle results are substantially weaker than the random 80/20 split.
-The random-split AUPRC of 0.135 should therefore be treated as optimistic.
-Clinical-only XGBoost offers the best pooled AUROC and avoids dependence on
-cycle-derived variables, so it is the preferred research benchmark.
-
-Per-cycle AUROC varies widely (approximately 0.42-0.95 depending on model and
-cycle), confirming temporal heterogeneity. Full fold results are stored in
-`data/cycle_holdout_validation.json` and rendered in
-`docs/CYCLE_HOLDOUT_VALIDATION.md`.
+Cycle-held-out evaluation is postponed until a larger incident
+pancreatic-cancer cohort is available. With six usable positives, multiple
+cycles contain no events and performance estimates would be dominated by
+individual participants.
 
 ## Leakage controls
 
-DiaPan excludes TCGA `OS`, `OS.time`, `PFI` and `PFI.time` because they define or
+MetaboGuard excludes TCGA `OS`, `OS.time`, `PFI` and `PFI.time` because they define or
 occur after the outcomes. Clinical leakage can substantially inflate apparent
 performance; one published example fell from AUC 0.76 to 0.64 after a single
 leaked feature was removed
@@ -265,30 +268,23 @@ cd api
 # Download, harmonise and write the pooled dataset plus build report
 python fetch_nhanes_multicycle.py
 
-# General-population baseline
-python train_biomarker_model.py \
-  --dataset nhanes_multicycle.csv \
-  --target PancreaticCancer \
-  --force
-
-# Primary brief-aligned model
-python train_biomarker_model.py \
-  --dataset nhanes_multicycle.csv \
-  --target PancreaticCancer \
-  --cohort-filter diabetics_only \
-  --force
+# Audit corrected outcome and feature coverage. Model fitting intentionally
+# fails until at least 20 usable positive cases exist.
+python -c "import pandas as pd; d=pd.read_csv('../data/nhanes_multicycle_v2.csv'); print(d[['PancreaticCancer','NODM_PancreaticCancer']].sum())"
 ```
 
 ## Next validation steps
 
-1. Perform sensitivity analysis with and without the unvalidated
-   `diabetes_subtype` proxy.
-2. Add survey-design-aware descriptive analysis using the combined MEC weight,
+1. Acquire a linked incident pancreatic-cancer cohort with exact diabetes and
+   cancer diagnosis dates.
+2. Perform sensitivity analysis with and without the unvalidated
+   `diabetes_subtype` proxy once the event threshold is met.
+3. Add survey-design-aware descriptive analysis using the combined MEC weight,
    strata and PSU fields.
-3. Derive or ingest fasting-subsample combined weights before making weighted
+4. Derive or ingest fasting-subsample combined weights before making weighted
    claims about insulin, glucose, HOMA-IR or C-peptide.
-4. Calibrate only after substantially more events are available; stable
+5. Calibrate only after substantially more events are available; stable
    calibration curves commonly require roughly 200 events and 200 non-events
    ([calibration review](https://pmc.ncbi.nlm.nih.gov/articles/PMC6912996/)).
-5. Seek a longitudinal cohort with serial biomarkers and CA19-9 to answer the
+6. Seek a longitudinal cohort with serial biomarkers and CA19-9 to answer the
    true early-detection trajectory question.

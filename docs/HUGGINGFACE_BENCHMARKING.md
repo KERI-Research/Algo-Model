@@ -1,101 +1,79 @@
-# Hugging Face Benchmarking Guide
+# MetaboGuard Hugging Face Benchmarking Guide
 
-## What constitutes a fair comparison
+## Artifact status
 
-A Hugging Face model is comparable to DiaPan only if it:
+`MetaboGuard-SSL v1` may be shared for **self-supervised representation and
+anomaly-scoring research**.
 
-1. Uses the same diabetic cohort and `PancreaticCancer` target.
-2. Uses the same clinical-only input columns.
-3. Learns preprocessing from training cycles only.
-4. Uses identical leave-one-survey-cycle-out folds.
-5. Reports AUROC, AUPRC, prevalence-relative lift and Brier score.
+It must not be published as a cancer/diabetes diagnostic or future-risk model.
+The former supervised DiaPan-XGB artifact remains invalidated.
 
-Hub download counts or metrics from unrelated datasets are not comparable.
+## Artifact outputs
 
-## Candidate Hugging Face models
+- 16-dimensional patient embedding
+- metabolic-deviation score
+- reference percentile
+- five highest reconstruction-deviation features
+- dataset capability declaration
+- cross-sectional association report
 
-| Candidate | Hub task | License | Suitability |
-| --- | --- | --- | --- |
-| [Prior-Labs TabPFN 3](https://hf.co/Prior-Labs/tabpfn_3) | Tabular classification | Custom/other | Technically relevant; license must be reviewed before redistribution |
-| [Prior-Labs TabPFN 2.5](https://hf.co/Prior-Labs/tabpfn_2_5) | Tabular classification | Custom/other | Technically relevant; requires identical DiaPan fold retraining |
-| [Prior-Labs TabPFN v2 classifier](https://hf.co/Prior-Labs/TabPFN-v2-clf) | Tabular classification | Custom/other | Compatible architecture; not a pancreatic-specific model |
-| [AutoGluon TabPFN Mix](https://hf.co/autogluon/tabpfn-mix-1.0-classifier) | Tabular classification | Apache-2.0 | Most straightforward public benchmark candidate |
-| [TabPFN Oncology UQ](https://hf.co/RyeCatcher/tabpfn-oncology-uq) | Unspecified | Unspecified | Oncology label alone is insufficient; no direct comparability established |
+## Appropriate benchmark tasks
 
-No public Hub model found in the search was already trained for the exact DiaPan
-task and feature schema. Generic models must therefore be fitted on DiaPan data,
-not evaluated zero-shot using unrelated heads or output labels.
+| Task | Metric |
+|---|---|
+| Masked-feature reconstruction | Validation MSE |
+| Representation stability | Embedding similarity across repeated corruption |
+| Anomaly ranking | AUROC/AUPRC only against independently defined anomaly labels |
+| Clustering | Silhouette/stability plus clinical interpretability |
+| Linear probe | Cross-validated AUROC/AUPRC, explicitly cross-sectional |
+| Missingness robustness | Score/embedding change after controlled masking |
 
-## DiaPan public-ready artifact
+## Inappropriate comparisons
 
-Path:
+Do not compare:
 
-```text
-model_artifacts/huggingface/diapan-risk-xgboost/
-```
+- MetaboGuard deviation percentiles against diagnostic probabilities;
+- cross-sectional cancer association against future incident-cancer models;
+- Type 1 proxy performance against autoantibody-confirmed Type 1 outcomes;
+- TCGA prognosis performance against preventive early-warning performance.
 
-Contents:
+## Candidate Hugging Face comparators
 
-| File | Purpose |
-| --- | --- |
-| `model.joblib` | Final clinical-only XGBoost model fitted on all labelled diabetics |
-| `README.md` | Hugging Face model card |
-| `config.json` | Task, license and benchmark metadata |
-| `feature_schema.json` | Input names, meanings, direction and imputation |
-| `inference.py` | Local prediction helper |
-| `sample_input.json` | Example input |
-| `benchmark_results.json` | Complete temporal fold report |
-| `benchmark_predictions.py` | Model-agnostic metric evaluator |
-| `requirements.txt` | Runtime dependencies |
+| Candidate | Use |
+|---|---|
+| AutoGluon TabPFN Mix | Frozen-representation or linear-probe comparator |
+| Prior-Labs TabPFN | Generic tabular representation/classification comparator |
+| Variational autoencoder | Probabilistic reconstruction baseline |
+| Masked tabular transformer | Self-supervised representation comparator |
+| Isolation Forest | Non-deep anomaly baseline |
+| PCA | Linear representation baseline |
 
-The artifact is public-ready under the project's CC BY 4.0 license, but has not
-been uploaded. Publication requires an explicit confirmation because it creates
-public content.
+Every comparator must use identical folds, features and preprocessing
+boundaries.
 
-## External-model prediction contract
+## Future disease-risk benchmark
 
-An external model should produce:
+A cancer/diabetes development benchmark becomes valid only when a dataset has:
 
-```csv
-global_participant_id,probability
-1999-2000:12345,0.0184
-2001-2002:45678,0.0021
-```
+- patient-level longitudinal observations;
+- an index date before disease;
+- incident outcome dates;
+- adequate events at the chosen horizon;
+- no post-diagnosis inputs.
 
-The probability column may contain an uncalibrated ranking score as long as it
-is numeric and higher means greater predicted risk. Brier score should only be
-interpreted as calibration error when outputs are probability-like.
+Supported horizons are selected from 1, 3 and 5 years based on event
+availability. Each horizon requires at least 50 events and 50 eligible
+non-events for initial evaluation.
 
-Evaluate:
+## Release checklist
 
-```bash
-cd model_artifacts/huggingface/diapan-risk-xgboost
-
-python benchmark_predictions.py \
-  --predictions external_predictions.csv \
-  --labels ../../../data/nhanes_multicycle.csv
-```
-
-## Current local benchmark
-
-| Model | AUROC | AUPRC | Lift | Brier |
-| --- | ---: | ---: | ---: | ---: |
-| XGBoost | **0.643** | 0.0128 | 2.03× | 0.0123 |
-| HistGradientBoosting | 0.635 | 0.0119 | 1.88× | 0.0159 |
-| Random Forest | 0.629 | 0.0184 | 2.91× | **0.0073** |
-| Balanced Logistic Regression | 0.601 | **0.0347** | **5.49×** | 0.1996 |
-
-XGBoost is exported because it has the strongest temporal AUROC. Random Forest
-is a credible secondary benchmark. Logistic Regression's poor Brier score
-shows that its high AUPRC does not translate into trustworthy probabilities.
-
-## Recommended Hugging Face experiment
-
-1. Start with AutoGluon TabPFN Mix because its Apache-2.0 license is explicit.
-2. Retrain separately inside each DiaPan temporal fold.
-3. Export one prediction per held-out participant.
-4. Evaluate with `benchmark_predictions.py`.
-5. Compare confidence intervals and per-cycle variation, not only pooled
-   metrics.
-6. Document computational limits and any reduced training subset. TabPFN-style
-   models may impose sample/feature constraints that change comparability.
+- Non-diagnostic model card
+- Dataset and cohort description
+- Feature allowlist and denylist
+- Type 1 research-only warning
+- No genetics unless approved
+- Capability declaration
+- Training and scoring examples
+- Reproducible preprocessing
+- External benchmark contract
+- CC BY 4.0 licence

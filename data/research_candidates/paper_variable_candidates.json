@@ -1,0 +1,1852 @@
+{
+  "sources": {
+    "genetic_clinical_2025": "https://doi.org/10.1186/s12916-025-04048-4",
+    "clinical_multiomics_2026": "https://doi.org/10.1186/s12967-026-07767-1"
+  },
+  "clinical_candidate_predictors_2025": [
+    "age_at_t2dm_diagnosis",
+    "sex",
+    "bmi",
+    "smoking_status",
+    "glucose",
+    "hba1c",
+    "haemoglobin",
+    "triglycerides",
+    "alt",
+    "creatinine",
+    "platelet_count",
+    "total_cholesterol",
+    "alkaline_phosphatase"
+  ],
+  "desired_longitudinal_or_symptom_variables_2025": [
+    "weight_change",
+    "glucose_change",
+    "bmi_change",
+    "abdominal_pain",
+    "weight_loss",
+    "jaundice",
+    "heartburn",
+    "indigestion",
+    "nausea"
+  ],
+  "clinical_candidate_predictors_2026": [
+    "age",
+    "sex",
+    "ethnicity",
+    "smoking_status",
+    "alcohol_status",
+    "bmi",
+    "hip_circumference",
+    "whole_body_fat_mass",
+    "left_leg_impedance",
+    "right_arm_fat_mass",
+    "left_arm_fat_mass",
+    "trunk_fat_mass",
+    "usual_walking_pace",
+    "long_standing_illness_disability_infirmity",
+    "haemoglobin",
+    "immature_reticulocyte_fraction",
+    "apolipoprotein_a",
+    "glucose",
+    "hba1c",
+    "total_cholesterol",
+    "hdl_cholesterol",
+    "ldl_cholesterol"
+  ],
+  "final_catboost_14_variables_2026": [
+    "hba1c",
+    "total_cholesterol",
+    "age",
+    "apolipoprotein_a",
+    "usual_walking_pace",
+    "immature_reticulocyte_fraction",
+    "left_arm_fat_mass",
+    "bmi",
+    "hdl_cholesterol",
+    "long_standing_illness_disability_infirmity",
+    "hip_circumference",
+    "trunk_fat_mass",
+    "alcohol_status",
+    "sex"
+  ],
+  "nodm_pc_prs_33_snps": [
+    {
+      "rsid": "rs13303010",
+      "risk_allele": "G",
+      "beta": 0.303063174490083,
+      "p_value": 0.03174,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs4655617",
+      "risk_allele": "C",
+      "beta": -0.203953856921069,
+      "p_value": 0.03597,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs41276588",
+      "risk_allele": "A",
+      "beta": 0.222343231143441,
+      "p_value": 0.02666,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs76263492",
+      "risk_allele": "T",
+      "beta": -0.58644756190089,
+      "p_value": 0.03943,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs9873618",
+      "risk_allele": "A",
+      "beta": 0.270790204781563,
+      "p_value": 0.00589,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs9854769",
+      "risk_allele": "G",
+      "beta": -0.22865873200232,
+      "p_value": 0.02711,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs3887925",
+      "risk_allele": "C",
+      "beta": -0.201382059532697,
+      "p_value": 0.03674,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs9854771",
+      "risk_allele": "A",
+      "beta": -0.237622872579044,
+      "p_value": 0.01937,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs72501964",
+      "risk_allele": "T",
+      "beta": -0.606419177050121,
+      "p_value": 0.04887,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs56337234",
+      "risk_allele": "T",
+      "beta": 0.198850858745165,
+      "p_value": 0.03322,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2853677",
+      "risk_allele": "G",
+      "beta": -0.197841368451991,
+      "p_value": 0.03898,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2736098",
+      "risk_allele": "T",
+      "beta": -0.449573747734227,
+      "p_value": 0.0001767,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs35226131",
+      "risk_allele": "T",
+      "beta": -0.867976871595604,
+      "p_value": 0.03561,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2735948",
+      "risk_allele": "A",
+      "beta": 0.352064331381049,
+      "p_value": 0.000207,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs401681",
+      "risk_allele": "T",
+      "beta": 0.352767319107715,
+      "p_value": 0.000184,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs6878122",
+      "risk_allele": "G",
+      "beta": 0.204572165728774,
+      "p_value": 0.03621,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs12539264",
+      "risk_allele": "G",
+      "beta": -0.310473160752596,
+      "p_value": 0.00585,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs6971499",
+      "risk_allele": "C",
+      "beta": -0.372514007968479,
+      "p_value": 0.009949,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2737226",
+      "risk_allele": "T",
+      "beta": 0.189793571632656,
+      "p_value": 0.04615,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2862954",
+      "risk_allele": "C",
+      "beta": 0.23031775506221,
+      "p_value": 0.01593,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs4929965",
+      "risk_allele": "A",
+      "beta": -0.204076488596984,
+      "p_value": 0.03807,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs2237895",
+      "risk_allele": "C",
+      "beta": -0.216913001563574,
+      "p_value": 0.02431,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs11602873",
+      "risk_allele": "T",
+      "beta": 0.422649932862265,
+      "p_value": 0.0003863,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs28884829",
+      "risk_allele": "A",
+      "beta": 0.591114454994794,
+      "p_value": 0.02448,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs10844518",
+      "risk_allele": "G",
+      "beta": 0.208638865111328,
+      "p_value": 0.04095,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs9543325",
+      "risk_allele": "C",
+      "beta": 0.20375683751402,
+      "p_value": 0.03311,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs1475655",
+      "risk_allele": "T",
+      "beta": 0.212689093410351,
+      "p_value": 0.03649,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs12912777",
+      "risk_allele": "T",
+      "beta": 0.309688152714396,
+      "p_value": 0.01615,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs72802342",
+      "risk_allele": "A",
+      "beta": 0.385942441619301,
+      "p_value": 0.01977,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs11870735",
+      "risk_allele": "T",
+      "beta": -0.29276161819508,
+      "p_value": 0.02838,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs144239147",
+      "risk_allele": "A",
+      "beta": 0.75377180237638,
+      "p_value": 0.01337,
+      "source": [
+        "PC_PRS"
+      ]
+    },
+    {
+      "rsid": "rs10404726",
+      "risk_allele": "T",
+      "beta": -0.192493112115451,
+      "p_value": 0.04567,
+      "source": [
+        "T2DM_PRS"
+      ]
+    },
+    {
+      "rsid": "rs450960",
+      "risk_allele": "T",
+      "beta": 0.22314355131421,
+      "p_value": 0.02366,
+      "source": [
+        "PC_PRS"
+      ]
+    }
+  ],
+  "overlapping_39_proteins": [
+    {
+      "Protein": "XPNPEP2",
+      "MeanDiff_clinical": 1.056401307,
+      "p_clinical": "2.50045E-05",
+      "MeanDiff_risk": 0.198782735,
+      "p_risk": "0.044373225",
+      "direction": "up"
+    },
+    {
+      "Protein": "AMIGO2",
+      "MeanDiff_clinical": -0.117811168,
+      "p_clinical": "0.000170143",
+      "MeanDiff_risk": -0.057501668,
+      "p_risk": "0.00634112",
+      "direction": "down"
+    },
+    {
+      "Protein": "NCAN",
+      "MeanDiff_clinical": 0.300984185,
+      "p_clinical": "0.000534657",
+      "MeanDiff_risk": 0.114171858,
+      "p_risk": "0.004214609",
+      "direction": "up"
+    },
+    {
+      "Protein": "EPO",
+      "MeanDiff_clinical": -0.536913918,
+      "p_clinical": "0.000700942",
+      "MeanDiff_risk": -0.216335626,
+      "p_risk": "0.003982542",
+      "direction": "down"
+    },
+    {
+      "Protein": "PLA2G7",
+      "MeanDiff_clinical": 0.322048145,
+      "p_clinical": "0.000783843",
+      "MeanDiff_risk": 0.163337694,
+      "p_risk": "1.25489E-06",
+      "direction": "up"
+    },
+    {
+      "Protein": "ICAM1",
+      "MeanDiff_clinical": -0.185336421,
+      "p_clinical": "0.001101708",
+      "MeanDiff_risk": -0.109627129,
+      "p_risk": "0.000150059",
+      "direction": "down"
+    },
+    {
+      "Protein": "CD22",
+      "MeanDiff_clinical": -0.293885668,
+      "p_clinical": "0.001768101",
+      "MeanDiff_risk": -0.170155053,
+      "p_risk": "0.00014553",
+      "direction": "down"
+    },
+    {
+      "Protein": "SH2D1A",
+      "MeanDiff_clinical": -0.216592995,
+      "p_clinical": "0.002692185",
+      "MeanDiff_risk": -0.09859281,
+      "p_risk": "0.025416516",
+      "direction": "down"
+    },
+    {
+      "Protein": "PLXNB2",
+      "MeanDiff_clinical": -0.162828447,
+      "p_clinical": "0.003036093",
+      "MeanDiff_risk": -0.144084826,
+      "p_risk": "2.43413E-10",
+      "direction": "down"
+    },
+    {
+      "Protein": "ATF2",
+      "MeanDiff_clinical": -0.258091081,
+      "p_clinical": "0.003304936",
+      "MeanDiff_risk": -0.155345258,
+      "p_risk": "0.001014681",
+      "direction": "down"
+    },
+    {
+      "Protein": "CDH1",
+      "MeanDiff_clinical": -0.278525163,
+      "p_clinical": "0.005308097",
+      "MeanDiff_risk": -0.155739739,
+      "p_risk": "6.58518E-06",
+      "direction": "down"
+    },
+    {
+      "Protein": "NRP1",
+      "MeanDiff_clinical": -0.188591818,
+      "p_clinical": "0.006315644",
+      "MeanDiff_risk": -0.049794242,
+      "p_risk": "0.040635044",
+      "direction": "down"
+    },
+    {
+      "Protein": "DEFB4A",
+      "MeanDiff_clinical": -1.097939997,
+      "p_clinical": "0.006844675",
+      "MeanDiff_risk": -0.253656561,
+      "p_risk": "0.048489737",
+      "direction": "down"
+    },
+    {
+      "Protein": "CRTAC1",
+      "MeanDiff_clinical": 0.242979954,
+      "p_clinical": "0.008949906",
+      "MeanDiff_risk": 0.112829257,
+      "p_risk": "5.24479E-05",
+      "direction": "up"
+    },
+    {
+      "Protein": "ADAMTS8",
+      "MeanDiff_clinical": 0.276659185,
+      "p_clinical": "0.009421957",
+      "MeanDiff_risk": 0.112077454,
+      "p_risk": "0.006284853",
+      "direction": "up"
+    },
+    {
+      "Protein": "SIGLEC10",
+      "MeanDiff_clinical": -0.289767763,
+      "p_clinical": "0.010677791",
+      "MeanDiff_risk": -0.098315063,
+      "p_risk": "0.001702808",
+      "direction": "down"
+    },
+    {
+      "Protein": "SEMA7A",
+      "MeanDiff_clinical": -0.142909339,
+      "p_clinical": "0.010734385",
+      "MeanDiff_risk": -0.089784613,
+      "p_risk": "0.001115597",
+      "direction": "down"
+    },
+    {
+      "Protein": "ITGAV",
+      "MeanDiff_clinical": 0.135092017,
+      "p_clinical": "0.010868134",
+      "MeanDiff_risk": 0.054973901,
+      "p_risk": "0.001174145",
+      "direction": "up"
+    },
+    {
+      "Protein": "ROBO1",
+      "MeanDiff_clinical": -0.163632015,
+      "p_clinical": "0.012020748",
+      "MeanDiff_risk": -0.129888354,
+      "p_risk": "7.44628E-07",
+      "direction": "down"
+    },
+    {
+      "Protein": "LGALS4",
+      "MeanDiff_clinical": -0.283988569,
+      "p_clinical": "0.013427971",
+      "MeanDiff_risk": -0.144054381,
+      "p_risk": "0.00617971",
+      "direction": "down"
+    },
+    {
+      "Protein": "FCER2",
+      "MeanDiff_clinical": -0.252246217,
+      "p_clinical": "0.01507154",
+      "MeanDiff_risk": -0.114784485,
+      "p_risk": "0.023396674",
+      "direction": "down"
+    },
+    {
+      "Protein": "KITLG",
+      "MeanDiff_clinical": 0.231666587,
+      "p_clinical": "0.016839297",
+      "MeanDiff_risk": 0.095471734,
+      "p_risk": "0.012813515",
+      "direction": "up"
+    },
+    {
+      "Protein": "LIFR",
+      "MeanDiff_clinical": -0.132458459,
+      "p_clinical": "0.016950332",
+      "MeanDiff_risk": -0.079680571,
+      "p_risk": "0.000234211",
+      "direction": "down"
+    },
+    {
+      "Protein": "LTA",
+      "MeanDiff_clinical": -0.180789842,
+      "p_clinical": "0.016978609",
+      "MeanDiff_risk": -0.128738121,
+      "p_risk": "0.000170359",
+      "direction": "down"
+    },
+    {
+      "Protein": "IL18R1",
+      "MeanDiff_clinical": -0.287729547,
+      "p_clinical": "0.017111139",
+      "MeanDiff_risk": -0.176568807,
+      "p_risk": "1.69003E-08",
+      "direction": "down"
+    },
+    {
+      "Protein": "FCRL1",
+      "MeanDiff_clinical": -0.271280475,
+      "p_clinical": "0.017267971",
+      "MeanDiff_risk": -0.174953803,
+      "p_risk": "7.50235E-05",
+      "direction": "down"
+    },
+    {
+      "Protein": "DKK4",
+      "MeanDiff_clinical": -0.277565857,
+      "p_clinical": "0.017515376",
+      "MeanDiff_risk": -0.18076343,
+      "p_risk": "1.39814E-06",
+      "direction": "down"
+    },
+    {
+      "Protein": "NTRK3",
+      "MeanDiff_clinical": 0.148296001,
+      "p_clinical": "0.020317447",
+      "MeanDiff_risk": 0.049163163,
+      "p_risk": "0.022598387",
+      "direction": "up"
+    },
+    {
+      "Protein": "PLTP",
+      "MeanDiff_clinical": 0.190176497,
+      "p_clinical": "0.023218318",
+      "MeanDiff_risk": 0.116954647,
+      "p_risk": "0.000919188",
+      "direction": "up"
+    },
+    {
+      "Protein": "MOG",
+      "MeanDiff_clinical": 0.251713571,
+      "p_clinical": "0.02385101",
+      "MeanDiff_risk": 0.123548148,
+      "p_risk": "0.000394881",
+      "direction": "up"
+    },
+    {
+      "Protein": "FGF23",
+      "MeanDiff_clinical": -0.331139001,
+      "p_clinical": "0.026339786",
+      "MeanDiff_risk": -0.129521027,
+      "p_risk": "0.01938069",
+      "direction": "down"
+    },
+    {
+      "Protein": "TCL1A",
+      "MeanDiff_clinical": -0.631827352,
+      "p_clinical": "0.027429503",
+      "MeanDiff_risk": -0.295770251,
+      "p_risk": "0.001864261",
+      "direction": "down"
+    },
+    {
+      "Protein": "ADA2",
+      "MeanDiff_clinical": -0.242615729,
+      "p_clinical": "0.031389269",
+      "MeanDiff_risk": -0.110865771,
+      "p_risk": "0.010975204",
+      "direction": "down"
+    },
+    {
+      "Protein": "DKK3",
+      "MeanDiff_clinical": 0.156727623,
+      "p_clinical": "0.031487225",
+      "MeanDiff_risk": 0.074714107,
+      "p_risk": "0.004966245",
+      "direction": "up"
+    },
+    {
+      "Protein": "TNFRSF11A",
+      "MeanDiff_clinical": -0.172665076,
+      "p_clinical": "0.031612968",
+      "MeanDiff_risk": -0.083673605,
+      "p_risk": "0.024663381",
+      "direction": "down"
+    },
+    {
+      "Protein": "THBS2",
+      "MeanDiff_clinical": -0.293619283,
+      "p_clinical": "0.032898387",
+      "MeanDiff_risk": -0.15825516,
+      "p_risk": "0.000164675",
+      "direction": "down"
+    },
+    {
+      "Protein": "RGMB",
+      "MeanDiff_clinical": 0.146135919,
+      "p_clinical": "0.040452548",
+      "MeanDiff_risk": 0.057333895,
+      "p_risk": "0.033024418",
+      "direction": "up"
+    },
+    {
+      "Protein": "GPA33",
+      "MeanDiff_clinical": 1.095518357,
+      "p_clinical": "0.042077236",
+      "MeanDiff_risk": 0.605971586,
+      "p_risk": "3.11781E-06",
+      "direction": "up"
+    },
+    {
+      "Protein": "TNFRSF13B",
+      "MeanDiff_clinical": -0.130239864,
+      "p_clinical": "0.044764847",
+      "MeanDiff_risk": -0.094804327,
+      "p_risk": "0.003693197",
+      "direction": "down"
+    }
+  ],
+  "overlapping_145_metabolites": [
+    {
+      "Metabolite": "Glucose",
+      "Median FoldChange_clinical": 0.828704119,
+      "p_clinical": "1.07098E-10",
+      "Median FoldChange_risk": 0.809700184,
+      "p_risk": "1.85433E-84",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "GL",
+      "Median FoldChange_clinical": 0.867519427,
+      "p_clinical": "3.63641E-10",
+      "Median FoldChange_risk": 0.853973754,
+      "p_risk": "1.77918E-91",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "XS_VLDL_CE",
+      "Median FoldChange_clinical": 1.210600699,
+      "p_clinical": "1.5117E-07",
+      "Median FoldChange_risk": 1.188079788,
+      "p_risk": "2.63399E-41",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_TG_pct",
+      "Median FoldChange_clinical": 0.90061643,
+      "p_clinical": "2.44959E-07",
+      "Median FoldChange_risk": 0.925156692,
+      "p_risk": "4.06929E-32",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "XS_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.069028691,
+      "p_clinical": "5.77058E-07",
+      "Median FoldChange_risk": 1.063309688,
+      "p_risk": "2.73176E-33",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.050864678,
+      "p_clinical": "5.92288E-07",
+      "Median FoldChange_risk": 1.046654611,
+      "p_risk": "2.15083E-33",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_FC",
+      "Median FoldChange_clinical": 1.171195992,
+      "p_clinical": "5.96786E-07",
+      "Median FoldChange_risk": 1.175013075,
+      "p_risk": "7.35387E-44",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_C",
+      "Median FoldChange_clinical": 1.187810676,
+      "p_clinical": "6.06016E-07",
+      "Median FoldChange_risk": 1.159189635,
+      "p_risk": "9.27844E-38",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_PL",
+      "Median FoldChange_clinical": 1.142287411,
+      "p_clinical": "1.29304E-06",
+      "Median FoldChange_risk": 1.131545921,
+      "p_risk": "5.95785E-41",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_C",
+      "Median FoldChange_clinical": 1.153689266,
+      "p_clinical": "1.50948E-06",
+      "Median FoldChange_risk": 1.176569146,
+      "p_risk": "5.0059E-44",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_L",
+      "Median FoldChange_clinical": 1.135234806,
+      "p_clinical": "1.85149E-06",
+      "Median FoldChange_risk": 1.152765229,
+      "p_risk": "7.81513E-42",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_P",
+      "Median FoldChange_clinical": 1.133381552,
+      "p_clinical": "2.49119E-06",
+      "Median FoldChange_risk": 1.145842999,
+      "p_risk": "3.70677E-39",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_CE",
+      "Median FoldChange_clinical": 1.181572843,
+      "p_clinical": "2.51757E-06",
+      "Median FoldChange_risk": 1.166414576,
+      "p_risk": "2.36545E-43",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.065890896,
+      "p_clinical": "2.96677E-06",
+      "Median FoldChange_risk": 1.050862825,
+      "p_risk": "4.95133E-28",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_TG_pct",
+      "Median FoldChange_clinical": 0.927368445,
+      "p_clinical": "4.33004E-06",
+      "Median FoldChange_risk": 0.948106098,
+      "p_risk": "4.15582E-28",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "S_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.058391104,
+      "p_clinical": "4.34254E-06",
+      "Median FoldChange_risk": 1.049877312,
+      "p_risk": "9.28408E-25",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_PL_pct",
+      "Median FoldChange_clinical": 1.057726291,
+      "p_clinical": "4.42012E-06",
+      "Median FoldChange_risk": 1.040496975,
+      "p_risk": "4.58895E-32",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_FC_pct",
+      "Median FoldChange_clinical": 1.079814971,
+      "p_clinical": "7.71604E-06",
+      "Median FoldChange_risk": 1.062241018,
+      "p_risk": "3.2576E-30",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_CE",
+      "Median FoldChange_clinical": 1.368912786,
+      "p_clinical": "8.83356E-06",
+      "Median FoldChange_risk": 1.335966548,
+      "p_risk": "2.36309E-41",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_TG_pct",
+      "Median FoldChange_clinical": 0.917434574,
+      "p_clinical": "9.63588E-06",
+      "Median FoldChange_risk": 0.939228813,
+      "p_risk": "3.46113E-28",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "M_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.131870548,
+      "p_clinical": "1.45637E-05",
+      "Median FoldChange_risk": 1.123309088,
+      "p_risk": "3.48139E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_C_pct",
+      "Median FoldChange_clinical": 1.021182615,
+      "p_clinical": "1.63436E-05",
+      "Median FoldChange_risk": 1.013361821,
+      "p_risk": "9.61963E-28",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_FC_pct",
+      "Median FoldChange_clinical": 1.079741914,
+      "p_clinical": "1.64999E-05",
+      "Median FoldChange_risk": 1.068660861,
+      "p_risk": "1.88968E-28",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_FC",
+      "Median FoldChange_clinical": 1.128994137,
+      "p_clinical": "2.20768E-05",
+      "Median FoldChange_risk": 1.152094395,
+      "p_risk": "2.00521E-39",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.229149349,
+      "p_clinical": "2.21827E-05",
+      "Median FoldChange_risk": 1.185285445,
+      "p_risk": "1.48263E-24",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_PL_pct",
+      "Median FoldChange_clinical": 1.041352862,
+      "p_clinical": "2.73067E-05",
+      "Median FoldChange_risk": 1.030782127,
+      "p_risk": "1.75173E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Remnant_C",
+      "Median FoldChange_clinical": 1.166363185,
+      "p_clinical": "2.74416E-05",
+      "Median FoldChange_risk": 1.158239297,
+      "p_risk": "5.05205E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_FC",
+      "Median FoldChange_clinical": 1.127515926,
+      "p_clinical": "3.50082E-05",
+      "Median FoldChange_risk": 1.122036942,
+      "p_risk": "2.46316E-27",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_VLDL_TG_pct",
+      "Median FoldChange_clinical": 0.955798197,
+      "p_clinical": "3.66629E-05",
+      "Median FoldChange_risk": 0.969959649,
+      "p_risk": "5.01162E-23",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "Total_C",
+      "Median FoldChange_clinical": 1.100083313,
+      "p_clinical": "4.17808E-05",
+      "Median FoldChange_risk": 1.114998134,
+      "p_risk": "2.28981E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Total_CE",
+      "Median FoldChange_clinical": 1.09433544,
+      "p_clinical": "4.22014E-05",
+      "Median FoldChange_risk": 1.10886307,
+      "p_risk": "2.22587E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_PL",
+      "Median FoldChange_clinical": 1.134933483,
+      "p_clinical": "4.27684E-05",
+      "Median FoldChange_risk": 1.128945698,
+      "p_risk": "1.18722E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_TG_pct",
+      "Median FoldChange_clinical": 0.91222075,
+      "p_clinical": "4.51929E-05",
+      "Median FoldChange_risk": 0.906595833,
+      "p_risk": "3.67427E-27",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "Total_FC",
+      "Median FoldChange_clinical": 1.102826751,
+      "p_clinical": "5.54614E-05",
+      "Median FoldChange_risk": 1.113233357,
+      "p_risk": "4.79977E-35",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Clinical_LDL_C",
+      "Median FoldChange_clinical": 1.158672956,
+      "p_clinical": "6.03818E-05",
+      "Median FoldChange_risk": 1.169642123,
+      "p_risk": "1.07325E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_C",
+      "Median FoldChange_clinical": 1.237446959,
+      "p_clinical": "6.76694E-05",
+      "Median FoldChange_risk": 1.246787958,
+      "p_risk": "4.16116E-37",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_FC_pct",
+      "Median FoldChange_clinical": 1.016717713,
+      "p_clinical": "7.54979E-05",
+      "Median FoldChange_risk": 1.016184341,
+      "p_risk": "1.01464E-23",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "non_HDL_C",
+      "Median FoldChange_clinical": 1.141326137,
+      "p_clinical": "7.66606E-05",
+      "Median FoldChange_risk": 1.138699245,
+      "p_risk": "3.78179E-35",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Val",
+      "Median FoldChange_clinical": 0.931867559,
+      "p_clinical": "8.25827E-05",
+      "Median FoldChange_risk": 0.963332904,
+      "p_risk": "5.90422E-10",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "LDL_FC",
+      "Median FoldChange_clinical": 1.128896067,
+      "p_clinical": "8.50098E-05",
+      "Median FoldChange_risk": 1.143946379,
+      "p_risk": "3.22002E-36",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_C",
+      "Median FoldChange_clinical": 1.161653244,
+      "p_clinical": "9.14407E-05",
+      "Median FoldChange_risk": 1.128795445,
+      "p_risk": "5.05128E-35",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_P",
+      "Median FoldChange_clinical": 1.114493383,
+      "p_clinical": "9.84163E-05",
+      "Median FoldChange_risk": 1.108666227,
+      "p_risk": "3.40743E-23",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_L",
+      "Median FoldChange_clinical": 1.141857906,
+      "p_clinical": "0.000105017",
+      "Median FoldChange_risk": 1.124029116,
+      "p_risk": "7.80047E-34",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_PL_pct",
+      "Median FoldChange_clinical": 0.968869624,
+      "p_clinical": "0.000119367",
+      "Median FoldChange_risk": 0.98161044,
+      "p_risk": "6.34094E-18",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "L_LDL_FC_pct",
+      "Median FoldChange_clinical": 1.030862781,
+      "p_clinical": "0.00013363",
+      "Median FoldChange_risk": 1.023139589,
+      "p_risk": "8.88819E-20",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "SCA",
+      "Median FoldChange_clinical": 0.914356453,
+      "p_clinical": "0.000161592",
+      "Median FoldChange_risk": 0.949089891,
+      "p_risk": "4.0102E-16",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "XS_VLDL_L",
+      "Median FoldChange_clinical": 1.117979003,
+      "p_clinical": "0.000172263",
+      "Median FoldChange_risk": 1.102422684,
+      "p_risk": "5.99327E-22",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_CE",
+      "Median FoldChange_clinical": 1.148361482,
+      "p_clinical": "0.000178057",
+      "Median FoldChange_risk": 1.120067945,
+      "p_risk": "1.05835E-32",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_C_pct",
+      "Median FoldChange_clinical": 1.019214524,
+      "p_clinical": "0.000235396",
+      "Median FoldChange_risk": 1.019856,
+      "p_risk": "8.13291E-25",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_VLDL_FC_pct",
+      "Median FoldChange_clinical": 1.036297809,
+      "p_clinical": "0.000247198",
+      "Median FoldChange_risk": 1.031103616,
+      "p_risk": "1.14123E-20",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.081335579,
+      "p_clinical": "0.000269953",
+      "Median FoldChange_risk": 1.062805119,
+      "p_risk": "1.05832E-17",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.069547603,
+      "p_clinical": "0.000273444",
+      "Median FoldChange_risk": 1.072594864,
+      "p_risk": "5.20665E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_C",
+      "Median FoldChange_clinical": 1.120198739,
+      "p_clinical": "0.000280647",
+      "Median FoldChange_risk": 1.11341677,
+      "p_risk": "1.40494E-15",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_C",
+      "Median FoldChange_clinical": 1.157890935,
+      "p_clinical": "0.000292319",
+      "Median FoldChange_risk": 1.129149087,
+      "p_risk": "8.02866E-32",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Sphingomyelins",
+      "Median FoldChange_clinical": 1.064691906,
+      "p_clinical": "0.000314379",
+      "Median FoldChange_risk": 1.067929681,
+      "p_risk": "3.35508E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "ApoB",
+      "Median FoldChange_clinical": 1.112822732,
+      "p_clinical": "0.000319406",
+      "Median FoldChange_risk": 1.111786661,
+      "p_risk": "1.03113E-29",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_P",
+      "Median FoldChange_clinical": 1.117269131,
+      "p_clinical": "0.000337212",
+      "Median FoldChange_risk": 1.112815287,
+      "p_risk": "2.40037E-29",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_PL",
+      "Median FoldChange_clinical": 1.141722467,
+      "p_clinical": "0.000344614",
+      "Median FoldChange_risk": 1.115341963,
+      "p_risk": "9.27247E-31",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_CE",
+      "Median FoldChange_clinical": 1.183107542,
+      "p_clinical": "0.00035536",
+      "Median FoldChange_risk": 1.143490727,
+      "p_risk": "8.55666E-16",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "VLDL_CE",
+      "Median FoldChange_clinical": 1.151677257,
+      "p_clinical": "0.00038666",
+      "Median FoldChange_risk": 1.154962604,
+      "p_risk": "4.05023E-27",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_L",
+      "Median FoldChange_clinical": 1.131469013,
+      "p_clinical": "0.000423054",
+      "Median FoldChange_risk": 1.11402243,
+      "p_risk": "1.02201E-29",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_TG_pct",
+      "Median FoldChange_clinical": 0.909127885,
+      "p_clinical": "0.000427536",
+      "Median FoldChange_risk": 0.919626168,
+      "p_risk": "1.90585E-24",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "L_HDL_FC_pct",
+      "Median FoldChange_clinical": 1.039893388,
+      "p_clinical": "0.000452513",
+      "Median FoldChange_risk": 1.042850765,
+      "p_risk": "6.5626E-16",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Total_BCAA",
+      "Median FoldChange_clinical": 0.941394434,
+      "p_clinical": "0.000471734",
+      "Median FoldChange_risk": 0.956211547,
+      "p_risk": "2.55987E-10",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "XL_VLDL_PL_pct",
+      "Median FoldChange_clinical": 1.017295167,
+      "p_clinical": "0.000483722",
+      "Median FoldChange_risk": 1.015026234,
+      "p_risk": "4.71709E-15",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_C_pct",
+      "Median FoldChange_clinical": 1.010195134,
+      "p_clinical": "0.000485904",
+      "Median FoldChange_risk": 1.010314426,
+      "p_risk": "6.86437E-30",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.130218931,
+      "p_clinical": "0.000536885",
+      "Median FoldChange_risk": 1.093528775,
+      "p_risk": "1.9065E-15",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_FC",
+      "Median FoldChange_clinical": 1.131922692,
+      "p_clinical": "0.000559422",
+      "Median FoldChange_risk": 1.13527764,
+      "p_risk": "5.69236E-30",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_CE",
+      "Median FoldChange_clinical": 1.148223646,
+      "p_clinical": "0.000562278",
+      "Median FoldChange_risk": 1.12265094,
+      "p_risk": "2.75065E-29",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_PL",
+      "Median FoldChange_clinical": 1.103691765,
+      "p_clinical": "0.000578413",
+      "Median FoldChange_risk": 1.092323745,
+      "p_risk": "1.49886E-17",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.042425359,
+      "p_clinical": "0.00065619",
+      "Median FoldChange_risk": 1.040951172,
+      "p_risk": "4.46401E-19",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_P",
+      "Median FoldChange_clinical": 1.098781505,
+      "p_clinical": "0.000677579",
+      "Median FoldChange_risk": 1.10373998,
+      "p_risk": "2.29077E-28",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_TG_pct",
+      "Median FoldChange_clinical": 0.889261537,
+      "p_clinical": "0.00071579",
+      "Median FoldChange_risk": 0.912404771,
+      "p_risk": "3.66942E-23",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "L_HDL_C_pct",
+      "Median FoldChange_clinical": 1.055918991,
+      "p_clinical": "0.00090376",
+      "Median FoldChange_risk": 1.043454011,
+      "p_risk": "7.06962E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_P",
+      "Median FoldChange_clinical": 1.093477412,
+      "p_clinical": "0.000955995",
+      "Median FoldChange_risk": 1.107118939,
+      "p_risk": "2.36606E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_FC",
+      "Median FoldChange_clinical": 1.117223388,
+      "p_clinical": "0.001009011",
+      "Median FoldChange_risk": 1.074308689,
+      "p_risk": "3.53684E-13",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_L",
+      "Median FoldChange_clinical": 1.106937524,
+      "p_clinical": "0.001133716",
+      "Median FoldChange_risk": 1.116379522,
+      "p_risk": "3.19268E-12",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_C",
+      "Median FoldChange_clinical": 1.202571143,
+      "p_clinical": "0.00116199",
+      "Median FoldChange_risk": 1.16770288,
+      "p_risk": "4.88715E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Total_PL",
+      "Median FoldChange_clinical": 1.057873849,
+      "p_clinical": "0.001162867",
+      "Median FoldChange_risk": 1.068280205,
+      "p_risk": "1.81732E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_CE",
+      "Median FoldChange_clinical": 1.218744893,
+      "p_clinical": "0.001202271",
+      "Median FoldChange_risk": 1.180859833,
+      "p_risk": "4.04728E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_FC",
+      "Median FoldChange_clinical": 1.144880407,
+      "p_clinical": "0.001483916",
+      "Median FoldChange_risk": 1.14219078,
+      "p_risk": "2.52281E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_LDL_C_pct",
+      "Median FoldChange_clinical": 1.009295997,
+      "p_clinical": "0.001487877",
+      "Median FoldChange_risk": 1.008149754,
+      "p_risk": "4.76146E-25",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_FC_pct",
+      "Median FoldChange_clinical": 1.022857143,
+      "p_clinical": "0.001598615",
+      "Median FoldChange_risk": 1.020265713,
+      "p_risk": "4.84894E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_FC",
+      "Median FoldChange_clinical": 1.173647378,
+      "p_clinical": "0.001854215",
+      "Median FoldChange_risk": 1.16207076,
+      "p_risk": "4.55301E-13",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_FC",
+      "Median FoldChange_clinical": 1.13656395,
+      "p_clinical": "0.002012586",
+      "Median FoldChange_risk": 1.176695211,
+      "p_risk": "6.17338E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Total_L",
+      "Median FoldChange_clinical": 1.059255355,
+      "p_clinical": "0.002162682",
+      "Median FoldChange_risk": 1.076582195,
+      "p_risk": "3.79806E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_FC",
+      "Median FoldChange_clinical": 1.112963662,
+      "p_clinical": "0.002219614",
+      "Median FoldChange_risk": 1.111932734,
+      "p_risk": "1.68807E-26",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_P",
+      "Median FoldChange_clinical": 1.23034689,
+      "p_clinical": "0.002646959",
+      "Median FoldChange_risk": 1.159730982,
+      "p_risk": "1.293E-13",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_P",
+      "Median FoldChange_clinical": 1.100106105,
+      "p_clinical": "0.002663084",
+      "Median FoldChange_risk": 1.097110335,
+      "p_risk": "3.49079E-24",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_C",
+      "Median FoldChange_clinical": 1.11519021,
+      "p_clinical": "0.002671746",
+      "Median FoldChange_risk": 1.102161033,
+      "p_risk": "1.34785E-24",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "IDL_CE_pct",
+      "Median FoldChange_clinical": 1.019858718,
+      "p_clinical": "0.003013442",
+      "Median FoldChange_risk": 1.019218879,
+      "p_risk": "1.40336E-20",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_C",
+      "Median FoldChange_clinical": 1.141453551,
+      "p_clinical": "0.00301597",
+      "Median FoldChange_risk": 1.116922037,
+      "p_risk": "2.46117E-24",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Ile",
+      "Median FoldChange_clinical": 0.911441523,
+      "p_clinical": "0.003297776",
+      "Median FoldChange_risk": 0.936884663,
+      "p_risk": "2.17762E-09",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "S_VLDL_C",
+      "Median FoldChange_clinical": 1.082501919,
+      "p_clinical": "0.003334523",
+      "Median FoldChange_risk": 1.125331119,
+      "p_risk": "7.27001E-23",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_PL",
+      "Median FoldChange_clinical": 1.104189396,
+      "p_clinical": "0.003386598",
+      "Median FoldChange_risk": 1.128164199,
+      "p_risk": "1.37155E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Cholines",
+      "Median FoldChange_clinical": 1.054520179,
+      "p_clinical": "0.003495381",
+      "Median FoldChange_risk": 1.054823009,
+      "p_risk": "2.92514E-16",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_TG_pct",
+      "Median FoldChange_clinical": 0.916339428,
+      "p_clinical": "0.003517128",
+      "Median FoldChange_risk": 0.926032084,
+      "p_risk": "5.75659E-14",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "L_VLDL_TG_pct",
+      "Median FoldChange_clinical": 0.972176915,
+      "p_clinical": "0.003701672",
+      "Median FoldChange_risk": 0.978694935,
+      "p_risk": "1.3524E-15",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "S_LDL_P",
+      "Median FoldChange_clinical": 1.068480943,
+      "p_clinical": "0.004168677",
+      "Median FoldChange_risk": 1.086553323,
+      "p_risk": "3.97521E-22",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_PL",
+      "Median FoldChange_clinical": 1.10982701,
+      "p_clinical": "0.004254298",
+      "Median FoldChange_risk": 1.097465084,
+      "p_risk": "9.89623E-22",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "MUFA_pct",
+      "Median FoldChange_clinical": 0.973559776,
+      "p_clinical": "0.004411252",
+      "Median FoldChange_risk": 0.970903343,
+      "p_risk": "2.01503E-11",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "S_LDL_CE",
+      "Median FoldChange_clinical": 1.12415411,
+      "p_clinical": "0.004413039",
+      "Median FoldChange_risk": 1.094166241,
+      "p_risk": "1.30536E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_CE_pct",
+      "Median FoldChange_clinical": 1.047861639,
+      "p_clinical": "0.004454305",
+      "Median FoldChange_risk": 1.043180811,
+      "p_risk": "4.58813E-11",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "VLDL_C",
+      "Median FoldChange_clinical": 1.095883534,
+      "p_clinical": "0.004754367",
+      "Median FoldChange_risk": 1.121143678,
+      "p_risk": "1.20067E-19",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_L",
+      "Median FoldChange_clinical": 1.110512591,
+      "p_clinical": "0.004828147",
+      "Median FoldChange_risk": 1.103244925,
+      "p_risk": "5.63912E-22",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_HDL_FC_pct",
+      "Median FoldChange_clinical": 1.02969524,
+      "p_clinical": "0.004860547",
+      "Median FoldChange_risk": 1.025151061,
+      "p_risk": "4.49595E-18",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Leu",
+      "Median FoldChange_clinical": 0.955523801,
+      "p_clinical": "0.004986799",
+      "Median FoldChange_risk": 0.948783162,
+      "p_risk": "3.18402E-09",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "L_HDL_L",
+      "Median FoldChange_clinical": 1.14118821,
+      "p_clinical": "0.005198297",
+      "Median FoldChange_risk": 1.110945173,
+      "p_risk": "1.4672E-11",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_CE",
+      "Median FoldChange_clinical": 1.08407593,
+      "p_clinical": "0.006007806",
+      "Median FoldChange_risk": 1.120934256,
+      "p_risk": "2.06202E-20",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_CE",
+      "Median FoldChange_clinical": 1.127417608,
+      "p_clinical": "0.007327455",
+      "Median FoldChange_risk": 1.113525845,
+      "p_risk": "4.22278E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XXL_VLDL_CE_pct",
+      "Median FoldChange_clinical": 1.110350794,
+      "p_clinical": "0.007397374",
+      "Median FoldChange_risk": 1.061001918,
+      "p_risk": "9.9491E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_L",
+      "Median FoldChange_clinical": 1.091126999,
+      "p_clinical": "0.007614635",
+      "Median FoldChange_risk": 1.089728129,
+      "p_risk": "5.36092E-21",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Total_P",
+      "Median FoldChange_clinical": 1.04810705,
+      "p_clinical": "0.00865054",
+      "Median FoldChange_risk": 1.047828823,
+      "p_risk": "6.37554E-15",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Ala",
+      "Median FoldChange_clinical": 0.951518546,
+      "p_clinical": "0.008732762",
+      "Median FoldChange_risk": 0.945186388,
+      "p_risk": "8.83049E-11",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "XL_HDL_TG_pct",
+      "Median FoldChange_clinical": 0.86049348,
+      "p_clinical": "0.009193542",
+      "Median FoldChange_risk": 0.90323898,
+      "p_risk": "1.67798E-06",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "HDL_FC",
+      "Median FoldChange_clinical": 1.066286705,
+      "p_clinical": "0.009592974",
+      "Median FoldChange_risk": 1.059267831,
+      "p_risk": "2.06082E-13",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "GlycA",
+      "Median FoldChange_clinical": 0.957230333,
+      "p_clinical": "0.010249059",
+      "Median FoldChange_risk": 0.972237366,
+      "p_risk": "1.60307E-09",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "Phosphatidylc",
+      "Median FoldChange_clinical": 1.054177998,
+      "p_clinical": "0.010529243",
+      "Median FoldChange_risk": 1.053829608,
+      "p_risk": "3.34306E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_PL",
+      "Median FoldChange_clinical": 1.121567121,
+      "p_clinical": "0.011040746",
+      "Median FoldChange_risk": 1.134642286,
+      "p_risk": "2.11426E-19",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "Phosphoglyc",
+      "Median FoldChange_clinical": 1.062072619,
+      "p_clinical": "0.011101949",
+      "Median FoldChange_risk": 1.05109847,
+      "p_risk": "4.79594E-12",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "HDL_size",
+      "Median FoldChange_clinical": 1.003842955,
+      "p_clinical": "0.011383199",
+      "Median FoldChange_risk": 1.003045199,
+      "p_risk": "1.58968E-08",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XS_VLDL_PL_pct",
+      "Median FoldChange_clinical": 0.993272417,
+      "p_clinical": "0.011510683",
+      "Median FoldChange_risk": 0.989995832,
+      "p_risk": "4.62588E-17",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "HDL_C",
+      "Median FoldChange_clinical": 1.057717131,
+      "p_clinical": "0.012589254",
+      "Median FoldChange_risk": 1.060885522,
+      "p_risk": "5.7215E-13",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "HDL_CE",
+      "Median FoldChange_clinical": 1.047907823,
+      "p_clinical": "0.015428957",
+      "Median FoldChange_risk": 1.064517696,
+      "p_risk": "2.63313E-12",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_PL",
+      "Median FoldChange_clinical": 1.067606791,
+      "p_clinical": "0.016299854",
+      "Median FoldChange_risk": 1.080992598,
+      "p_risk": "1.88073E-19",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_VLDL_P",
+      "Median FoldChange_clinical": 1.080342352,
+      "p_clinical": "0.016680826",
+      "Median FoldChange_risk": 1.118521301,
+      "p_risk": "1.0607E-17",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_PL",
+      "Median FoldChange_clinical": 1.088999547,
+      "p_clinical": "0.018039838",
+      "Median FoldChange_risk": 1.097184611,
+      "p_risk": "4.52426E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XL_HDL_FC_pct",
+      "Median FoldChange_clinical": 0.970956345,
+      "p_clinical": "0.02026703",
+      "Median FoldChange_risk": 0.970396298,
+      "p_risk": "1.35166E-06",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "Omega_6",
+      "Median FoldChange_clinical": 1.030232157,
+      "p_clinical": "0.022641004",
+      "Median FoldChange_risk": 1.041778774,
+      "p_risk": "1.57423E-12",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_VLDL_PL",
+      "Median FoldChange_clinical": 1.071649613,
+      "p_clinical": "0.023210948",
+      "Median FoldChange_risk": 1.094372363,
+      "p_risk": "8.97246E-17",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_LDL_FC_pct",
+      "Median FoldChange_clinical": 1.027577872,
+      "p_clinical": "0.025529162",
+      "Median FoldChange_risk": 1.018179809,
+      "p_risk": "3.14598E-07",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "HDL_P",
+      "Median FoldChange_clinical": 1.047276391,
+      "p_clinical": "0.026955341",
+      "Median FoldChange_risk": 1.044484181,
+      "p_risk": "5.79718E-11",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "S_LDL_CE_pct",
+      "Median FoldChange_clinical": 1.010636198,
+      "p_clinical": "0.027439749",
+      "Median FoldChange_risk": 1.0095368,
+      "p_risk": "2.72037E-08",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "XXL_VLDL_C_pct",
+      "Median FoldChange_clinical": 1.070349862,
+      "p_clinical": "0.028515133",
+      "Median FoldChange_risk": 1.04546806,
+      "p_risk": "3.77266E-07",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LA",
+      "Median FoldChange_clinical": 1.033278207,
+      "p_clinical": "0.029784707",
+      "Median FoldChange_risk": 1.049773136,
+      "p_risk": "1.81442E-11",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "HDL_L",
+      "Median FoldChange_clinical": 1.037354909,
+      "p_clinical": "0.031203407",
+      "Median FoldChange_risk": 1.045747879,
+      "p_risk": "1.51332E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "TG_by_PG",
+      "Median FoldChange_clinical": 0.919382578,
+      "p_clinical": "0.032602752",
+      "Median FoldChange_risk": 0.947021697,
+      "p_risk": "4.25625E-05",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "PUFA",
+      "Median FoldChange_clinical": 1.030921096,
+      "p_clinical": "0.033119931",
+      "Median FoldChange_risk": 1.051026841,
+      "p_risk": "1.87192E-14",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "VLDL_size",
+      "Median FoldChange_clinical": 0.992631365,
+      "p_clinical": "0.035880594",
+      "Median FoldChange_risk": 0.994521521,
+      "p_risk": "0.000382301",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "ApoA1",
+      "Median FoldChange_clinical": 1.024276236,
+      "p_clinical": "0.036538029",
+      "Median FoldChange_risk": 1.038636277,
+      "p_risk": "3.30428E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "LDL_size",
+      "Median FoldChange_clinical": 1.000418831,
+      "p_clinical": "0.038385862",
+      "Median FoldChange_risk": 1.000795978,
+      "p_risk": "2.87422E-08",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "L_HDL_TG_pct",
+      "Median FoldChange_clinical": 0.905026597,
+      "p_clinical": "0.040537486",
+      "Median FoldChange_risk": 0.929353277,
+      "p_risk": "5.02472E-06",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "M_HDL_FC",
+      "Median FoldChange_clinical": 1.04749581,
+      "p_clinical": "0.04169568",
+      "Median FoldChange_risk": 1.061693068,
+      "p_risk": "9.40421E-09",
+      "direction": "up"
+    },
+    {
+      "Metabolite": "M_HDL_PL_pct",
+      "Median FoldChange_clinical": 0.993071208,
+      "p_clinical": "0.044060099",
+      "Median FoldChange_risk": 0.99397076,
+      "p_risk": "2.23829E-08",
+      "direction": "down"
+    },
+    {
+      "Metabolite": "PUFA_by_MUFA",
+      "Median FoldChange_clinical": 1.037092638,
+      "p_clinical": "0.045261066",
+      "Median FoldChange_risk": 1.046400914,
+      "p_risk": "8.93767E-08",
+      "direction": "up"
+    }
+  ],
+  "validated_priority_serum_proteins": [
+    "PLTP",
+    "CRTAC1",
+    "ITGAV"
+  ]
+}

@@ -1,12 +1,12 @@
 """
-Build a harmonised NHANES 1999-March 2020 research cohort for DiaPan.
+Build a harmonised NHANES 1999-March 2020 research cohort for MetaboGuard.
 
 Design decisions
 ----------------
 1. Use non-overlapping survey periods: 1999-2016 biennial cycles plus the
    combined 2017-March 2020 pre-pandemic release. Do not also include the
    standalone 2017-2018 J cycle because those participants are contained in P.
-2. Preserve the existing DiaPan column contract (for example GHB_LBXGH) while
+2. Preserve the existing MetaboGuard column contract (for example GHB_LBXGH) while
    adding survey-cycle provenance and derived features.
 3. Treat repeated NHANES cycles as repeated cross-sections, not longitudinal
    patient follow-up. "Trajectory" features below are cohort/age/cycle proxies.
@@ -15,9 +15,9 @@ Design decisions
 
 Outputs
 -------
-- data/nhanes_multicycle.csv
-- api/nhanes_data/nhanes_multicycle.csv
-- data/nhanes_multicycle_build_report.json
+- data/nhanes_multicycle_v2.csv
+- api/nhanes_data/nhanes_multicycle_v2.csv
+- data/nhanes_multicycle_v2_build_report.json
 """
 
 from __future__ import annotations
@@ -34,7 +34,9 @@ import pandas as pd
 
 
 BASE_URL = "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/{start}/DataFiles/{filename}"
-PANCREAS_MCQ_CODE = 39
+# Official NHANES MCQ230 coding: 29 = Pancreas (pancreatic); 39 = Other.
+# https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2015/DataFiles/MCQ_I.htm
+PANCREAS_MCQ_CODE = 29
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,10 @@ COMPONENTS = {
     "TCHOL": {"required": False},
     "HSCRP": {"required": False},
     "WHQ": {"required": False},
+    "SMQ": {"required": False},
+    "ALQ": {"required": False},
+    "CBC": {"required": False},
+    "BIOPRO": {"required": False},
 }
 
 
@@ -97,7 +103,8 @@ KEEP = {
     "BMX": ["SEQN", "BMXWT", "BMXBMI", "BMXWAIST"],
     "DIQ": ["SEQN", "DIQ010", "DID040", "DIQ050", "DIQ160", "DIQ170",
             "DIQ172", "DIQ180"],
-    "MCQ": ["SEQN", "MCQ220", "MCQ230A", "MCQ230B", "MCQ230C", "MCQ230D"],
+    "MCQ": ["SEQN", "MCQ220", "MCQ230A", "MCQ230B", "MCQ230C", "MCQ230D",
+            "MCQ240T"],
     "GHB": ["SEQN", "LBXGH"],
     "GLU": ["SEQN", "LBXGLU", "LBXIN", "LBDINSI"],
     "INS": ["SEQN", "LBXIN", "LBDINSI"],
@@ -107,6 +114,11 @@ KEEP = {
     "TCHOL": ["SEQN", "LBXTC"],
     "HSCRP": ["SEQN", "LBXHSCRP"],
     "WHQ": ["SEQN", "WHD020", "WHD050", "WHD140"],
+    "SMQ": ["SEQN", "SMQ020", "SMQ040"],
+    "ALQ": ["SEQN", "ALQ100", "ALQ101", "ALQ110", "ALQ111", "ALQ130"],
+    "CBC": ["SEQN", "LBXHGB", "LBXPLTSI", "LBXIRF"],
+    "BIOPRO": ["SEQN", "LBXSATSI", "LBXSAPSI", "LBDSAPSI",
+               "LBXSCR", "LBDSCR", "LBDSCRSI"],
 }
 
 
@@ -122,6 +134,8 @@ def _candidate_filenames(cycle: Cycle, component: str) -> list[str]:
             "TRIGLY": ["LAB13.XPT"],
             "HDL": ["LAB13.XPT"],
             "TCHOL": ["LAB13.XPT"],
+            "CBC": ["LAB25.XPT"],
+            "BIOPRO": ["LAB18.XPT"],
         }
         if component in aliases:
             return aliases[component]
@@ -135,6 +149,8 @@ def _candidate_filenames(cycle: Cycle, component: str) -> list[str]:
             "TRIGLY": [f"L13_{suffix}.XPT"],
             "HDL": [f"L13_{suffix}.XPT"],
             "TCHOL": [f"L13_{suffix}.XPT"],
+            "CBC": [f"L25_{suffix}.XPT"],
+            "BIOPRO": [f"L40_{suffix}.XPT"],
         }
         if component in aliases:
             return aliases[component]
@@ -198,11 +214,26 @@ def _safe_numeric(frame: pd.DataFrame, column: str) -> pd.Series:
 def _derive(frame: pd.DataFrame) -> pd.DataFrame:
     out = frame.copy()
     # In 2005-2012 insulin was bundled in the GLU file. Normalize back to the
-    # existing DiaPan name so one model feature works across all cycles.
+        # existing MetaboGuard name so one model feature works across all cycles.
     if "INS_LBXIN" not in out.columns and "GLU_LBXIN" in out.columns:
         out["INS_LBXIN"] = out["GLU_LBXIN"]
     elif "GLU_LBXIN" in out.columns:
         out["INS_LBXIN"] = out["INS_LBXIN"].fillna(out["GLU_LBXIN"])
+    # Normalize legacy 2001-2002 biochemistry names to the modern MetaboGuard schema.
+    if "BIOPRO_LBDSAPSI" in out.columns:
+        if "BIOPRO_LBXSAPSI" not in out.columns:
+            out["BIOPRO_LBXSAPSI"] = out["BIOPRO_LBDSAPSI"]
+        else:
+            out["BIOPRO_LBXSAPSI"] = out["BIOPRO_LBXSAPSI"].fillna(
+                out["BIOPRO_LBDSAPSI"]
+            )
+    if "BIOPRO_LBDSCR" in out.columns:
+        if "BIOPRO_LBXSCR" not in out.columns:
+            out["BIOPRO_LBXSCR"] = out["BIOPRO_LBDSCR"]
+        else:
+            out["BIOPRO_LBXSCR"] = out["BIOPRO_LBXSCR"].fillna(
+                out["BIOPRO_LBDSCR"]
+            )
     diabetes_raw = _safe_numeric(out, "DIQ_DIQ010")
     cancer_raw = _safe_numeric(out, "MCQ_MCQ220")
     out["Diabetes"] = _binary(diabetes_raw)
@@ -236,6 +267,55 @@ def _derive(frame: pd.DataFrame) -> pd.DataFrame:
         ),
     )
 
+    # Pancreatic cancer diagnosis age is available as MCQ240T through 2015-16.
+    # It was removed from the 2017-March 2020 public file.
+    pancreatic_diagnosis_age = _safe_numeric(out, "MCQ_MCQ240T").where(
+        lambda value: value.between(0, 120)
+    )
+    pancreatic_diagnosis_age = pancreatic_diagnosis_age.where(any_pancreas)
+    out["pancreatic_cancer_diagnosis_age"] = pancreatic_diagnosis_age
+    diagnosis_interval = pancreatic_diagnosis_age - onset
+    out["pancreatic_cancer_minus_diabetes_years"] = diagnosis_interval
+    out["same_year_diabetes_pancreatic_cancer"] = np.where(
+        diagnosis_interval.notna(), (diagnosis_interval == 0).astype(float), np.nan
+    )
+    nodm_pc = pd.Series(np.nan, index=out.index, dtype=float)
+    nodm_pc.loc[(out["Diabetes"] == 1) & (out["PancreaticCancer"] == 0)] = 0.0
+    has_timing = (out["Diabetes"] == 1) & (out["PancreaticCancer"] == 1) & diagnosis_interval.notna()
+    nodm_pc.loc[has_timing] = diagnosis_interval.loc[has_timing].between(0, 3).astype(float)
+    out["NODM_PancreaticCancer"] = nodm_pc
+
+    # Smoking: 0 never, 1 former, 2 current. SMQ040 codes 1/2 mean
+    # every day/some days and 3 means not at all.
+    ever_smoked = _safe_numeric(out, "SMQ_SMQ020")
+    smoke_now = _safe_numeric(out, "SMQ_SMQ040")
+    smoking_status = pd.Series(np.nan, index=out.index, dtype=float)
+    smoking_status.loc[ever_smoked == 2] = 0.0
+    smoking_status.loc[(ever_smoked == 1) & (smoke_now == 3)] = 1.0
+    smoking_status.loc[(ever_smoked == 1) & smoke_now.isin([1, 2])] = 2.0
+    out["smoking_status"] = smoking_status
+    out["current_smoker"] = np.where(
+        smoking_status.notna(), (smoking_status == 2).astype(float), np.nan
+    )
+
+    # Alcohol status: 0 never/very-low lifetime use, 1 ever but no quantified
+    # current use, 2 current quantified use. Question wording changed over time,
+    # so raw fields remain available for sensitivity analysis.
+    any_year = _safe_numeric(out, "ALQ_ALQ100").combine_first(
+        _safe_numeric(out, "ALQ_ALQ101")
+    )
+    lifetime = _safe_numeric(out, "ALQ_ALQ110").combine_first(
+        _safe_numeric(out, "ALQ_ALQ111")
+    )
+    drinks_day = _safe_numeric(out, "ALQ_ALQ130").where(lambda value: value < 100)
+    alcohol_status = pd.Series(np.nan, index=out.index, dtype=float)
+    alcohol_status.loc[(any_year == 2) & (lifetime == 2)] = 0.0
+    alcohol_status.loc[lifetime == 2] = 0.0
+    alcohol_status.loc[(any_year == 1) | (lifetime == 1)] = 1.0
+    alcohol_status.loc[drinks_day > 0] = 2.0
+    out["alcohol_status"] = alcohol_status
+    out["average_drinks_per_day"] = drinks_day
+
     glucose = _safe_numeric(out, "GLU_LBXGLU")
     insulin = _safe_numeric(out, "INS_LBXIN")
     hba1c = _safe_numeric(out, "GHB_LBXGH")
@@ -244,6 +324,8 @@ def _derive(frame: pd.DataFrame) -> pd.DataFrame:
     out["fasting_hyperglycemia"] = np.where(
         glucose.notna(), (glucose >= 126).astype(float), np.nan
     )
+    out["hba1c_reciprocal_100"] = np.where(hba1c > 0, 100.0 / hba1c, np.nan)
+    out["hba1c_squared"] = hba1c ** 2
 
     current_weight = _safe_numeric(out, "WHQ_WHD020").where(lambda x: x < 700)
     prior_weight = _safe_numeric(out, "WHQ_WHD050").where(lambda x: x < 700)
@@ -341,16 +423,16 @@ def build_multicycle(output_root: Path | None = None) -> tuple[Path, Path, Path]
     pooled = _derive(pooled)
     pooled["global_participant_id"] = pooled["survey_cycle"].astype(str) + ":" + pooled["SEQN"].astype(str)
 
-    data_path = project_root / "data" / "nhanes_multicycle.csv"
-    api_path = project_root / "api" / "nhanes_data" / "nhanes_multicycle.csv"
-    report_path = project_root / "data" / "nhanes_multicycle_build_report.json"
+    data_path = project_root / "data" / "nhanes_multicycle_v2.csv"
+    api_path = project_root / "api" / "nhanes_data" / "nhanes_multicycle_v2.csv"
+    report_path = project_root / "data" / "nhanes_multicycle_v2_build_report.json"
     for path in (data_path, api_path, report_path):
         path.parent.mkdir(parents=True, exist_ok=True)
     pooled.to_csv(data_path, index=False)
     pooled.to_csv(api_path, index=False)
 
     target_summary = {}
-    for target in ("Diabetes", "Cancer", "PancreaticCancer"):
+    for target in ("Diabetes", "Cancer", "PancreaticCancer", "NODM_PancreaticCancer"):
         values = pd.to_numeric(pooled[target], errors="coerce")
         target_summary[target] = {
             "labelled": int(values.notna().sum()),

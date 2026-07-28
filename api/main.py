@@ -10,13 +10,14 @@ from pydantic import BaseModel
 from biomarker import execute_biomarker_discovery
 from engine import CausalExecutionError, execute_pipeline
 from predictive import execute_predictive_baseline
+from self_supervised import dataset_capabilities, score_records
 from pathlib import Path
 from fetch_nhanes import ensure_nhanes_dataset
 from fetch_tcga import ensure_tcga_cdr_dataset
 import pandas as pd
 
 app = FastAPI(
-    title="DiaPan API",
+    title="MetaboGuard API",
     description=(
         "Metabolic risk-stratification research API for diabetes and "
         "pancreatic cancer. Developed within the KERI department."
@@ -32,19 +33,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DEPRECATED_DATASETS = {
+    "nhanes_merged.csv": (
+        "Deprecated: pre-Priority-A schema and incorrect pancreatic code. "
+        "Use nhanes_merged_v2.csv or nhanes_multicycle_v2.csv."
+    ),
+    "nhanes_multicycle.csv": (
+        "Deprecated: this file used MCQ230 code 39 ('Other') as pancreatic "
+        "cancer. Use nhanes_multicycle_v2.csv, which uses the official code 29."
+    )
+}
+
 class AnalysisRequest(BaseModel):
-    dataset: str = "nhanes_merged.csv"
+    dataset: str = "nhanes_multicycle_v2.csv"
     treatment: str = "Diabetes"
     outcome: str = "Cancer"
     allow_fallback: bool = True
 
 
 class DatasetRequest(BaseModel):
-    dataset: str = "nhanes_merged.csv"
+    dataset: str = "nhanes_multicycle_v2.csv"
 
 
 class BiomarkerRequest(BaseModel):
-    dataset: str = "nhanes_merged.csv"
+    dataset: str = "nhanes_multicycle_v2.csv"
     patient_record: dict[str, object] | None = None
     top_k: int = 8
     force_retrain: bool = False
@@ -52,12 +64,23 @@ class BiomarkerRequest(BaseModel):
     # NHANES also supports 'PancreaticCancer'. TCGA also supports 'Progression'.
     target: str = "Cancer"
     # Optional cohort filter, e.g. 'diabetics_only' for pancreatic risk
-    # stratification within diabetic patients (per the DiaPan brief).
+    # stratification within diabetic patients (per the MetaboGuard brief).
     cohort_filter: str | None = None
+
+
+class PreventionScoreRequest(BaseModel):
+    patient_record: dict[str, object]
+    artifact: str = "nhanes_multicycle_v2"
+
+
+class PreventionCapabilitiesRequest(BaseModel):
+    dataset: str = "nhanes_multicycle_v2.csv"
 
 
 def resolve_dataset_path(dataset_name: str) -> Path | None:
     """Resolve dataset file across common project locations."""
+    if Path(dataset_name).name in DEPRECATED_DATASETS:
+        return None
     api_dir = Path(__file__).resolve().parent
     project_root = api_dir.parent
 
@@ -73,7 +96,7 @@ def resolve_dataset_path(dataset_name: str) -> Path | None:
             return path
 
     dataset_leaf = Path(dataset_name).name
-    if dataset_leaf == "nhanes_merged.csv":
+    if dataset_leaf == "nhanes_merged_v2.csv":
         ensure_nhanes_dataset()
     elif dataset_leaf == "tcga_cdr.csv":
         ensure_tcga_cdr_dataset()
@@ -99,6 +122,8 @@ def list_available_datasets() -> list[dict[str, str]]:
             continue
 
         for csv_path in dataset_dir.glob("*.csv"):
+            if csv_path.name in DEPRECATED_DATASETS:
+                continue
             dataset_paths.setdefault(csv_path.name, csv_path)
 
     # Ensure both first-party datasets are materialized so they show up in the
@@ -114,6 +139,8 @@ def list_available_datasets() -> list[dict[str, str]]:
             continue
 
         for csv_path in dataset_dir.glob("*.csv"):
+            if csv_path.name in DEPRECATED_DATASETS:
+                continue
             dataset_paths.setdefault(csv_path.name, csv_path)
 
     return [
@@ -248,3 +275,46 @@ async def biomarker_discovery(request: BiomarkerRequest):
         raise HTTPException(status_code=422, detail=str(error))
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
+
+
+@app.post("/api/v1/prevention-capabilities")
+async def prevention_capabilities(request: PreventionCapabilitiesRequest):
+    file_path = resolve_dataset_path(request.dataset)
+    if file_path is None:
+        raise HTTPException(status_code=404, detail="Dataset not found.")
+    frame = pd.read_csv(file_path, low_memory=False)
+    return {
+        "project": "MetaboGuard",
+        "intended_use": "Preventive research and clinician-reviewed early warning.",
+        "not_intended_for": "Diagnosis, treatment or patient reassurance.",
+        "capabilities": dataset_capabilities(frame),
+    }
+
+
+@app.post("/api/v1/prevention-score")
+async def prevention_score(request: PreventionScoreRequest):
+    project_root = Path(__file__).resolve().parent.parent
+    artifact = (
+        project_root
+        / "model_artifacts"
+        / "metaboguard_ssl"
+        / request.artifact
+    )
+    if not (artifact / "metadata.json").exists():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Self-supervised artifact is not trained. Run "
+                "train_self_supervised.py first. No diagnostic fallback is used."
+            ),
+        )
+    result = score_records(pd.DataFrame([request.patient_record]), artifact)[0]
+    return {
+        "project": "MetaboGuard",
+        "output_type": "metabolic_deviation_warning",
+        "score": result,
+        "clinical_warning": (
+            "Research-only signal for clinician review. This does not diagnose "
+            "or estimate a validated future disease probability."
+        ),
+    }
