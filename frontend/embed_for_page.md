@@ -1,6 +1,6 @@
 # Embed KERI Dashboard Into keri.cerebrallab.org (GitHub Pages)
 
-This guide makes the React dashboard embeddable inside your existing website.
+This guide keeps one GitHub Pages site while still letting the React dashboard be developed and built separately.
 
 ## 1) Install frontend dependencies
 
@@ -20,25 +20,21 @@ export REACT_APP_API_URL=https://your-api-domain.example
 
 Use a real public API URL reachable from browsers.
 
-## 3) Build for `/dashboard` path
+## 3) Build for `/dashboard` path and sync into org site
 
 ```bash
 cd frontend
-npm run build:pages
+npm run publish:org-site
 ```
 
-This produces a static build with asset paths rooted at `/dashboard`.
+This does two things:
 
-## 4) Publish build to GitHub Pages
+- Builds the React app with asset paths rooted at `/dashboard`.
+- Copies the build output into `Org-Site/Keri-Project/dashboard/`.
 
-If this frontend repo is the one connected to Pages:
+## 4) Publish only the org site repository to GitHub Pages
 
-```bash
-cd frontend
-npm run deploy
-```
-
-If your website is in a different repo, copy the generated `frontend/build` contents to the `dashboard/` folder of the website repo and publish that repo.
+Commit and push changes from `Org-Site/Keri-Project` (including the updated `dashboard/` folder). Keep GitHub Pages pointed at the org site repo only.
 
 ## 5) Add iframe to website page
 
@@ -50,7 +46,7 @@ Use this HTML snippet in the site where you want the dashboard to appear:
   <p>Interactive causal and biomarker analysis interface.</p>
 
   <iframe
-    src="https://keri.cerebrallab.org/dashboard/"
+    src="/dashboard/"
     title="KERI Dashboard"
     loading="lazy"
     referrerpolicy="strict-origin-when-cross-origin"

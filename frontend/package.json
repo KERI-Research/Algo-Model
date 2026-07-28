@@ -6,6 +6,9 @@
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
+		"build:pages": "PUBLIC_URL=/dashboard react-scripts build",
+		"sync:org-site": "rm -rf ../Org-Site/Keri-Project/dashboard && mkdir -p ../Org-Site/Keri-Project/dashboard && cp -R build/. ../Org-Site/Keri-Project/dashboard/",
+		"publish:org-site": "npm run build:pages && npm run sync:org-site",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject"
 	},
