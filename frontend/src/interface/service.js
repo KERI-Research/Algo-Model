@@ -186,3 +186,46 @@ export const fetchPreventionScore = async (
 	}
 	return await response.json();
 };
+
+/**
+ * Research surfaces. These return data observations, model associations and
+ * published evidence. None of them returns a diagnosis, a future-risk probability
+ * or a cancer site.
+ */
+
+export const fetchDataReliability = async (
+	dataset = "nhanes_multicycle_v2.csv",
+) => {
+	const response = await fetch(`${API_BASE_URL}/api/v1/data-reliability`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ dataset }),
+	});
+	if (!response.ok) {
+		throw await buildApiError(response, "Data reliability report failed");
+	}
+	return await response.json();
+};
+
+export const fetchEvidenceCatalogue = async () => {
+	const response = await fetch(`${API_BASE_URL}/api/v1/evidence-catalogue`);
+	if (!response.ok) {
+		throw await buildApiError(response, "Evidence catalogue unavailable");
+	}
+	return await response.json();
+};
+
+export const fetchResearchClusters = async (
+	variant = "complete_cases",
+	run = "latest",
+) => {
+	const response = await fetch(`${API_BASE_URL}/api/v1/research-clusters`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ run, variant }),
+	});
+	if (!response.ok) {
+		throw await buildApiError(response, "Cluster summary unavailable");
+	}
+	return await response.json();
+};

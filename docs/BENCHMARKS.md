@@ -76,6 +76,14 @@ Under-trained models look worse, as expected: the 3-epoch smoke run reaches 0.29
 holdout MSE versus PCA's 0.0460. Reporting a smoke run as a result would be
 misleading, which is why smoke artifacts are labelled and cannot be promoted.
 
+## Unsupervised phenotype clustering (separate surface)
+
+Cluster benchmarking lives in [`CLUSTERING.md`](CLUSTERING.md): k-means, Gaussian mixtures
+and in-tree HDBSCAN, compared on silhouette, Davies-Bouldin, Calinski-Harabasz, bootstrap
+ARI, cluster-wise Jaccard, seed ARI, a column-permutation null, top-1% outlier sensitivity
+and five negative controls. It shares the same preprocessing, frozen encoder and persisted
+split indices as the baselines here. Current result: abstain (`no_stable_clusters`).
+
 ## Deferred comparisons (deliberately not run today)
 
 | Candidate | Status | Reason |
@@ -83,6 +91,9 @@ misleading, which is why smoke artifacts are labelled and cannot be promoted.
 | [TabPFN](https://github.com/PriorLabs/TabPFN) | deferred | supervised tabular foundation model; not a substitute for an unsupervised encoder, and supervised targets are gated |
 | VIME / SCARF / ReMasker-style objectives ([ReMasker](https://arxiv.org/abs/2309.13793)) | scaffold only | re-masking loss on observed values only is a plausible upgrade to the masking objective; not adopted today to keep the demonstrated pipeline stable |
 | [`inria-soda/tabular-benchmark`](https://huggingface.co/datasets/inria-soda/tabular-benchmark) | reference only | generic tabular algorithm benchmarking, not clinical validation |
+| Consensus clustering ([Monti et al.](https://link.springer.com/article/10.1023/A:1023949509487)) | deferred | natural next step once a non-artefact solution exists; the resample machinery is already in place |
+| [`YuchenShen/FoMo-0D`](https://huggingface.co/YuchenShen/FoMo-0D) | experimental, local only | zero-shot outlier-detection foundation model; would only ever run locally, with no hosted inference and no data upload |
+| [`yzhao062/pyod`](https://github.com/yzhao062/pyod) | not added | in-tree scikit-learn methods cover the current need without new dependencies |
 | [`gabrielaltay/tcga-tabular-open`](https://huggingface.co/datasets/gabrielaltay/tcga-tabular-open) | excluded from scoring | TCGA is post-diagnosis; denylisted for prevention work |
 | PyOD anomaly zoo | not added | native scikit-learn PCA + Isolation Forest is sufficient; avoid a new dependency before the meeting |
 

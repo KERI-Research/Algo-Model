@@ -216,6 +216,41 @@ Backends: `torch` when installed, otherwise a deterministic NumPy implementation
 the same architecture (`--backend numpy`). Default device is CPU for reproducibility;
 `--device mps` is available on the torch backend and is not bit-for-bit reproducible.
 
+## Research pass: reliability, phenotypes, evidence
+
+Following the 2026-08-04 supervisor feedback
+([decision record](docs/decisions/2026-08-04-professor-feedback.md)):
+
+```bash
+cd api
+
+# everything at once: integrity -> reliability -> evidence -> clustering x2 -> charts
+../.venv/bin/python run_research_pass.py            # ~1-3 min
+../.venv/bin/python run_research_pass.py --quick     # smaller grid, ~1 min
+
+# individual steps
+../.venv/bin/python data_reliability.py --output ../model_artifacts/reports/data_reliability.json
+../.venv/bin/python evidence_catalogue.py --strict
+../.venv/bin/python clustering.py --complete-cases-only
+```
+
+- **Data reliability** (`api/data_reliability.py`) grades every model input into
+  `usable_now`, `qualified_use`, `unavailable` or `prohibited`, and fails closed on unit,
+  leakage or schema violations. Current file: 17 usable now, 8 qualified use, 16 prohibited.
+- **Exploratory phenotype clustering** (`api/clustering.py`) is label-free in fit and
+  selection, gated on stability, a permuted null, outlier sensitivity and mandatory negative
+  controls, and **abstains** when nothing passes. Current result: `no_stable_clusters`
+  because the recoverable structure is dominated by survey cycle. See
+  [`docs/CLUSTERING.md`](docs/CLUSTERING.md).
+- **Evidence catalogue** (`data/evidence/biomarker_evidence.json`) records 20 rows with
+  mandatory provenance, plus the allowed/denied statement lists and the claims contract
+  (PRoBE, TRIPOD+AI, PROBAST+AI, STARD). See
+  [`docs/EVIDENCE_AND_CLAIMS.md`](docs/EVIDENCE_AND_CLAIMS.md).
+
+Clusters are patient/metabolic phenotypes — never a cancer diagnosis, subtype or site.
+Early detection is treated as a **panel and feature-interaction** problem; the claim that
+cancers have no specific biomarkers is false and is not made anywhere in this project.
+
 ## Benchmarks
 
 ```bash
@@ -279,6 +314,9 @@ not provide a diagnosis or future-risk claim.
 - [`docs/TRAINING.md`](docs/TRAINING.md) — training, configs, backends, reproducibility rules
 - [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — PCA / Isolation Forest baselines and deferred comparisons
 - [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) — safety card, gates, limitations, blocker
+- [`docs/CLUSTERING.md`](docs/CLUSTERING.md) — exploratory phenotypes, gates, negative controls, abstain
+- [`docs/EVIDENCE_AND_CLAIMS.md`](docs/EVIDENCE_AND_CLAIMS.md) — evidence provenance, allowed/denied statements, claims contract
+- [`docs/decisions/2026-08-04-professor-feedback.md`](docs/decisions/2026-08-04-professor-feedback.md) — dated decision record (recollected notes)
 - [`docs/PREVENTION_MODEL_SPEC.md`](docs/PREVENTION_MODEL_SPEC.md)
 - [`docs/RESULTS_GUIDE.md`](docs/RESULTS_GUIDE.md)
 - [`docs/COLUMN_DICTIONARY.md`](docs/COLUMN_DICTIONARY.md)

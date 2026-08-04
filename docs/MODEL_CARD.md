@@ -13,7 +13,7 @@ statement that applies to all current MetaboGuard outputs.
 | Owner | KERI department, research use |
 | Status | Research prototype, clinician-reviewed, **non-diagnostic** |
 | Reference artifact | `model_artifacts/metaboguard_ssl/meeting_2026-08-04/` (40/40 epochs, NumPy backend, CPU, not promoted) |
-| Backend caveat | PyTorch is not installed in `.venv`; torch-backend parity is unverified |
+| Backends | Both verified on the full run: torch 2.13.0 holdout MSE 0.04052, deterministic NumPy fallback 0.04286, capacity-matched PCA 0.04605 |
 | Data | NHANES 1999–March 2020 corrected pooled cross-section (`nhanes_multicycle_v2.csv`), TCGA-CDR for post-diagnosis context only |
 
 ## Intended use
@@ -77,6 +77,46 @@ so the contract cannot drift silently again.
 | Minimum association cases | Post-hoc probes are suppressed below 50 cases per class |
 | Artifact promotion | Smoke runs cannot be promoted to the artifact the API serves |
 
+## Added scope, 2026-08-04: exploratory phenotypes and evidence provenance
+
+| Surface | Status | Rule |
+| --- | --- | --- |
+| Exploratory phenotype clustering (`api/clustering.py`) | research only | Label-free in fit and selection; clusters are patient/metabolic phenotypes and may never be named after a cancer, cancer site or disease subtype; abstains when stability, permuted-null, outlier-sensitivity or negative-control gates fail. |
+| Data reliability report (`api/data_reliability.py`) | gate | Feature eligibility tiers `usable_now` / `qualified_use` / `unavailable` / `prohibited`; hard violations raise. |
+| Evidence catalogue (`data/evidence/biomarker_evidence.json`) | gate | Mandatory provenance; a row reaches a clinician view only with a real source and a graded evidence level; causal phrasing rejected without a causal design. |
+| Cancer-site assignment | **disabled** | Site comes from a self-reported multi-select item with 19 prevalent pancreatic cases. |
+
+### Statement classes required in clinician-facing surfaces
+
+`data observation`, `model association`, `published evidence`,
+`causal claim not established`. The API returns the class with every payload and the
+dashboard renders it as a visible badge.
+
+### Panel framing (scientific correction)
+
+Early detection is a **panel and feature-interaction** problem. The statement that no cancer
+has a specific biomarker is **false** and prohibited; the defensible statement is that no
+single marker is universally sufficient across cancers. Catalogued counter-examples: CA19-9
+(pancreas) and the GALAD components (HCC), both with their lead-time limits recorded. See
+[`EVIDENCE_AND_CLAIMS.md`](EVIDENCE_AND_CLAIMS.md).
+
+### Approved burden wording
+
+Global pancreatic cancer burden was 531,318 cases and 490,786 deaths in 2024
+([CA Cancer J Clin](https://pmc.ncbi.nlm.nih.gov/articles/PMC13343830/), DOI 10.3322/caac.70090);
+a demographic constant-rate projection gives 998,663 cases and 936,038 deaths in 2050
+([JAMA Netw Open](https://pmc.ncbi.nlm.nih.gov/articles/PMC11539015/), DOI 10.1001/jamanetworkopen.2024.43198).
+This is not a causal forecast.
+
+### Claims contract
+
+Detection-performance claims must satisfy PRoBE
+([design](https://edrn.cancer.gov/documents/158/PRoBEStudyDesign.pdf), DOI 10.1093/jnci/djn326),
+TRIPOD+AI ([BMJ](https://www.bmj.com/content/385/bmj-2023-078378), DOI 10.1136/bmj-2023-078378),
+PROBAST+AI ([site](https://www.probast.org/probast_ai)) and STARD
+([EQUATOR](https://www.equator-network.org/reporting-guidelines/stard/)). Current outputs meet
+none of the specimen or lead-time requirements and are therefore research only.
+
 ## Known limitations
 
 1. **Cross-sectional data.** One observation per participant, no follow-up. Nothing
@@ -95,7 +135,10 @@ so the contract cannot drift silently again.
    (see [`BENCHMARKS.md`](BENCHMARKS.md)).
 7. **Survey weights are not applied** to the representation model, so deviation
    percentiles describe the pooled sample, not the US population.
-8. **PyTorch is optional.** Today's verified runs used the deterministic NumPy
+8. **Clustering currently abstains.** On the pooled cross-section the dominant recoverable
+   structure is survey cycle, not metabolism, so no phenotype is reported. This is a data
+   limitation, not a tuning problem.
+9. **PyTorch is optional.** Today's verified runs used the deterministic NumPy
    backend; the torch backend must be re-verified after installing
    `requirements-ssl.txt`.
 

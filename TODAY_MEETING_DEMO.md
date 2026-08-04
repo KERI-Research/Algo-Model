@@ -60,6 +60,12 @@ cd /Volumes/Personal-Projects/KERI/api && ../.venv/bin/uvicorn main:app --port 8
 # POST /api/v1/prevention-future-risk  -> HTTP 409 with the exact blocker
 # POST /api/v1/prevention-score        -> deviation score + percentile + latent
 # POST /api/v1/data-integrity          -> full coding/leakage/gate report
+# POST /api/v1/data-reliability        -> eligibility tiers + drift + label confidence
+# GET  /api/v1/evidence-catalogue      -> clinician-ready evidence rows with provenance
+# POST /api/v1/research-clusters       -> phenotype summary or explicit abstain
+# POST /api/v1/data-reliability        -> eligibility tiers + drift + label confidence
+# GET  /api/v1/evidence-catalogue      -> clinician-ready evidence rows with provenance
+# POST /api/v1/research-clusters       -> phenotype summary or explicit abstain
 ```
 
 ---
@@ -168,11 +174,12 @@ rewrite.
 
 ## What remains for a full, publishable run
 
-1. `pip install -r requirements-ssl.txt`, then re-run `run_meeting_demo.py --full` to
-   verify torch-backend parity against the saved NumPy numbers.
-2. Promote a full run for API serving:
-   `python train_self_supervised.py --config configs/ssl_full.json --promote`.
-3. Longitudinal cohort acquisition, then clinician review of the deviation-flag workflow.
+1. Torch parity is done: PyTorch 2.13.0 is installed and the full run on `--backend torch`
+   reached holdout MSE 0.04052 (NumPy 0.04286). Promote whichever run you want served with
+   `train_self_supervised.py --config configs/ssl_full.json --promote`.
+2. Longitudinal cohort acquisition, then clinician review of the deviation-flag workflow.
+3. A non-artefact clustering solution: harmonise assay handling across cycles (or analyse a
+   single cycle) so survey cycle stops dominating, then repeat the phenotype pass.
 
 See [`docs/TRAINING.md`](docs/TRAINING.md), [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) and
 [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md).

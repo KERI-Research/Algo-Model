@@ -301,7 +301,7 @@ Each decision below is implemented in code and covered by a test.
 | Participant-grouped, seeded 70/15/15 splits with a disjointness assertion | NHANES rows are one-per-participant today, but the same code must stay correct when longitudinal data arrive. Split indices are persisted in `splits.npz`. |
 | Preprocessing and the deviation reference distribution fit on the training partition only | Standard leakage control ([scikit-learn common pitfalls](https://scikit-learn.org/stable/common_pitfalls.html)); a percentile only has meaning against a fixed reference. |
 | Post-hoc association probes moved to the holdout partition and gated at 50 cases per class | Cross-validated probes on all rows overlap the encoder's training rows and inflate apparent separation. |
-| Deterministic NumPy backend added alongside PyTorch | PyTorch is not installed in `.venv` and this laptop has no network access during preparation. A pure-NumPy Adam implementation of the same architecture keeps the demonstration reproducible; both backends export identical weight names. |
+| Deterministic NumPy backend added alongside PyTorch | PyTorch was unavailable when the pipeline was built, and a research pipeline should not be blocked by an optional accelerator dependency. Torch 2.13.0 has since been installed and both backends are verified on the full run. A pure-NumPy Adam implementation of the same architecture keeps the demonstration reproducible; both backends export identical weight names. |
 | CPU default, `mps` opt-in | Bit-for-bit reproducibility ([PyTorch randomness notes](https://pytorch.org/docs/stable/notes/randomness.html)). |
 | Run manifest (seed, backend, device, package versions, epochs, wall time, checkpoint policy) plus generated model card per artifact | An artifact must be auditable without reading the code that produced it. |
 | Timestamped run directories with an explicit `--promote` step, refused for smoke runs | Prevents an under-trained demonstration artifact from silently becoming the served model. |
@@ -309,6 +309,62 @@ Each decision below is implemented in code and covered by a test.
 | API renames the supervised output to `cross_sectional_association_probability`, keeps `cancer_risk_probability` only as a deprecated alias, and returns `is_future_risk_probability: false` | The old field name implies future risk that the data cannot support. |
 | `/api/v1/prevention-future-risk` returns HTTP 409 with the horizon gate report | Fail-closed is safer and more informative than an approximate answer. |
 | Masking objective left unchanged (no ReMasker-style observed-value-only loss yet) | A plausible upgrade ([ReMasker](https://arxiv.org/abs/2309.13793)) but not worth destabilising a demonstrable pipeline today; recorded as deferred work. |
+
+## 2026-08-04 supervisor feedback: methodological consequences
+
+Full decision record: [`decisions/2026-08-04-professor-feedback.md`](decisions/2026-08-04-professor-feedback.md)
+(recollected notes, not a transcript).
+
+### Early detection is a panel problem, not a single-marker problem
+
+The scientifically correct statement, now enforced by the evidence-catalogue validator, is
+that **no single marker is universally sufficient for early detection across cancers**, so
+panels and interacting features are required. The opposite claim — that cancers have no
+specific biomarkers — is **false** and is rejected in code: CA19-9 is catalogued with
+prediagnostic AUC 0.998 at diagnosis falling to 0.74 at 12 months and 0.55 at 5 years
+([BJS Open meta-analysis](https://academic.oup.com/bjsopen/article/8/3/zrae046/7700226)),
+and GALAD is catalogued as a validated five-component panel for high-risk cirrhosis
+surveillance ([Gastroenterology 2024](https://pubmed.ncbi.nlm.nih.gov/39293548/)). Both are
+counter-examples to a blanket denial and simultaneously demonstrate why single markers are
+not enough at useful lead times. Full details, including the allowed and denied statement
+lists and the PRoBE / TRIPOD+AI / PROBAST+AI / STARD claims contract, are in
+[`EVIDENCE_AND_CLAIMS.md`](EVIDENCE_AND_CLAIMS.md).
+
+### Terminology
+
+Causal phrasing is removed from anything describing our findings. Features are
+**risk-associated features**, **early-development signals** or **biological pathways**.
+`causal` survives only where it names the DoWhy estimation method, not a finding. The
+evidence loader rejects causal phrasing unless a row's `study_design` is a causal design.
+
+### Clustering replaces the unsupportable supervised framing
+
+| Decision | Reason |
+| --- | --- |
+| Clustering is exploratory phenotype discovery, never disease classification | There is no ground truth for a metabolic phenotype and no outcome to validate against in cross-sectional data. |
+| Labels are excluded from fit **and** from model selection | Otherwise "unsupervised" discovery becomes weak supervision through the selection step. |
+| Frozen encoder, artifact preprocessing, persisted split indices | Clustering must not silently refit or leak; the report states whether persisted splits were reused or recomputed. |
+| Mandatory negative controls (survey cycle, missingness burden, assay-availability burden, age, sex) | Pooled survey data reproduces measurement context first. Without controls, batch structure would be reported as biology. |
+| Bias-corrected Cramér's V; exact assay pattern is diagnostic only | The raw statistic inflates with category count, which would make every high-cardinality control look dominant. |
+| Cluster-wise bootstrap Jaccard alongside global ARI | A high global ARI can hide one dissolving cluster ([Hennig](https://www.homepages.ucl.ac.uk/~ucakche/papers/clusta.pdf)). |
+| Column-permutation null and top-1% outlier-sensitivity refit | Silhouette can be produced by outliers or by geometry that appears in structureless data of the same shape ([Rousseeuw 1987](https://wis.kuleuven.be/stat/robust/papers/publications-1987/rousseeuw-silhouettes-jcam-sciencedirectopenarchiv.pdf)). |
+| Explicit **abstain** status | Stability does not establish validity, and an unstable clustering must not be presented as a phenotype finding. |
+| HDBSCAN from scikit-learn's own tree, degrading to DBSCAN | Density-based coverage ([Campello et al.](https://link.springer.com/chapter/10.1007/978-3-642-37456-2_14)) without dependency churn. Consensus clustering ([Monti et al.](https://link.springer.com/article/10.1023/A:1023949509487)) is deferred, not claimed. |
+| Post-hoc label use only, suppressed below 50 cases per class | Labels may characterise a phenotype; they may never define it, and small-count prevalence is not reportable. |
+
+Current outcome on the corrected file: **`no_stable_clusters`** in both the all-adults and
+complete-case analyses, because the strongest recoverable structure is survey cycle. See
+[`CLUSTERING.md`](CLUSTERING.md).
+
+### Data reliability became a gate
+
+`api/data_reliability.py` produces a structured report (provenance, fingerprints, schema,
+unit/range plausibility, duplicates, coverage, missingness by split/cycle/subgroup,
+assay-cycle drift, label confidence, leakage, survey-weight applicability, capability state)
+and assigns every model input to `usable_now`, `qualified_use`, `unavailable` or
+`prohibited`. Hard violations raise, so no analysis can run on data that failed review.
+Plausibility windows are project-set review thresholds for catching encoding and sentinel
+errors, explicitly not clinical reference intervals.
 
 ## Remaining longitudinal blocker
 

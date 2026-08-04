@@ -118,6 +118,24 @@ time and the checkpoint policy — enough to reproduce or audit a run.
 6. **Fail-closed gates.** Invalidated datasets/targets raise; longitudinal heads
    raise unless a horizon has ≥50 events and ≥50 non-events.
 
+## 5b. Research pass (reliability, phenotypes, evidence)
+
+```bash
+cd api
+../.venv/bin/python data_reliability.py --output ../model_artifacts/reports/data_reliability.json
+../.venv/bin/python evidence_catalogue.py --strict
+../.venv/bin/python clustering.py --complete-cases-only
+../.venv/bin/python run_research_pass.py           # all of the above plus SVG charts
+```
+
+`run_research_pass.py` writes `model_artifacts/research_runs/research__<UTC>/` containing
+`data_integrity_report.json`, `data_reliability_report.json`,
+`evidence_catalogue_report.json`, `clustering_all_adults/`, `clustering_complete_cases/`,
+`charts/*.svg` with the CSV behind each chart, `research_pass.json` and
+`RESEARCH_SUMMARY.md`. Clustering consumes the **frozen** encoder artifact and never
+retrains it. See [`CLUSTERING.md`](CLUSTERING.md) and
+[`EVIDENCE_AND_CLAIMS.md`](EVIDENCE_AND_CLAIMS.md).
+
 ## 6. Expected console noise (all non-fatal)
 
 | Message | Source | Handling |

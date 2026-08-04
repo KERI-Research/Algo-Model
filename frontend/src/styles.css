@@ -581,3 +581,133 @@ th {
         letter-spacing: 0.2em;
     }
 }
+/* ---------------------------------------------------------------------------
+   Research panel: reliability, exploratory phenotypes, published evidence.
+   Colour choices are colour-blind safe and every badge carries a text label.
+   --------------------------------------------------------------------------- */
+
+.research-panel {
+	max-width: 1180px;
+	margin: 2rem auto 4rem;
+	padding: 0 1.5rem;
+	font-size: 0.95rem;
+}
+
+.research-header h2 {
+	margin-bottom: 0.35rem;
+}
+
+.research-warning {
+	background: #fff4e5;
+	border-left: 4px solid #d55e00;
+	padding: 0.65rem 0.9rem;
+	margin: 0.5rem 0 1rem;
+	color: #3d2b1f;
+}
+
+.research-controls {
+	display: flex;
+	gap: 0.6rem;
+	align-items: center;
+	flex-wrap: wrap;
+	margin-bottom: 1rem;
+}
+
+.research-card {
+	border: 1px solid #d9dee5;
+	border-radius: 8px;
+	padding: 1rem 1.1rem;
+	margin-bottom: 1.1rem;
+	background: #ffffff;
+}
+
+.research-card h3 {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+	margin-top: 0;
+}
+
+.evidence-badge {
+	font-size: 0.72rem;
+	font-weight: 600;
+	padding: 0.15rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid currentColor;
+	white-space: nowrap;
+}
+
+.evidence-data_observation {
+	color: #0072b2;
+}
+
+.evidence-model_association {
+	color: #7a5195;
+}
+
+.evidence-published_evidence {
+	color: #009e73;
+}
+
+.evidence-causal_claim_not_established {
+	color: #b00020;
+}
+
+.research-note {
+	color: #4a5561;
+	font-size: 0.88rem;
+}
+
+.research-messages {
+	background: #fdecec;
+	border-left: 4px solid #b00020;
+	padding: 0.6rem 1.2rem;
+	margin-bottom: 1rem;
+}
+
+.abstain-box {
+	border: 1px dashed #7a5195;
+	border-radius: 6px;
+	padding: 0.7rem 0.9rem;
+	background: #f8f5fb;
+}
+
+.tier-list,
+.cluster-list,
+.evidence-list {
+	padding-left: 1.2rem;
+}
+
+.tier-features {
+	color: #4a5561;
+}
+
+.evidence-limitation {
+	color: #6b4a00;
+}
+
+.candidate-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 0.8rem;
+	font-size: 0.85rem;
+}
+
+.candidate-table caption {
+	caption-side: top;
+	text-align: left;
+	color: #4a5561;
+	padding-bottom: 0.4rem;
+}
+
+.candidate-table th,
+.candidate-table td {
+	border: 1px solid #e2e6ec;
+	padding: 0.35rem 0.5rem;
+	text-align: left;
+}
+
+.candidate-table thead th {
+	background: #f2f5f8;
+}

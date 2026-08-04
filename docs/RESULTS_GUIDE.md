@@ -149,6 +149,51 @@ Deprecated: `cancer_risk_probability` is retained for one release as an alias of
 `cross_sectional_association_probability`. Do not quote it; the name implies future
 risk the data cannot support.
 
+## Reading the research-pass outputs (added 2026-08-04)
+
+### Feature eligibility tiers (data observation)
+
+| Tier | What it means for interpretation |
+| --- | --- |
+| `usable_now` | Present, plausible, ≥50% coverage among adults, no blocking drift or availability gap. |
+| `qualified_use` | Usable **with the stated caveat printed alongside any result**: low coverage, cycle availability gap, cycle-level drift, implausible-value burden, or a declared evidence gap. |
+| `unavailable` | Absent or effectively unmeasured. Any statement about it is unsupported. |
+| `prohibited` | Outcome label, label-derived column, or post-diagnosis TCGA context. Never an input. |
+
+Current file: 17 `usable_now`, 8 `qualified_use` (C-peptide, glucose, insulin, hs-CRP,
+triglycerides, LDL, HOMA-IR, race/ethnicity), 0 `unavailable`, 16 `prohibited`.
+
+### Cluster outputs (model association)
+
+| Output | What it is | What it is not |
+| --- | --- | --- |
+| `cluster_id` | A phenotype identifier such as `cluster_2` | A cancer type, cancer site, disease subtype or severity grade |
+| `prototype_median_profile` | Median raw feature values inside the phenotype | A patient, a reference range or a target |
+| `top_distinguishing_panel` | Features whose robust standardised difference from the reference is largest | Causes, or evidence that the panel detects disease |
+| `membership_confidence` | GMM posterior, or k-means relative margin | A probability of disease |
+| `posthoc_label_summary` | Prevalence of an **already-recorded** diagnosis per phenotype, suppressed below 50 cases | Future risk, incidence, or validation of the phenotype |
+| `status: no_stable_clusters` | A result: nothing passed the gates | A bug, or a reason to lower the thresholds |
+
+If the status is `no_stable_clusters`, the correct sentence is: *"No stable metabolic
+phenotype survived our stability and negative-control checks on this data."* Do not describe
+candidate solutions from the table as findings.
+
+### Negative controls
+
+A gating control above 0.30 means the clustering largely reproduces that nuisance variable.
+Age and sex associations are expected to be non-zero in metabolic data; only values above
+the threshold mark a solution as a data artefact. The exact assay-availability pattern is
+shown for transparency and never gates a decision.
+
+### Evidence rows (published evidence)
+
+Read three fields together before quoting any number: `stage_or_lead_time`,
+`validation_status` and `limitations`. A high AUC measured at diagnosis says nothing about
+early detection; the lead-time column is where the honest answer lives. Rows without a
+source URL or with an ungraded `evidence_grade` are research-only and must not reach a
+clinician-facing surface. See [`EVIDENCE_AND_CLAIMS.md`](EVIDENCE_AND_CLAIMS.md) for the
+allowed and denied statement lists.
+
 Gated off entirely: any 1/3/5-year horizon output. `/api/v1/prevention-future-risk`
 returns HTTP 409 with the event-count gate report, and
 `prevention-capabilities.longitudinal_heads_enabled` is `false`.

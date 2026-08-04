@@ -180,6 +180,46 @@ set is disjoint from it.
 | `Diabetes` | `DIQ010 == 1` | Prevalent, self-reported |
 | `diabetes_subtype` | `1` = research-only Type 1 proxy (young onset + insulin), `2` = Type 2 proxy, `0` = no diabetes | Proxy only: no autoantibodies, no approved genetics, no confirmatory C-peptide criteria |
 
+## Feature eligibility tiers (generated, 2026-08-04)
+
+`api/data_reliability.py` assigns every candidate column a tier. Regenerate with
+`python data_reliability.py --output ../model_artifacts/reports/data_reliability.json`.
+
+| Tier | Columns |
+| --- | --- |
+| `usable_now` | `DEMO_RIDAGEYR`, `DEMO_RIAGENDR`, `BMX_BMXBMI`, `BMX_BMXWAIST`, `GHB_LBXGH`, `TRIGLY_LBDLDL`*, `HDL_LBDHDD`, `TCHOL_LBXTC`, `CBC_LBXHGB`, `CBC_LBXPLTSI`, `BIOPRO_LBXSATSI`, `BIOPRO_LBXSAPSI`, `BIOPRO_LBXSCR`, `smoking_status`, `alcohol_status`, `average_drinks_per_day`, `weight_loss_1yr_lb`, `weight_loss_10yr_lb` (17 columns in the current file) |
+| `qualified_use` | `CPEP_LBXCPSI`, `GLU_LBXGLU`, `INS_LBXIN`, `HSCRP_LBXHSCRP`, `TRIGLY_LBXTR`, `TRIGLY_LBDLDL`, `homa_ir`, `DEMO_RIDRETH3` |
+| `unavailable` | none in the current file |
+| `prohibited` | all outcome labels, label-derived columns and every `tcga_*` column (16 columns) |
+
+\* tier membership is regenerated per dataset; the authoritative list is the JSON report.
+
+Reasons attached to the `qualified_use` columns in the current file:
+
+| Column | Caveat |
+| --- | --- |
+| `CPEP_LBXCPSI` | Fasting subsample; measured in a minority of cycles (cycle availability gap). |
+| `HSCRP_LBXHSCRP` | Cycle availability gap; catalogued evidence shows **no consistent association** with pancreatic cancer, so treat as a known-weak feature ([Bao et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC3495286/)). |
+| `GLU_LBXGLU`, `INS_LBXIN`, `homa_ir` | Fasting subsample: coverage below the 50% threshold. |
+| `TRIGLY_LBXTR`, `TRIGLY_LBDLDL` | Fasting subsample coverage, plus a declared lipid evidence gap in the catalogue. |
+| `DEMO_RIDRETH3` | Category definitions change across cycles; not comparable as a continuous level. |
+
+## Columns with catalogued published evidence
+
+Each mapping points at a row in `data/evidence/biomarker_evidence.json`; read the row's
+`stage_or_lead_time` and `limitations` before quoting anything.
+
+| Column | Evidence row | One-line takeaway |
+| --- | --- | --- |
+| `GHB_LBXGH` | `ev-hba1c-panc-epic` | Association strongest within 2 years of diabetes diagnosis. |
+| `CPEP_LBXCPSI` | `ev-cpeptide-panc-michaud` | Nonfasting C-peptide associated; fasting insulin was null. |
+| `homa_ir` | `ev-insulin-resistance-panc-toledo` | Review-level association, mortality-based attributable risk. |
+| `weight_loss_1yr_lb` | `ev-weightloss-panc-casecontrol`, `ev-recent-diabetes-weightloss-pdac-jamaoncol-2020` | Strong relative association; absolute 4-year incidence still 0.29%. |
+| `BMX_BMXBMI` | `ev-adiposity-panc-pooled`, `ev-excess-body-fatness-multisite-nejm-2016` | IARC sufficient evidence for risk; no early-detection use; weight-loss causality unestablished. |
+| `HSCRP_LBXHSCRP` | `ev-hscrp-panc-bao-null` | Explicit negative result. |
+| `CBC_LBXPLTSI` | `ev-thrombocytosis-multisite-bjgp-2017` | Non-specific multi-site risk marker; does not indicate site. |
+| `TRIGLY_LBXTR` | `ev-lipids-panc-gap` | Declared evidence gap: model it, do not claim it. |
+
 ## Identifiers, splits and capability columns
 
 | Column | Meaning |
