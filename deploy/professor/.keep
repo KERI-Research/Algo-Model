@@ -1,0 +1,2 @@
+Directory marker. Generated content (assets/, server/core/, vendored client modules)
+is produced by prepare_assets.py and is not tracked. See README.md.

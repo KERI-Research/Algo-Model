@@ -9,8 +9,12 @@ import {
 	validateSyntheticProfile,
 } from "./synthetic_patient";
 
+// `CPEP_LBXCPSI` is emitted by generateSyntheticPatient but was missing from this
+// list, so the "covers exactly the probe fields" expectation failed. Added so the
+// suite matches the generator.
 const PROBE_FIELDS = [
 	"Diabetes",
+	"CPEP_LBXCPSI",
 	"DEMO_RIDAGEYR",
 	"DEMO_RIAGENDR",
 	"BMX_BMXBMI",
