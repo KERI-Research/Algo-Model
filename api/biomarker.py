@@ -746,14 +746,24 @@ def load_biomarker_model(data_path: str, target: str = "Cancer", cohort_filter: 
 
 
 def _normalize_patient_record(record: dict[str, Any], artifact: dict[str, Any]) -> tuple[pd.DataFrame, dict[str, Any]]:
-    row = {feature: np.nan for feature in artifact["features"]}
+    expected_columns = {
+        *artifact["features"],
+        *artifact["required_fields"],
+        *artifact["optional_high_impact_fields"],
+    }
+    row = {feature: np.nan for feature in expected_columns}
     row.update(record)
     frame = pd.DataFrame([row])
     prepared = _prepare_dataframe(frame)
     features = artifact["features"]
 
-    missing_required = [field for field in artifact["required_fields"] if pd.isna(prepared.at[0, field])]
-    missing_optional = [field for field in artifact["optional_high_impact_fields"] if pd.isna(prepared.at[0, field])]
+    def _is_missing(field: str) -> bool:
+        if field not in prepared.columns:
+            return True
+        return bool(pd.isna(prepared.at[0, field]))
+
+    missing_required = [field for field in artifact["required_fields"] if _is_missing(field)]
+    missing_optional = [field for field in artifact["optional_high_impact_fields"] if _is_missing(field)]
 
     for feature, median in artifact["medians"].items():
         if feature in prepared.columns:

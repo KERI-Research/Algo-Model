@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+
 import {
 	fetchBiomarkerDiscovery,
 	fetchDatasetCatalog,
@@ -19,6 +20,10 @@ import {
 	fetchPreventionCapabilities,
 	fetchPredictiveBaseline,
 } from "./service";
+import {
+	SYNTHETIC_SAFETY_NOTE,
+	generateSyntheticPatient,
+} from "./synthetic_patient";
 
 const INITIAL_PATIENT_FORM = {
 	Diabetes: "",
@@ -30,6 +35,7 @@ const INITIAL_PATIENT_FORM = {
 	GHB_LBXGH: "",
 	GLU_LBXGLU: "",
 	INS_LBXIN: "",
+	CPEP_LBXCPSI: "",
 };
 
 const PATIENT_FIELD_ALIASES = {
@@ -47,12 +53,16 @@ const PATIENT_FIELD_ALIASES = {
 	glucose: "GLU_LBXGLU",
 	fasting_glucose: "GLU_LBXGLU",
 	insulin: "INS_LBXIN",
+	cpep: "CPEP_LBXCPSI",
+	c_peptide: "CPEP_LBXCPSI",
+	fasting_c_peptide: "CPEP_LBXCPSI",
 };
 
 const CausalDashboard = () => {
 	const [datasets, setDatasets] = useState([]);
-	const [selectedDataset, setSelectedDataset] =
-		useState("nhanes_multicycle_v2.csv");
+	const [selectedDataset, setSelectedDataset] = useState(
+		"nhanes_multicycle_v2.csv",
+	);
 	const [datasetPreview, setDatasetPreview] = useState(null);
 	const [directionResults, setDirectionResults] = useState(null);
 	const [loading, setLoading] = useState(false);
@@ -65,8 +75,10 @@ const CausalDashboard = () => {
 	const [biomarkerLoading, setBiomarkerLoading] = useState(false);
 	const [biomarkerError, setBiomarkerError] = useState(null);
 	const [patientForm, setPatientForm] = useState(INITIAL_PATIENT_FORM);
+	const [syntheticProfile, setSyntheticProfile] = useState(null);
 	const [uploadStatus, setUploadStatus] = useState(null);
-	const [preventionCapabilities, setPreventionCapabilities] = useState(null);
+	const [preventionCapabilities, setPreventionCapabilities] =
+		useState(null);
 
 	useEffect(() => {
 		const loadDatasets = async () => {
@@ -117,7 +129,6 @@ const CausalDashboard = () => {
 					);
 				setDatasetPreview(data);
 			} catch (previewRequestError) {
-				setDatasetPreview(null);
 				setPreviewError(previewRequestError.message);
 			} finally {
 				setPreviewLoading(false);
@@ -126,7 +137,6 @@ const CausalDashboard = () => {
 
 		loadPreview();
 	}, [selectedDataset]);
-
 	useEffect(() => {
 		const loadCapabilities = async () => {
 			if (!selectedDataset) {
@@ -290,6 +300,29 @@ const CausalDashboard = () => {
 			...current,
 			[field]: value,
 		}));
+		// Any manual edit means the form is no longer purely as-generated.
+		setSyntheticProfile((current) =>
+			current ? { ...current, edited: true } : current,
+		);
+	};
+
+	/**
+	 * Fill the probe inputs with a fabricated, internally coherent profile.
+	 * It never submits, never calls the scoring API, and leaves every field editable.
+	 */
+	const handleGenerateSyntheticPatient = () => {
+		const profile = generateSyntheticPatient();
+		setPatientForm((current) => ({
+			...current,
+			...profile.values,
+		}));
+		setSyntheticProfile({
+			archetype: profile.archetype,
+			populatedFields: profile.populatedFields.length,
+			omittedFields: profile.omittedFields,
+			generatedAt: new Date().toLocaleTimeString(),
+			edited: false,
+		});
 	};
 
 	const buildPatientRecord = () => {
@@ -501,40 +534,45 @@ const CausalDashboard = () => {
 					<p className="eyebrow">
 						MetaboGuard RESEARCH CONSOLE
 					</p>
-						<h1>
-							Preventive Metabolic
-							Early-Warning Research
-						</h1>
-						<p className="hero-copy">
-							Learn unlabelled metabolic
-							patterns, identify unusual
-							profiles, and test whether the
-							representation contains
-							cross-sectional cancer or
-							diabetes signal.
+					<h1>
+						Preventive Metabolic
+						Early-Warning Research
+					</h1>
+					<p className="hero-copy">
+						Learn unlabelled metabolic
+						patterns, identify unusual
+						profiles, and test whether the
+						representation contains
+						cross-sectional cancer or
+						diabetes signal.
+					</p>
+					<p className="alert alert-warning compact-alert">
+						Non-diagnostic research use
+						only. Longitudinal 1/3/5-year
+						risk heads are disabled until
+						the event-count capability gates
+						pass. Research-only clinician
+						review. Deviation scores do not
+						diagnose cancer or diabetes and
+						are not validated future-risk
+						probabilities.
+					</p>
+					{preventionCapabilities?.capabilities && (
+						<p className="alert compact-alert">
+							Dataset capability:{" "}
+							{
+								preventionCapabilities
+									.capabilities
+									.supported_output
+							}
+							.{" "}
+							{
+								preventionCapabilities
+									.capabilities
+									.warning
+							}
 						</p>
-						<p className="alert alert-warning compact-alert">
-							Non-diagnostic research use only. Longitudinal 1/3/5-year risk heads are disabled until the event-count capability gates pass. Research-only clinician review.
-							Deviation scores do not diagnose
-							cancer or diabetes and are not
-							validated future-risk
-							probabilities.
-						</p>
-						{preventionCapabilities?.capabilities && (
-							<p className="alert compact-alert">
-								Dataset capability:{" "}
-								{
-									preventionCapabilities
-										.capabilities
-										.supported_output
-								}
-								.{" "}
-								{
-									preventionCapabilities
-										.capabilities.warning
-								}
-							</p>
-						)}
+					)}
 				</section>
 
 				<section className="content-grid">
@@ -572,8 +610,8 @@ const CausalDashboard = () => {
 								>
 									{datasets.length ===
 									0 ? (
-											<option value="nhanes_multicycle_v2.csv">
-												nhanes_multicycle_v2.csv
+										<option value="nhanes_multicycle_v2.csv">
+											nhanes_multicycle_v2.csv
 										</option>
 									) : (
 										datasets.map(
@@ -881,6 +919,90 @@ const CausalDashboard = () => {
 									}
 								</p>
 							)}
+							<div className="synthetic-controls">
+								<button
+									type="button"
+									className="synthetic-button"
+									onClick={
+										handleGenerateSyntheticPatient
+									}
+									aria-describedby="synthetic-patient-note"
+									aria-label="Generate synthetic patient: fill every biomarker probe input with fabricated test values"
+								>
+									Generate
+									synthetic
+									patient
+								</button>
+								<p
+									id="synthetic-patient-note"
+									className="synthetic-note"
+								>
+									Fills
+									the
+									probe
+									inputs
+									below
+									with
+									fabricated
+									values
+									for
+									interface
+									testing.
+									It does
+									not run
+									the
+									model,
+									and
+									every
+									field
+									stays
+									editable.
+								</p>
+							</div>
+							{syntheticProfile && (
+								<p
+									className="synthetic-indicator"
+									role="status"
+									aria-live="polite"
+								>
+									<strong>
+										Synthetic
+										research
+										data
+									</strong>{" "}
+									&mdash;{" "}
+									{
+										syntheticProfile
+											.archetype
+											.label
+									}{" "}
+									generated
+									at{" "}
+									{
+										syntheticProfile.generatedAt
+									}
+									,{" "}
+									{
+										syntheticProfile.populatedFields
+									}{" "}
+									of 10
+									fields
+									populated
+									{syntheticProfile
+										.omittedFields
+										.length >
+									0
+										? ` (left blank: ${syntheticProfile.omittedFields.join(", ")})`
+										: ""}
+									{syntheticProfile.edited
+										? ", manually edited since generation"
+										: ""}
+									.{" "}
+									{
+										SYNTHETIC_SAFETY_NOTE
+									}
+								</p>
+							)}
 							<div className="patient-form-grid">
 								<label>
 									<span>
@@ -1091,6 +1213,28 @@ const CausalDashboard = () => {
 										) =>
 											handlePatientFieldChange(
 												"INS_LBXIN",
+												event
+													.target
+													.value,
+											)
+										}
+									/>
+								</label>
+								<label>
+									<span>
+										C-peptide
+									</span>
+									<input
+										type="number"
+										step="0.1"
+										value={
+											patientForm.CPEP_LBXCPSI
+										}
+										onChange={(
+											event,
+										) =>
+											handlePatientFieldChange(
+												"CPEP_LBXCPSI",
 												event
 													.target
 													.value,
@@ -1353,13 +1497,23 @@ const CausalDashboard = () => {
 											.cross_sectional_association_probability !==
 											undefined && (
 											<p className="ate-value biomarker-score">
-							<span className="section-label">
-								Cross-sectional association
-								with an already-recorded
-								diagnosis - not a
-								future-risk probability
-								and not a diagnosis
-							</span>
+												<span className="section-label">
+													Cross-sectional
+													association
+													with
+													an
+													already-recorded
+													diagnosis
+													-
+													not
+													a
+													future-risk
+													probability
+													and
+													not
+													a
+													diagnosis
+												</span>
 												{(
 													biomarkerResults
 														.patient_assessment

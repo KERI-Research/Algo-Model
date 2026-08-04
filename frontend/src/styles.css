@@ -711,3 +711,115 @@ th {
 .candidate-table thead th {
 	background: #f2f5f8;
 }
+/* ---------------------------------------------------------------------------
+   Synthetic patient generator (Biomarker Probe). The indicator never relies on
+   colour alone: it carries the words "Synthetic research data", a dashed border
+   and an explicit safety sentence.
+   --------------------------------------------------------------------------- */
+
+.synthetic-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 0.8rem 0 0.4rem;
+}
+
+.synthetic-button {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.45rem 0.9rem;
+	border: 1px solid #0072b2;
+	border-radius: 6px;
+	background: #ffffff;
+	color: #0b3c5d;
+	cursor: pointer;
+}
+
+.synthetic-button:hover {
+	background: #eaf4fb;
+}
+
+.synthetic-button:focus-visible {
+	outline: 3px solid #0072b2;
+	outline-offset: 2px;
+}
+
+.synthetic-note {
+	margin: 0;
+	flex: 1 1 18rem;
+	font-size: 0.82rem;
+	color: #4a5561;
+}
+
+.synthetic-indicator {
+	border: 2px dashed #7a5195;
+	border-radius: 6px;
+	background: #f8f5fb;
+	color: #2f2440;
+	padding: 0.55rem 0.8rem;
+	margin: 0.2rem 0 0.9rem;
+	font-size: 0.84rem;
+	line-height: 1.45;
+}
+
+.synthetic-indicator strong {
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+/* ---------------------------------------------------------------------------
+   Synthetic patient generator (Biomarker Probe). The indicator never relies on
+   colour alone: it carries the words "Synthetic research data", a dashed border
+   and an explicit safety sentence.
+   --------------------------------------------------------------------------- */
+
+.synthetic-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 0.8rem 0 0.4rem;
+}
+
+.synthetic-button {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.45rem 0.9rem;
+	border: 1px solid #0072b2;
+	border-radius: 6px;
+	background: #ffffff;
+	color: #0b3c5d;
+	cursor: pointer;
+}
+
+.synthetic-button:hover {
+	background: #eaf4fb;
+}
+
+.synthetic-button:focus-visible {
+	outline: 3px solid #0072b2;
+	outline-offset: 2px;
+}
+
+.synthetic-note {
+	margin: 0;
+	flex: 1 1 18rem;
+	font-size: 0.82rem;
+	color: #4a5561;
+}
+
+.synthetic-indicator {
+	border: 2px dashed #7a5195;
+	border-radius: 6px;
+	background: #f8f5fb;
+	color: #2f2440;
+	padding: 0.55rem 0.8rem;
+	margin: 0.2rem 0 0.9rem;
+	font-size: 0.84rem;
+	line-height: 1.45;
+}
+
+.synthetic-indicator strong {
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}

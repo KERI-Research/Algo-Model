@@ -52,6 +52,38 @@ cd /Volumes/Personal-Projects/KERI/api
 cat ../model_artifacts/metaboguard_ssl/meeting_2026-08-04/RUN_SUMMARY.md
 ```
 
+### Filling the Biomarker Probe during the demo
+
+In the Biomarker Probe panel, click **Generate synthetic patient**. It fills all nine probe
+inputs with fabricated, internally coherent values (waist follows BMI, glucose follows
+HbA1c, diabetes onset age stays below age) and shows a **Synthetic research data** banner
+naming the archetype used - `reference_range`, `metabolic_deviation`,
+`reported_diabetes_metabolic` or `sparse_but_valid`. Click again for a new profile, edit any
+field by hand, then press **Run Biomarker Model** yourself: the generator never submits and
+never calls the scoring API on its own.
+
+Say this alongside it: *"These values are fabricated for interface testing. They are not a
+patient and must not be interpreted clinically. The archetypes are metabolic measurement
+patterns, not diagnoses or risk categories, and no outcome label is ever generated."*
+
+Details and field ranges: [`frontend/README.md`](frontend/README.md).
+
+### Filling the Biomarker Probe during the demo
+
+In the Biomarker Probe panel, click **Generate synthetic patient**. It fills all nine probe
+inputs with fabricated, internally coherent values (waist follows BMI, glucose follows
+HbA1c, diabetes onset age stays below age) and shows a **Synthetic research data** banner
+naming the archetype used - `reference_range`, `metabolic_deviation`,
+`reported_diabetes_metabolic` or `sparse_but_valid`. Click again for a new profile, edit any
+field by hand, then press **Run Biomarker Model** yourself: the generator never submits and
+never calls the scoring API on its own.
+
+Say this alongside it: *"These values are fabricated for interface testing. They are not a
+patient and must not be interpreted clinically. The archetypes are metabolic measurement
+patterns, not diagnoses or risk categories, and no outcome label is ever generated."*
+
+Details and field ranges: [`frontend/README.md`](frontend/README.md).
+
 Optional API demonstration:
 
 ```bash

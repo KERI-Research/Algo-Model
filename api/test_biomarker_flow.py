@@ -13,6 +13,7 @@ from biomarker import (  # noqa: E402
     ALTERNATE_MODEL_NAME,
     MODEL_NAME,
     XGBClassifier,
+    _normalize_patient_record,
     execute_biomarker_discovery,
     train_biomarker_model,
 )
@@ -40,6 +41,23 @@ class InvalidatedInputTests(unittest.TestCase):
     def test_invalidated_target_is_refused(self) -> None:
         with self.assertRaises(ValueError):
             train_biomarker_model(str(DATASET_PATH), target="PancreaticCancer")
+
+    def test_normalize_patient_record_handles_optional_field_not_in_features(self) -> None:
+        artifact = {
+            "features": ["Diabetes"],
+            "required_fields": ["Diabetes"],
+            "optional_high_impact_fields": ["CPEP_LBXCPSI"],
+            "medians": {"Diabetes": 0.0},
+        }
+
+        patient_features, missingness = _normalize_patient_record(
+            {"Diabetes": 1},
+            artifact,
+        )
+
+        self.assertEqual(list(patient_features.columns), ["Diabetes"])
+        self.assertEqual(missingness["missing_required_fields"], [])
+        self.assertIn("CPEP_LBXCPSI", missingness["missing_optional_fields"])
 
 
 @unittest.skipUnless(artifacts_writable(), "artifact directory is not writable")
