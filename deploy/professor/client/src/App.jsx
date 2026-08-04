@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import DatasetAnalysis from "./components/DatasetAnalysis.jsx";
 import Evidence from "./components/Evidence.jsx";
+import HowItWorks from "./components/HowItWorks.jsx";
 import Login from "./components/Login.jsx";
 import Overview from "./components/Overview.jsx";
 import PatientProbe from "./components/PatientProbe.jsx";
@@ -48,6 +49,21 @@ const SECTIONS = [
 		title: "Evidence and methods",
 		lede: "Source-linked biomarker catalogue, reporting standards, and claim boundaries.",
 		Component: Evidence,
+	},
+];
+
+/**
+ * Reachable from Overview and Evidence & Methods, deliberately not in the
+ * sidebar: five working sections stay uncluttered, and this explainer is one
+ * click away from both places a reader would look for it.
+ */
+const AUX_SECTIONS = [
+	{
+		id: "how",
+		title: "How the AI works",
+		lede: "What the model learns, what it reports, and why longitudinal data is the blocker.",
+		Component: HowItWorks,
+		parent: "overview",
 	},
 ];
 
@@ -114,7 +130,10 @@ export default function App() {
 		);
 	}
 
-	const section = SECTIONS.find((item) => item.id === active) || SECTIONS[0];
+	const section =
+		SECTIONS.find((item) => item.id === active) ||
+		AUX_SECTIONS.find((item) => item.id === active) ||
+		SECTIONS[0];
 	const View = section.Component;
 
 	return (
@@ -130,6 +149,9 @@ export default function App() {
 							type="button"
 							key={item.id}
 							className="nav-item"
+							data-parent-of-active={
+								item.id === section.parent ? "true" : undefined
+							}
 							aria-current={item.id === active ? "page" : undefined}
 							onClick={() => setActive(item.id)}
 							data-testid={`nav-${item.id}`}
@@ -141,6 +163,15 @@ export default function App() {
 						</button>
 					))}
 				</nav>
+				<button
+					type="button"
+					className="nav-aside"
+					aria-current={active === "how" ? "page" : undefined}
+					onClick={() => setActive("how")}
+					data-testid="nav-how"
+				>
+					How the AI works
+				</button>
 				<div className="sidebar-foot">
 					<span>
 						Non-diagnostic research. Prototype hosting: no identifiable or clinical
@@ -162,7 +193,11 @@ export default function App() {
 					<h1>{section.title}</h1>
 					<p>{section.lede}</p>
 				</div>
-				<View key={section.id} onUnauthorised={handleUnauthorised} />
+				<View
+					key={section.id}
+					onUnauthorised={handleUnauthorised}
+					onNavigate={setActive}
+				/>
 			</main>
 		</div>
 	);

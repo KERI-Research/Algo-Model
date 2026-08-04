@@ -1,9 +1,15 @@
 """Model surface: metadata, single-record probe, and batch dataset scoring.
 
 All scoring uses the deployed NumPy inference artifact
-(``assets/ssl_artifact``): exported autoencoder weights, the fitted
-scikit-learn preprocessor and the reference score distribution. No training and
-no PyTorch, in any code path.
+(``assets/ssl_artifact``): exported autoencoder weights, the fitted preprocessor
+constants and the reference score distribution. No training and no PyTorch, in
+any code path.
+
+Scoring goes through :mod:`server.inference`, which replays the exported
+preprocessor constants with NumPy alone (so serverless hosting does not need
+scikit-learn or SciPy) and falls back to the vendored scikit-learn path when the
+exported constants are absent. Outputs are identical either way, enforced by
+``tests/test_inference_parity.py``.
 """
 
 from __future__ import annotations
@@ -19,7 +25,8 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .core_bridge import CODE_VERSION, PREVENTION_FEATURES, score_records
+from .core_bridge import CODE_VERSION, PREVENTION_FEATURES
+from .inference import params_available, score_records
 
 NON_DIAGNOSTIC_WARNING = (
     "Research use only, non-diagnostic. Outputs are metabolic deviation scores, "
@@ -47,6 +54,47 @@ FIELD_MEANINGS = {
         "it carries no label."
     ),
 }
+
+SECTION_TITLES = {
+    "current_profile_assessment": "Current profile assessment",
+    "standout_factors": "Standout factors in this profile",
+    "data_readiness": "Data readiness and missing information",
+    "research_association": "Research-only cancer/diabetes association",
+}
+
+PROFILE_WARNING_STATEMENT = (
+    "This profile differs from the reference and may warrant clinician review."
+)
+
+FUTURE_RISK_DISABLED_STATEMENT = (
+    "No validated future cancer or diabetes risk model is currently deployed."
+)
+
+
+def _deviation_band_from_percentile(percentile: float) -> dict[str, str]:
+    if percentile < 90:
+        return {
+            "key": "within_reference_range",
+            "label": "Within reference range",
+            "interpretation": "No model warning; not evidence disease is absent.",
+        }
+    if percentile < 95:
+        return {
+            "key": "mild_deviation",
+            "label": "Mild deviation",
+            "interpretation": "Consider data quality and routine review.",
+        }
+    if percentile < 99:
+        return {
+            "key": "elevated_deviation",
+            "label": "Elevated deviation",
+            "interpretation": "Clinician-reviewed follow-up research.",
+        }
+    return {
+        "key": "high_deviation",
+        "label": "High deviation",
+        "interpretation": "Strongly unusual profile; still not diagnostic.",
+    }
 
 EVIDENCE_BOUNDARIES = [
     "Trained self-supervised on cross-sectional NHANES adult records; no outcome label was used.",
@@ -77,6 +125,9 @@ def model_summary() -> dict[str, Any]:
         "deployment_version": config.DEPLOYMENT_VERSION,
         "created_at": metadata.get("created_at"),
         "inference_backend": "numpy",
+        "preprocessor_path": (
+            "exported_constants" if params_available() else "sklearn_artifact"
+        ),
         "training_backend_not_deployed": "PyTorch is not installed or used in this deployment.",
         "architecture": {
             "type": "Denoising autoencoder (self-supervised)",
@@ -125,15 +176,58 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("No allowlisted feature values were supplied.")
     frame = pd.DataFrame([cleaned])
     result = score_records(frame, config.SSL_ARTIFACT_DIR)[0]
+    deviation_band = _deviation_band_from_percentile(
+        float(result.get("reference_percentile", 0.0))
+    )
+    features_missing = [
+        feature for feature in PREVENTION_FEATURES if feature not in cleaned
+    ]
     metadata = artifact_metadata()
     return {
         "score": result,
         "features_used": sorted(cleaned),
-        "features_missing": [
-            feature for feature in PREVENTION_FEATURES if feature not in cleaned
-        ],
+        "features_missing": features_missing,
         "field_meanings": FIELD_MEANINGS,
         "evidence_boundaries": EVIDENCE_BOUNDARIES,
+        "dataset_capability_state": "Cross-sectional only",
+        "patient_assessment": {
+            "current_profile_assessment": {
+                "section_title": SECTION_TITLES["current_profile_assessment"],
+                "deviation_band": deviation_band["key"],
+                "deviation_band_label": deviation_band["label"],
+                "reference_percentile": result.get("reference_percentile"),
+                "warning_label": f"{deviation_band['label']} (not diagnostic)",
+                "note": PROFILE_WARNING_STATEMENT,
+            },
+            "standout_factors": {
+                "section_title": SECTION_TITLES["standout_factors"],
+                "top_deviation_features": result.get("top_deviation_features", []),
+                "note": "Model association only; not causality and not diagnosis.",
+            },
+            "data_readiness": {
+                "section_title": SECTION_TITLES["data_readiness"],
+                "missing_fields": [
+                    {
+                        "field": field,
+                        "priority": "medium",
+                        "why_it_matters": "Additional features improve interpretation depth.",
+                        "expected_impact_bucket": "moderate_confidence_gain",
+                    }
+                    for field in features_missing[:8]
+                ],
+                "dataset_capability_state": "Cross-sectional only",
+            },
+            "research_association": {
+                "section_title": SECTION_TITLES["research_association"],
+                "status": "disabled_on_this_route",
+                "note": FUTURE_RISK_DISABLED_STATEMENT,
+            },
+            "safety_contract": {
+                "diagnostic_status": "non_diagnostic",
+                "future_risk": "disabled",
+                "clinical_warning": "profile_deviation_only",
+            },
+        },
         "output_type": "metabolic_deviation_and_representation",
         "is_future_risk_probability": False,
         "is_disease_classification": False,

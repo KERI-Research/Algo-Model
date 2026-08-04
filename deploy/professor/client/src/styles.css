@@ -941,3 +941,251 @@ tbody tr:last-child td {
 		padding: var(--space-4);
 	}
 }
+
+/* --- explainer entry point ---------------------------------------------- */
+
+.explainer-cta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-4);
+	align-items: center;
+	justify-content: space-between;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: var(--radius-lg);
+	padding: var(--space-4) var(--space-5);
+	margin-bottom: var(--space-5);
+}
+
+.explainer-cta h2 {
+	margin-bottom: var(--space-1);
+}
+
+.explainer-cta p {
+	margin: 0;
+	font-size: var(--text-sm);
+	color: var(--ink-500);
+	max-width: 68ch;
+}
+
+.nav-aside {
+	display: block;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: 1px dashed var(--border-strong);
+	border-radius: var(--radius);
+	padding: var(--space-2) var(--space-3);
+	color: var(--accent);
+	font-size: var(--text-sm);
+	min-height: 38px;
+}
+
+.nav-aside:hover {
+	background: var(--accent-soft);
+	border-style: solid;
+}
+
+.nav-aside[aria-current="page"] {
+	background: var(--accent-soft);
+	border-style: solid;
+	font-weight: 500;
+}
+
+/* --- step-by-step flow diagram ------------------------------------------ */
+
+.flow {
+	list-style: none;
+	margin: 0 0 var(--space-4);
+	padding: 0;
+	counter-reset: flow;
+}
+
+.flow-step {
+	display: grid;
+	grid-template-columns: 34px 1fr;
+	gap: var(--space-4);
+	margin: 0;
+	padding-bottom: var(--space-5);
+	position: relative;
+}
+
+.flow-step:last-child {
+	padding-bottom: 0;
+}
+
+/* Connector line between steps: pure CSS, no imagery. */
+.flow-step:not(:last-child)::before {
+	content: "";
+	position: absolute;
+	left: 16px;
+	top: 34px;
+	bottom: 6px;
+	width: 2px;
+	background: linear-gradient(
+		to bottom,
+		var(--border-strong),
+		var(--border)
+	);
+}
+
+.flow-marker {
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	border: 1px solid var(--accent);
+	background: var(--accent-soft);
+	color: var(--accent);
+	display: grid;
+	place-items: center;
+	position: relative;
+	z-index: 1;
+}
+
+.flow-number {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+	font-weight: 500;
+	font-variant-numeric: tabular-nums;
+}
+
+.flow-body h3 {
+	margin: var(--space-1) 0 var(--space-2);
+}
+
+.flow-body p {
+	margin: 0;
+	font-size: var(--text-sm);
+	color: var(--ink-700);
+}
+
+.flow-label {
+	display: inline-block;
+	font-size: var(--text-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: var(--ink-500);
+	font-weight: 500;
+}
+
+/* --- plain-language definition list ------------------------------------- */
+
+.plain-list {
+	margin: 0;
+	display: grid;
+	gap: var(--space-4);
+}
+
+.plain-list dt {
+	font-weight: 700;
+	color: var(--ink-900);
+	margin-bottom: var(--space-1);
+}
+
+.plain-list dd {
+	margin: 0;
+	font-size: var(--text-sm);
+	color: var(--ink-700);
+	max-width: 78ch;
+}
+
+@media (max-width: 900px) {
+	.explainer-cta {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.explainer-cta .btn {
+		width: 100%;
+	}
+
+	.flow-step {
+		grid-template-columns: 28px 1fr;
+		gap: var(--space-3);
+	}
+
+	.flow-marker {
+		width: 28px;
+		height: 28px;
+	}
+
+	.flow-step:not(:last-child)::before {
+		left: 13px;
+		top: 28px;
+	}
+}
+
+/* The parent section of the explainer stays visually related without claiming
+   a second aria-current="page". */
+.nav-item[data-parent-of-active="true"] {
+	background: var(--surface-alt);
+	color: var(--ink-900);
+}
+
+/* --- tables that stack instead of scrolling on small screens ------------ */
+
+@media (max-width: 760px) {
+	.stack-table {
+		display: block;
+	}
+
+	.stack-table thead {
+		display: none;
+	}
+
+	.stack-table caption {
+		border-bottom: none;
+		padding-bottom: var(--space-2);
+	}
+
+	.stack-table tbody,
+	.stack-table tr {
+		display: block;
+		width: 100%;
+	}
+
+	.stack-table tr {
+		border-bottom: 1px solid var(--border);
+		padding: var(--space-3) 0;
+	}
+
+	.stack-table tr:last-child {
+		border-bottom: none;
+	}
+
+	.stack-table th,
+	.stack-table td {
+		display: block;
+		white-space: normal;
+		border: none;
+		padding: var(--space-1) var(--space-4);
+		background: transparent;
+		text-align: left;
+	}
+
+	.stack-table th[scope="row"] {
+		font-size: var(--text-base);
+		font-weight: 700;
+		color: var(--ink-900);
+		text-transform: none;
+		letter-spacing: 0;
+		position: static;
+	}
+
+	/* Column name carried into each stacked cell. */
+	.stack-table td::before {
+		content: attr(data-label);
+		display: block;
+		font-size: var(--text-xs);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--ink-500);
+		margin-bottom: 2px;
+	}
+
+	/* A stacked table must not also scroll sideways. */
+	.card .table-wrap:has(.stack-table) {
+		overflow-x: visible;
+	}
+}

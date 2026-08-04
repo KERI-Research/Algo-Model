@@ -22,22 +22,45 @@ const FIELD_GROUPS = [
 	{
 		id: "demographics",
 		legend: "Demographics and reported status",
-		fields: ["DEMO_RIDAGEYR", "DEMO_RIAGENDR", "DEMO_RIDRETH3", "Diabetes", "DIQ_DID040"],
+		fields: [
+			"DEMO_RIDAGEYR",
+			"DEMO_RIAGENDR",
+			"DEMO_RIDRETH3",
+			"Diabetes",
+			"DIQ_DID040",
+		],
 	},
 	{
 		id: "anthropometry",
 		legend: "Anthropometry",
-		fields: ["BMX_BMXBMI", "BMX_BMXWAIST", "weight_loss_1yr_lb", "weight_loss_10yr_lb"],
+		fields: [
+			"BMX_BMXBMI",
+			"BMX_BMXWAIST",
+			"weight_loss_1yr_lb",
+			"weight_loss_10yr_lb",
+		],
 	},
 	{
 		id: "glycaemia",
 		legend: "Glycaemia and insulin",
-		fields: ["GHB_LBXGH", "GLU_LBXGLU", "INS_LBXIN", "CPEP_LBXCPSI", "homa_ir"],
+		fields: [
+			"GHB_LBXGH",
+			"GLU_LBXGLU",
+			"INS_LBXIN",
+			"CPEP_LBXCPSI",
+			"homa_ir",
+		],
 	},
 	{
 		id: "lipids",
 		legend: "Lipids and inflammation",
-		fields: ["TRIGLY_LBXTR", "TRIGLY_LBDLDL", "HDL_LBDHDD", "TCHOL_LBXTC", "HSCRP_LBXHSCRP"],
+		fields: [
+			"TRIGLY_LBXTR",
+			"TRIGLY_LBDLDL",
+			"HDL_LBDHDD",
+			"TCHOL_LBXTC",
+			"HSCRP_LBXHSCRP",
+		],
 	},
 	{
 		id: "haematology",
@@ -53,7 +76,11 @@ const FIELD_GROUPS = [
 	{
 		id: "lifestyle",
 		legend: "Lifestyle",
-		fields: ["smoking_status", "alcohol_status", "average_drinks_per_day"],
+		fields: [
+			"smoking_status",
+			"alcohol_status",
+			"average_drinks_per_day",
+		],
 	},
 ];
 
@@ -73,7 +100,8 @@ const LABELS = {
 const ALL_FIELDS = FIELD_GROUPS.flatMap((group) => group.fields);
 
 const schemaFor = (field) =>
-	PREVENTION_FIELD_SCHEMA[field] || SYNTHETIC_FIELD_SCHEMA[field] || { kind: "number" };
+	PREVENTION_FIELD_SCHEMA[field] ||
+	SYNTHETIC_FIELD_SCHEMA[field] || { kind: "number" };
 
 const labelFor = (field) => {
 	const schema = schemaFor(field);
@@ -81,7 +109,10 @@ const labelFor = (field) => {
 };
 
 const emptyForm = () =>
-	ALL_FIELDS.reduce((accumulator, field) => ({ ...accumulator, [field]: "" }), {});
+	ALL_FIELDS.reduce(
+		(accumulator, field) => ({ ...accumulator, [field]: "" }),
+		{},
+	);
 
 /** Fields the model actually consumes: `Diabetes` and onset age are context only. */
 const MODEL_FIELDS = ALL_FIELDS.filter(
@@ -96,7 +127,10 @@ export default function PatientProbe({ onUnauthorised }) {
 	const [error, setError] = useState(null);
 
 	const missingRequired = useMemo(
-		() => REQUIRED_PROBE_FIELDS.filter((field) => !String(form[field] ?? "").trim()),
+		() =>
+			REQUIRED_PROBE_FIELDS.filter(
+				(field) => !String(form[field] ?? "").trim(),
+			),
 		[form],
 	);
 
@@ -128,14 +162,19 @@ export default function PatientProbe({ onUnauthorised }) {
 		MODEL_FIELDS.forEach((field) => {
 			const value = String(form[field] ?? "").trim();
 			if (value !== "") {
-				record[field] = Number.isNaN(Number(value)) ? value : Number(value);
+				record[field] = Number.isNaN(Number(value))
+					? value
+					: Number(value);
 			}
 		});
 		try {
-			const response = await apiPostJson("/api/v1/probe/score", {
-				patient_record: record,
-				confirm_explicit_scoring: true,
-			});
+			const response = await apiPostJson(
+				"/api/v1/probe/score",
+				{
+					patient_record: record,
+					confirm_explicit_scoring: true,
+				},
+			);
 			setResult(response);
 		} catch (failure) {
 			if (failure.status === 401) {
@@ -149,17 +188,32 @@ export default function PatientProbe({ onUnauthorised }) {
 	};
 
 	const score_ = result ? result.score : null;
+	const assessment = result?.patient_assessment || null;
+	const readiness = assessment?.data_readiness || null;
 
 	return (
 		<>
 			<Notice kind="info" title="Explicit scoring only.">
-				Nothing is scored while you type. The model runs once, when you press
-				<strong> Score this record</strong>, and no submitted record is stored.
+				Nothing is scored while you type. The model runs
+				once, when you press
+				<strong> Score this record</strong>, and no
+				submitted record is stored.
 			</Notice>
 
-			<section className="card" aria-labelledby="probe-form-heading">
-				<h2 id="probe-form-heading">Record under test</h2>
-				<div className="actions" style={{ marginTop: 0, marginBottom: "var(--space-4)" }}>
+			<section
+				className="card"
+				aria-labelledby="probe-form-heading"
+			>
+				<h2 id="probe-form-heading">
+					Record under test
+				</h2>
+				<div
+					className="actions"
+					style={{
+						marginTop: 0,
+						marginBottom: "var(--space-4)",
+					}}
+				>
 					<button
 						type="button"
 						className="btn btn-secondary"
@@ -179,8 +233,15 @@ export default function PatientProbe({ onUnauthorised }) {
 				</div>
 
 				{generated ? (
-					<Notice kind="ok" title={`Synthetic profile: ${generated.archetype.label}.`}>
-						{generated.archetype.description} {SYNTHETIC_NOTE}
+					<Notice
+						kind="ok"
+						title={`Synthetic profile: ${generated.archetype.label}.`}
+					>
+						{
+							generated.archetype
+								.description
+						}{" "}
+						{SYNTHETIC_NOTE}
 					</Notice>
 				) : null}
 
@@ -192,77 +253,172 @@ export default function PatientProbe({ onUnauthorised }) {
 					noValidate
 				>
 					{FIELD_GROUPS.map((group) => (
-						<fieldset className="fieldset" key={group.id}>
-							<legend>{group.legend}</legend>
+						<fieldset
+							className="fieldset"
+							key={group.id}
+						>
+							<legend>
+								{group.legend}
+							</legend>
 							<div className="form-grid">
-								{group.fields.map((field) => {
-									const schema = schemaFor(field);
-									const required = REQUIRED_PROBE_FIELDS.includes(field);
-									const inputId = `probe-${field}`;
-									return (
-										<div key={field}>
-											<label htmlFor={inputId}>
-												{labelFor(field)}
-												{required ? (
-													<span aria-hidden="true"> *</span>
-												) : null}
-												{schema.unit ? (
-													<span
-														style={{
-															color: "var(--ink-400)",
-															fontWeight: 400,
-														}}
-													>
-														{" "}
-														({schema.unit})
-													</span>
-												) : null}
-											</label>
-											{schema.kind === "categorical" ? (
-												<select
-													id={inputId}
-													value={form[field] ?? ""}
-													required={required}
-													onChange={(event) =>
-														update(field, event.target.value)
+								{group.fields.map(
+									(
+										field,
+									) => {
+										const schema =
+											schemaFor(
+												field,
+											);
+										const required =
+											REQUIRED_PROBE_FIELDS.includes(
+												field,
+											);
+										const inputId = `probe-${field}`;
+										return (
+											<div
+												key={
+													field
+												}
+											>
+												<label
+													htmlFor={
+														inputId
 													}
-													data-testid={`input-${field}`}
 												>
-													<option value="">Not supplied</option>
-													{schema.options.map((option) => (
-														<option key={option} value={option}>
-															{(schema.optionLabels || {})[
-																option
-															] || option}
+													{labelFor(
+														field,
+													)}
+													{required ? (
+														<span aria-hidden="true">
+															{" "}
+															*
+														</span>
+													) : null}
+													{schema.unit ? (
+														<span
+															style={{
+																color: "var(--ink-400)",
+																fontWeight: 400,
+															}}
+														>
+															{" "}
+															(
+															{
+																schema.unit
+															}
+															)
+														</span>
+													) : null}
+												</label>
+												{schema.kind ===
+												"categorical" ? (
+													<select
+														id={
+															inputId
+														}
+														value={
+															form[
+																field
+															] ??
+															""
+														}
+														required={
+															required
+														}
+														onChange={(
+															event,
+														) =>
+															update(
+																field,
+																event
+																	.target
+																	.value,
+															)
+														}
+														data-testid={`input-${field}`}
+													>
+														<option value="">
+															Not
+															supplied
 														</option>
-													))}
-												</select>
-											) : (
-												<input
-													id={inputId}
-													type="number"
-													inputMode="decimal"
-													step={schema.step || "any"}
-													min={schema.min}
-													max={schema.max}
-													value={form[field] ?? ""}
-													required={required}
-													onChange={(event) =>
-														update(field, event.target.value)
-													}
-													data-testid={`input-${field}`}
-												/>
-											)}
-										</div>
-									);
-								})}
+														{schema.options.map(
+															(
+																option,
+															) => (
+																<option
+																	key={
+																		option
+																	}
+																	value={
+																		option
+																	}
+																>
+																	{(schema.optionLabels ||
+																		{})[
+																		option
+																	] ||
+																		option}
+																</option>
+															),
+														)}
+													</select>
+												) : (
+													<input
+														id={
+															inputId
+														}
+														type="number"
+														inputMode="decimal"
+														step={
+															schema.step ||
+															"any"
+														}
+														min={
+															schema.min
+														}
+														max={
+															schema.max
+														}
+														value={
+															form[
+																field
+															] ??
+															""
+														}
+														required={
+															required
+														}
+														onChange={(
+															event,
+														) =>
+															update(
+																field,
+																event
+																	.target
+																	.value,
+															)
+														}
+														data-testid={`input-${field}`}
+													/>
+												)}
+											</div>
+										);
+									},
+								)}
 							</div>
 						</fieldset>
 					))}
 
 					{missingRequired.length ? (
-						<p className="field-hint" data-testid="text-missing-required">
-							Required before scoring: {missingRequired.map(labelFor).join(", ")}.
+						<p
+							className="field-hint"
+							data-testid="text-missing-required"
+						>
+							Required before scoring:{" "}
+							{missingRequired
+								.map(labelFor)
+								.join(", ")}
+							.
 						</p>
 					) : null}
 
@@ -270,49 +426,92 @@ export default function PatientProbe({ onUnauthorised }) {
 						<button
 							type="submit"
 							className="btn"
-							disabled={pending || missingRequired.length > 0}
+							disabled={
+								pending ||
+								missingRequired.length >
+									0
+							}
 							data-testid="button-score-record"
 						>
 							{pending ? (
 								<>
-									<span className="spinner" aria-hidden="true" />
+									<span
+										className="spinner"
+										aria-hidden="true"
+									/>
 									Scoring
 								</>
 							) : (
 								"Score this record"
 							)}
 						</button>
-						<span className="field-hint" style={{ marginTop: 0 }}>
-							Reported diabetes and onset age are context fields; they are not
-							model inputs and not outputs.
+						<span
+							className="field-hint"
+							style={{ marginTop: 0 }}
+						>
+							Reported diabetes and
+							onset age are context
+							fields; they are not
+							model inputs and not
+							outputs.
 						</span>
 					</div>
 				</form>
 			</section>
 
-			<section aria-labelledby="probe-result-heading" aria-live="polite">
-				<h2 id="probe-result-heading" style={{ marginBottom: "var(--space-3)" }}>
+			<section
+				aria-labelledby="probe-result-heading"
+				aria-live="polite"
+			>
+				<h2
+					id="probe-result-heading"
+					style={{
+						marginBottom: "var(--space-3)",
+					}}
+				>
 					Research output
 				</h2>
 				{error ? (
-					<Notice kind="blocked" title="Scoring failed.">
-						<span data-testid="text-probe-error">{error}</span>
+					<Notice
+						kind="blocked"
+						title="Scoring failed."
+					>
+						<span data-testid="text-probe-error">
+							{error}
+						</span>
 					</Notice>
 				) : null}
 
 				{!score_ && !error ? (
 					<Empty testId="empty-probe-result">
-						No record has been scored yet. Fill the form or generate a synthetic
-						profile, then press Score this record.
+						No record has been scored yet.
+						Fill the form or generate a
+						synthetic profile, then press
+						Score this record.
 					</Empty>
 				) : null}
 
 				{score_ ? (
 					<>
+						<Notice
+							kind="caution"
+							title="Research-only output"
+						>
+							Research-only,
+							non-diagnostic,
+							cross-sectional. No
+							validated future cancer
+							or diabetes risk model
+							is currently deployed.
+						</Notice>
+
 						<div className="grid grid-3">
 							<Stat
 								label="Metabolic deviation score"
-								value={formatNumber(score_.metabolic_deviation_score, 3)}
+								value={formatNumber(
+									score_.metabolic_deviation_score,
+									3,
+								)}
 								detail="Unitless, floored at zero, unbounded above."
 								state="abstain"
 							/>
@@ -329,92 +528,341 @@ export default function PatientProbe({ onUnauthorised }) {
 							/>
 						</div>
 
-						<div className="card">
-							<h3>Feature contributions</h3>
-							<p className="field-hint" style={{ marginTop: 0 }}>
-								Reconstruction error by feature. This shows what the model could
-								not reproduce, not a cause and not a diagnosis.
+						{assessment?.current_profile_assessment ? (
+							<div
+								className="card"
+								data-testid="panel-current-profile-assessment"
+							>
+								<h3>
+									{
+										assessment
+											.current_profile_assessment
+											.section_title
+									}
+								</h3>
+								<p
+									className="field-hint"
+									style={{
+										marginTop: 0,
+									}}
+								>
+									{
+										assessment
+											.current_profile_assessment
+											.warning_label
+									}
+								</p>
+								<DefinitionList
+									items={[
+										[
+											"Deviation band",
+											assessment
+												.current_profile_assessment
+												.deviation_band_label,
+										],
+										[
+											"Reference percentile",
+											String(
+												assessment
+													.current_profile_assessment
+													.reference_percentile,
+											),
+										],
+										[
+											"Interpretation note",
+											assessment
+												.current_profile_assessment
+												.note,
+										],
+									]}
+								/>
+							</div>
+						) : null}
+
+						<div
+							className="card"
+							data-testid="panel-standout-factors"
+						>
+							<h3>
+								{assessment
+									?.standout_factors
+									?.section_title ||
+									"Standout factors in this profile"}
+							</h3>
+							<p
+								className="field-hint"
+								style={{
+									marginTop: 0,
+								}}
+							>
+								Reconstruction
+								error by
+								feature. This
+								shows what the
+								model could not
+								reproduce, a
+								model
+								association
+								only, not
+								causality and
+								not a diagnosis.
 							</p>
 							<div className="table-wrap">
 								<table>
 									<thead>
 										<tr>
-											<th scope="col">Feature</th>
-											<th scope="col" className="num">
-												Reconstruction error
+											<th scope="col">
+												Feature
 											</th>
-											<th scope="col">Share of top contribution</th>
+											<th
+												scope="col"
+												className="num"
+											>
+												Reconstruction
+												error
+											</th>
+											<th scope="col">
+												Share
+												of
+												top
+												contribution
+											</th>
 										</tr>
 									</thead>
 									<tbody>
-										{score_.top_deviation_features.map((entry) => {
-											const top =
-												score_.top_deviation_features[0]
-													.reconstruction_error || 1;
-											return (
-												<tr key={entry.feature}>
-													<th scope="row">
-														<code>{entry.feature}</code>
-													</th>
-													<td className="num">
-														{formatNumber(
-															entry.reconstruction_error,
-															4,
-														)}
-													</td>
-													<td style={{ minWidth: 140 }}>
-														<span className="meter">
-															<span
-																style={{
-																	width: `${Math.max(4, (entry.reconstruction_error / top) * 100)}%`,
-																}}
-															/>
-														</span>
-													</td>
-												</tr>
-											);
-										})}
+										{score_.top_deviation_features.map(
+											(
+												entry,
+											) => {
+												const top =
+													score_
+														.top_deviation_features[0]
+														.reconstruction_error ||
+													1;
+												return (
+													<tr
+														key={
+															entry.feature
+														}
+													>
+														<th scope="row">
+															<code>
+																{
+																	entry.feature
+																}
+															</code>
+														</th>
+														<td className="num">
+															{formatNumber(
+																entry.reconstruction_error,
+																4,
+															)}
+														</td>
+														<td
+															style={{
+																minWidth: 140,
+															}}
+														>
+															<span className="meter">
+																<span
+																	style={{
+																		width: `${Math.max(4, (entry.reconstruction_error / top) * 100)}%`,
+																	}}
+																/>
+															</span>
+														</td>
+													</tr>
+												);
+											},
+										)}
 									</tbody>
 								</table>
 							</div>
 						</div>
 
+						<div
+							className="card"
+							data-testid="panel-data-readiness"
+						>
+							<h3>
+								{readiness?.section_title ||
+									"Data readiness and missing information"}
+							</h3>
+							<p
+								className="field-hint"
+								style={{
+									marginTop: 0,
+								}}
+							>
+								Dataset
+								capability
+								state:{" "}
+								{readiness?.dataset_capability_state ||
+									result.dataset_capability_state ||
+									"Cross-sectional only"}
+							</p>
+							{readiness
+								?.missing_fields
+								?.length ? (
+								<div className="table-wrap">
+									<table>
+										<thead>
+											<tr>
+												<th scope="col">
+													Field
+												</th>
+												<th scope="col">
+													Priority
+												</th>
+												<th scope="col">
+													Why
+													it
+													matters
+												</th>
+											</tr>
+										</thead>
+										<tbody>
+											{readiness.missing_fields.map(
+												(
+													item,
+												) => (
+													<tr
+														key={
+															item.field
+														}
+													>
+														<th scope="row">
+															<code>
+																{
+																	item.field
+																}
+															</code>
+														</th>
+														<td>
+															{
+																item.priority
+															}
+														</td>
+														<td>
+															{
+																item.why_it_matters
+															}
+														</td>
+													</tr>
+												),
+											)}
+										</tbody>
+									</table>
+								</div>
+							) : (
+								<p className="field-hint">
+									No
+									additional
+									high-priority
+									data
+									fields
+									are
+									currently
+									requested.
+								</p>
+							)}
+						</div>
+
+						{assessment?.research_association ? (
+							<div
+								className="card"
+								data-testid="panel-research-association"
+							>
+								<h3>
+									{
+										assessment
+											.research_association
+											.section_title
+									}
+								</h3>
+								<p
+									className="field-hint"
+									style={{
+										marginTop: 0,
+									}}
+								>
+									{
+										assessment
+											.research_association
+											.note
+									}
+								</p>
+							</div>
+						) : null}
+
 						<div className="grid grid-2">
 							<div className="card">
-								<h3>How to read this</h3>
+								<h3>
+									How to
+									read
+									this
+								</h3>
 								<DefinitionList
 									items={[
 										[
 											"Deviation score",
-											result.field_meanings.metabolic_deviation_score,
+											result
+												.field_meanings
+												.metabolic_deviation_score,
 										],
 										[
 											"Percentile",
-											result.field_meanings.reference_percentile,
+											result
+												.field_meanings
+												.reference_percentile,
 										],
 										[
 											"Contributions",
-											result.field_meanings.top_deviation_features,
+											result
+												.field_meanings
+												.top_deviation_features,
 										],
 										[
 											"Representation",
-											result.field_meanings.latent_representation,
+											result
+												.field_meanings
+												.latent_representation,
 										],
 									]}
 								/>
 							</div>
 							<div className="card">
-								<h3>Evidence boundaries</h3>
+								<h3>
+									Evidence
+									boundaries
+								</h3>
 								<ul>
-									{result.evidence_boundaries.map((item) => (
-										<li key={item}>{item}</li>
-									))}
+									{result.evidence_boundaries.map(
+										(
+											item,
+										) => (
+											<li
+												key={
+													item
+												}
+											>
+												{
+													item
+												}
+											</li>
+										),
+									)}
 								</ul>
 							</div>
 						</div>
 
-						<Notice kind="caution" title="Not a diagnosis.">
-							{result.non_diagnostic_warning}
+						<Notice
+							kind="caution"
+							title="Not a diagnosis."
+						>
+							{
+								result.non_diagnostic_warning
+							}
 						</Notice>
 					</>
 				) : null}

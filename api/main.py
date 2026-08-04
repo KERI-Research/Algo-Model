@@ -31,6 +31,14 @@ from data_integrity import (
     horizon_gate_report,
     validate_dataset,
 )
+from research_contract import (
+    FUTURE_RISK_DISABLED_STATEMENT,
+    NON_DIAGNOSTIC_WARNING,
+    PROFILE_WARNING_STATEMENT,
+    SECTION_TITLES,
+    capability_state_from_supported_output,
+    deviation_band_from_percentile,
+)
 import json
 from pathlib import Path
 from fetch_nhanes import ensure_nhanes_dataset
@@ -47,13 +55,6 @@ app = FastAPI(
         "is required. Developed within the KERI department."
     ),
     version="1.1.0",
-)
-
-NON_DIAGNOSTIC_WARNING = (
-    "Research use only, non-diagnostic. Outputs are metabolic deviation scores, "
-    "percentiles, latent representations or cross-sectional associations with "
-    "already-recorded diagnoses. They are not diagnoses and not future disease "
-    "probabilities. Clinician review is required."
 )
 
 app.add_middleware(
@@ -294,6 +295,11 @@ async def biomarker_discovery(request: BiomarkerRequest):
         )
 
     try:
+        frame = pd.read_csv(file_path, low_memory=False)
+        capabilities = dataset_capabilities(frame)
+        dataset_capability_state = capability_state_from_supported_output(
+            capabilities.get("supported_output")
+        )
         return execute_biomarker_discovery(
             str(file_path),
             patient_record=request.patient_record,
@@ -301,6 +307,7 @@ async def biomarker_discovery(request: BiomarkerRequest):
             force_retrain=request.force_retrain,
             target=request.target,
             cohort_filter=request.cohort_filter,
+            dataset_capability_state=dataset_capability_state,
         )
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error))
@@ -315,12 +322,16 @@ async def prevention_capabilities(request: PreventionCapabilitiesRequest):
         raise HTTPException(status_code=404, detail="Dataset not found or invalidated.")
     frame = pd.read_csv(file_path, low_memory=False)
     gates = horizon_gate_report(frame, DEFAULT_HORIZON_DAYS)
+    capabilities = dataset_capabilities(frame)
     return {
         "project": "MetaboGuard",
         "intended_use": "Preventive research and clinician-reviewed early warning.",
         "not_intended_for": "Diagnosis, treatment or patient reassurance.",
         "non_diagnostic_warning": NON_DIAGNOSTIC_WARNING,
-        "capabilities": dataset_capabilities(frame),
+        "capabilities": capabilities,
+        "dataset_capability_state": capability_state_from_supported_output(
+            capabilities.get("supported_output")
+        ),
         "future_horizon_gates": gates,
         "longitudinal_heads_enabled": bool(gates["any_horizon_eligible"]),
         "gate_policy": (
@@ -375,7 +386,21 @@ def _resolve_ssl_artifact(name: str) -> Path:
 async def prevention_score(request: PreventionScoreRequest):
     artifact = _resolve_ssl_artifact(request.artifact)
     metadata = json.loads((artifact / "metadata.json").read_text())
+    source_dataset = metadata.get("source_dataset") or "nhanes_multicycle_v2.csv"
+    source_path = resolve_dataset_path(source_dataset)
+    if source_path and source_path.exists():
+        capability_frame = pd.read_csv(source_path, low_memory=False)
+        capabilities = dataset_capabilities(capability_frame)
+    else:
+        capabilities = {
+            "supported_output": "cross_sectional_representation_and_deviation_only",
+            "supports_future_development_prediction": False,
+        }
+    dataset_capability_state = capability_state_from_supported_output(
+        capabilities.get("supported_output")
+    )
     result = score_records(pd.DataFrame([request.patient_record]), artifact)[0]
+    deviation_band = deviation_band_from_percentile(result.get("reference_percentile"))
     warnings: list[str] = []
     if metadata.get("run_label") == "smoke":
         warnings.append(
@@ -387,7 +412,46 @@ async def prevention_score(request: PreventionScoreRequest):
         "project": "MetaboGuard",
         "output_type": "metabolic_deviation_and_representation",
         "is_future_risk_probability": False,
+        "dataset_capability_state": dataset_capability_state,
         "score": result,
+        "patient_assessment": {
+            "current_profile_assessment": {
+                "section_title": SECTION_TITLES["current_profile_assessment"],
+                "deviation_band": deviation_band["key"],
+                "deviation_band_label": deviation_band["label"],
+                "reference_percentile": result.get("reference_percentile"),
+                "warning_label": deviation_band["label"],
+                "note": PROFILE_WARNING_STATEMENT,
+            },
+            "standout_factors": {
+                "section_title": SECTION_TITLES["standout_factors"],
+                "top_deviation_features": result.get("top_deviation_features", []),
+            },
+            "data_readiness": {
+                "section_title": SECTION_TITLES["data_readiness"],
+                "missing_fields": [
+                    {
+                        "field": field,
+                        "priority": "medium",
+                        "why_it_matters": "Additional inputs improve profile interpretation breadth.",
+                        "expected_impact_bucket": "moderate_confidence_gain",
+                    }
+                    for field in metadata.get("features", [])
+                    if field not in request.patient_record
+                ],
+                "dataset_capability_state": dataset_capability_state,
+            },
+            "research_association": {
+                "section_title": SECTION_TITLES["research_association"],
+                "status": "disabled_on_this_route",
+                "note": FUTURE_RISK_DISABLED_STATEMENT,
+            },
+            "safety_contract": {
+                "diagnostic_status": "non_diagnostic",
+                "future_risk": "disabled",
+                "clinical_warning": "profile_deviation_only",
+            },
+        },
         "field_meanings": {
             "metabolic_deviation_score": "How unusual this profile is versus the training reference.",
             "reference_percentile": "Rank of the deviation score within the training reference distribution.",

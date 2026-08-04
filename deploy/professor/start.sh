@@ -4,9 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-# A deployment-only .env file may be mounted beside this script when the
-# hosting platform cannot inject arbitrary app configuration variables.
-# The file is excluded from version control and never served by the client.
+# The publishing platform currently does not expose arbitrary app configuration
+# as environment variables. A deployment-only .env file may therefore be
+# mounted beside this script. It is excluded from version control and is never
+# served by the static client.
 if [[ -f .env ]]; then
   set -a
   # shellcheck disable=SC1091

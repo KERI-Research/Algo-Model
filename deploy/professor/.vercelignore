@@ -1,0 +1,35 @@
+# Keep the serverless function and build context small.
+# The build needs client/ sources; the function needs server/ and assets/.
+
+.git
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.pytest_cache/
+.vercel
+
+# Test and QA material - never deployed.
+tests/
+fixtures/
+pytest.ini
+requirements-test.txt
+
+# pplx-sandbox-only runtime pieces (Vercel uses api/index.py + requirements.txt).
+main.py
+start.sh
+requirements-deploy.txt
+prepare_assets.py
+
+# Local build output and dependencies (Vercel rebuilds the client itself).
+client/node_modules/
+client/dist/
+
+# Documentation is not needed at runtime.
+HANDOFF.md
+SECURITY_PRIVACY.md
+
+# Unused in the trimmed runtime profile: the pickled preprocessor needs
+# scikit-learn/joblib, which this function deliberately does not install.
+assets/ssl_artifact/preprocessor.joblib

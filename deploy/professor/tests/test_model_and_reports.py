@@ -43,6 +43,13 @@ def test_score_single_record_outputs():
     assert result["features_used"]
     assert result["evidence_boundaries"]
     assert "deviation" in result["field_meanings"]["metabolic_deviation_score"].lower()
+    assert result["dataset_capability_state"] == "Cross-sectional only"
+    assessment = result["patient_assessment"]
+    assert "current_profile_assessment" in assessment
+    assert "standout_factors" in assessment
+    assert "data_readiness" in assessment
+    assert "research_association" in assessment
+    assert assessment["safety_contract"]["future_risk"] == "disabled"
 
 
 def test_score_single_record_ignores_prohibited_fields():
@@ -73,6 +80,20 @@ def test_probe_endpoint_requires_explicit_scoring(authed_client):
         json={"patient_record": SAMPLE_RECORD, "confirm_explicit_scoring": True},
     )
     assert ok.status_code == 200
+
+
+def test_probe_output_uses_non_future_risk_wording(authed_client):
+    response = authed_client.post(
+        "/api/v1/probe/score",
+        json={"patient_record": SAMPLE_RECORD, "confirm_explicit_scoring": True},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    text = json.dumps(body).lower()
+    assert "risk of developing" not in text
+    assert "prediction of future cancer" not in text
+    assert "probability of getting" not in text
+    assert "non-diagnostic" in body["non_diagnostic_warning"].lower()
 
 
 def test_model_summary_states_prohibited_outputs(authed_client):

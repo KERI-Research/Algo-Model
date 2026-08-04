@@ -9,7 +9,7 @@ import {
 	TierBadge,
 } from "./common.jsx";
 
-export default function Evidence({ onUnauthorised }) {
+export default function Evidence({ onUnauthorised, onNavigate }) {
 	const [data, setData] = useState(null);
 	const [error, setError] = useState(null);
 	const [query, setQuery] = useState("");
@@ -202,6 +202,24 @@ export default function Evidence({ onUnauthorised }) {
 						.
 					</Notice>
 				) : null}
+			</section>
+
+			<section className="explainer-cta" aria-labelledby="explainer-evidence-heading">
+				<div>
+					<h2 id="explainer-evidence-heading">How the AI works</h2>
+					<p>
+						How the model is trained and scored, the capability status table, and
+						why longitudinal data is the blocker.
+					</p>
+				</div>
+				<button
+					type="button"
+					className="btn btn-secondary"
+					onClick={() => onNavigate && onNavigate("how")}
+					data-testid="button-open-how-it-works-evidence"
+				>
+					Read the explanation
+				</button>
 			</section>
 
 			<section className="card" aria-labelledby="methods-heading">

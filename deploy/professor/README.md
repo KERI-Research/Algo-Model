@@ -20,6 +20,14 @@ identifiable or clinical patient data.**
 | **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV. |
 | **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation. |
 | **Evidence & Methods**     | Source-linked biomarker catalogue with evidence grades, multi-marker rationale, PRoBE and TRIPOD+AI references, supported vs prohibited claims. |
+| **How the AI works**       | Explainer reached from Overview and Evidence & Methods (and a quiet sidebar link, not a numbered section): eight-step CSS flow diagram, plain-language reading of the outputs, current vs future longitudinal model comparison, the role of TCGA, and a three-state capability table. |
+
+The **How the AI works** page states the governing limitation verbatim: "The
+current model is not trained on longitudinal data. It cannot estimate a
+patient's probability of developing cancer over time, predict which cancer they
+will develop, or provide a diagnosis." Capability states are `Available now`,
+`Research only` and `Unavailable until longitudinal validation`; the third is a
+statement about missing data, never a release schedule.
 
 No output is a diagnosis, a disease probability, a future-risk horizon or a
 cancer-type claim. The future-risk head stays fail-closed and clustering
@@ -65,7 +73,7 @@ If either variable is missing, `/api/v1/status` reports
 `auth_configured: false`, login returns `503`, and every protected route stays
 closed. See `.env.example` for placeholders only.
 
-## Deployment (Perplexity hosting)
+## Deployment A: Perplexity hosting
 
 ```
 deploy_website(project_path=".../client/dist", site_name="MetaboGuard Research Review")
@@ -84,6 +92,113 @@ step rewrites to the backend proxy path. Locally the sentinel is left in place
 and the client falls back to same-origin relative requests, so development and
 deployment both work from the same build.
 
+## Deployment B: Vercel (Hobby / free, production)
+
+Vercel serves the Vite build as static files and runs FastAPI as one Python
+serverless function. Nothing else changes: same routes, same auth, same
+in-memory scoring, no persistence.
+
+**Project settings (Vercel CLI or dashboard)**
+
+| Setting                | Value                                              |
+| ---------------------- | -------------------------------------------------- |
+| CLI project root       | the directory containing `vercel.json` (`deploy/professor` in the KERI repo, or the sandbox project root) |
+| Framework preset       | Other (`"framework": null`)                        |
+| Install command        | `npm --prefix client ci`                           |
+| Build command          | `npm --prefix client ci && npm --prefix client run build:vercel` |
+| Output directory       | `client/dist`                                      |
+| Serverless entrypoint  | `api/index.py` (exports the FastAPI `app`)         |
+| Python requirements    | root `requirements.txt` (trimmed: FastAPI, pandas, NumPy, python-multipart) |
+| Node / Python versions | Node 20+, Python 3.12 (Vercel default)             |
+
+`vercel.json` supplies all of the above, so `vercel` / `vercel --prod` needs no
+extra flags. Routing:
+
+* `/api/v1/:path*` -> `/api/index` (the path is preserved, so FastAPI's
+  `/api/v1/...` routes match unchanged);
+* every other path -> the static build, with `index.html` as the SPA fallback
+  (the filesystem is checked first, so hashed assets are served directly).
+
+**Environment variables** - set both as Vercel *environment variables* for
+Production (and Preview if you use it). Never commit them, never put them in
+`vercel.json`:
+
+```
+METABOGUARD_ACCESS_KEY_SHA256   # sha256 hex digest of the access key
+METABOGUARD_SESSION_SECRET      # long random secret
+```
+
+`vercel env add METABOGUARD_ACCESS_KEY_SHA256 production` (paste the digest) is
+the CLI route. No frontend variable is needed: `build:vercel` sets
+`VITE_DEPLOY_TARGET=vercel` itself, which makes the client call same-origin
+`/api/v1` and drops the pplx proxy sentinel from the bundle entirely.
+
+**Generated files and the two deploy modes.** `assets/`, `server/core/` and
+`client/src/lib/synthetic_patient*.js` are produced by `prepare_assets.py` from
+the authoritative repository and are deliberately not tracked in Git. The
+function needs `assets/` and `server/core/`, and the client build needs
+`synthetic_patient.js`, so:
+
+* **CLI deploy (recommended).** Run `prepare_assets.py` first, then
+  `vercel --prod` from this directory. When a `.vercelignore` file is present the
+  Vercel CLI uses it instead of `.gitignore`, and this project's `.vercelignore`
+  does not exclude any of those generated paths - they upload with the rest of
+  the project.
+* **Git-integration deploy.** A build triggered from a Git push only sees
+  committed files, so the generated paths must be committed first (about 700 KB:
+  `assets/`, `server/core/`, and the two vendored `client/src/lib` modules).
+  Otherwise the client build fails on the missing import and the function starts
+  without a model artifact.
+
+**Local serverless-equivalent check** (blocks scikit-learn/SciPy/joblib to
+emulate the trimmed function runtime, then exercises routing, login, probe,
+upload, export and rate limiting):
+
+```bash
+npm --prefix client run build:vercel
+METABOGUARD_ACCESS_KEY_SHA256=$(printf '%s' 'your-key' | sha256sum | cut -d' ' -f1) \
+METABOGUARD_SESSION_SECRET=local-check-secret \
+python3 scripts/vercel_local_check.py your-key
+```
+
+**Function footprint**: ~155 MB unzipped (pandas 74 MB, NumPy 70 MB, FastAPI
+stack ~12 MB, app code and assets under 1 MB), inside the 250 MB Hobby limit.
+scikit-learn and SciPy are deliberately absent; see "Runtime profiles" below.
+
+### Runtime profiles
+
+| Profile  | Where                          | Installed                                        | Preprocessor                                     |
+| -------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------ |
+| Full     | development, CI, pplx sandbox  | `requirements-deploy.txt` (adds scikit-learn, joblib, uvicorn) | fitted `preprocessor.joblib` via the vendored module |
+| Trimmed  | Vercel function                | `requirements.txt`                               | `preprocessor_params.json` replayed with NumPy    |
+
+Both profiles produce byte-identical scores. `tests/test_inference_parity.py`
+compares them row by row (890 rows including all-missing, unseen categorical
+levels and string-typed values), and `tests/test_research_constants.py` compares
+the exported constants and `dataset_capabilities` against the authoritative
+vendored modules. `/api/v1/model` reports which path is live via
+`preprocessor_path`.
+
+### Vercel limitations to expect
+
+- **Cold starts.** Importing pandas/NumPy and reading the artifact takes roughly
+  1-3 s on a cold invocation. Dataset analysis of a few thousand rows then runs
+  in well under a second.
+- **60 s function ceiling** on Hobby. The 5,000-scored-row cap and the internal
+  compute budget keep requests far below it, but a 15 MB / 20,000-row upload is
+  parsed twice (screen, then analyse) because nothing is persisted.
+- **4.5 MB request-body limit** on Vercel functions. This is stricter than the
+  app's own 15 MB rule, so in practice CSV uploads over ~4.5 MB will be rejected
+  by the platform before FastAPI sees them.
+- **Rate limiting is per-instance.** Each serverless instance keeps its own
+  in-memory counter, so a distributed attacker gets more attempts than the
+  5-per-5-minutes rule suggests. Sessions are unaffected (signed cookies, no
+  server state).
+- **No writable persistence** (by design). Uploads are memory-only and no
+  results are stored.
+- Hobby projects are for non-commercial use, and the deployment is still
+  prototype hosting: no identifiable or clinical patient data.
+
 ## Tests
 
 ```bash
@@ -94,13 +209,20 @@ cd client && npm test                                              # 46 frontend
 ## Repository layout
 
 ```
-main.py                     uvicorn entrypoint (also importable as server.app:app)
+main.py                     uvicorn entrypoint for pplx hosting (server.app:app)
+api/index.py                Vercel serverless entrypoint (exports the FastAPI app)
+vercel.json                 Vercel build, routing and function configuration
+.vercelignore               keeps tests, fixtures and pplx-only files out of Vercel
+requirements.txt            trimmed Vercel function requirements (no scikit-learn)
+scripts/vercel_local_check.py  serverless-equivalent local verification
 start.sh                    production start command, port 5000
 requirements-deploy.txt     runtime deps (no PyTorch)
 server/config.py            paths, limits, env variable names
 server/auth.py              SHA-256 key check, signed __Host- session cookie, rate limiting
 server/dataset.py           CSV intake: identifier/leakage screening, tiers, ephemeral parsing
 server/model.py             NumPy inference wrapper, aggregates, in-memory results CSV
+server/inference.py         NumPy-only preprocessor + scoring (no scikit-learn needed)
+server/research_constants.py  exported constants + dataset_capabilities fallback
 server/reports.py           reliability, clustering abstention, evidence payloads
 server/core/                byte-for-byte copies of the authoritative KERI research modules
 prepare_assets.py           vendors research modules and builds assets/ from the repo
@@ -108,6 +230,7 @@ assets/ssl_artifact/        deployed NumPy artifact (weights, preprocessor, meta
 assets/reports/             reliability, integrity and clustering reports from the research run
 assets/evidence/            biomarker evidence catalogue
 client/                     Vite + React dashboard (built to client/dist)
+client/src/components/HowItWorks.jsx  the "How the AI works" explainer page
 fixtures/                   safe, identifier and leakage CSV fixtures for QA
 tests/                      pytest suite
 ```

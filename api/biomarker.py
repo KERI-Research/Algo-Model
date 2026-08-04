@@ -37,6 +37,12 @@ except Exception:  # pragma: no cover - optional at import time during partial i
 
 
 from data_integrity import assert_dataset_allowed, assert_target_allowed
+from research_contract import (
+    ASSOCIATION_SCOPE_NOTES,
+    FUTURE_RISK_DISABLED_STATEMENT,
+    NON_DIAGNOSTIC_WARNING,
+    SECTION_TITLES,
+)
 
 ARTIFACT_VERSION = "v1"
 MODEL_NAME = "metaboguard_hist_gradient_boosting_v1"
@@ -813,6 +819,54 @@ def _build_follow_up_questions(missing_fields: list[str], optional: bool) -> lis
     ]
 
 
+def _expected_impact_bucket(priority: str) -> str:
+    if priority == "high":
+        return "large_confidence_gain"
+    if priority == "medium":
+        return "moderate_confidence_gain"
+    return "small_confidence_gain"
+
+
+def _data_readiness_items(
+    missing_required: list[str],
+    missing_optional: list[str],
+) -> list[dict[str, str]]:
+    items: list[dict[str, str]] = []
+    for field in missing_required:
+        items.append(
+            {
+                "field": field,
+                "priority": "high",
+                "why_it_matters": "Required before this association score can be computed.",
+                "expected_impact_bucket": _expected_impact_bucket("high"),
+            }
+        )
+    for field in missing_optional:
+        items.append(
+            {
+                "field": field,
+                "priority": "medium",
+                "why_it_matters": "Improves context for interpreting research-only associations.",
+                "expected_impact_bucket": _expected_impact_bucket("medium"),
+            }
+        )
+    return items
+
+
+def _association_scope(target: str) -> dict[str, dict[str, str]]:
+    cancer_scope = dict(ASSOCIATION_SCOPE_NOTES["any_cancer_prevalence"])
+    diabetes_scope = dict(ASSOCIATION_SCOPE_NOTES["type2_diabetes_proxy"])
+    if target != "Cancer":
+        cancer_scope["note"] = (
+            "Cross-sectional association with an already-recorded diagnosis in this "
+            "target. Not future risk."
+        )
+    return {
+        "any_cancer_prevalence": cancer_scope,
+        "type2_diabetes_proxy": diabetes_scope,
+    }
+
+
 def _confidence_label(confidence: float) -> str:
     if confidence >= 0.78:
         return "high"
@@ -821,7 +875,12 @@ def _confidence_label(confidence: float) -> str:
     return "low"
 
 
-def _build_patient_assessment(data_path: str, artifact: dict[str, Any], patient_record: dict[str, Any]) -> dict[str, Any]:
+def _build_patient_assessment(
+    data_path: str,
+    artifact: dict[str, Any],
+    patient_record: dict[str, Any],
+    dataset_capability_state: str = "Cross-sectional only",
+) -> dict[str, Any]:
     patient_features, missingness = _normalize_patient_record(patient_record, artifact)
     missing_required = missingness["missing_required_fields"]
     missing_optional = missingness["missing_optional_fields"]
@@ -833,6 +892,23 @@ def _build_patient_assessment(data_path: str, artifact: dict[str, Any], patient_
             "follow_up_questions": _build_follow_up_questions(missing_required, optional=False),
             "confidence": 0.0,
             "confidence_label": "insufficient",
+            "association_scope": _association_scope(artifact.get("target", "Cancer")),
+            "standout_factors": [],
+            "confidence_breakdown": {
+                "data_quality": "insufficient",
+                "sample_support": "cross_sectional_only",
+                "overall_confidence_bucket": "exploratory_only",
+            },
+            "data_readiness": {
+                "missing_fields": _data_readiness_items(missing_required, missing_optional),
+                "dataset_capability_state": dataset_capability_state,
+                "section_title": SECTION_TITLES["data_readiness"],
+            },
+            "safety_contract": {
+                "diagnostic_status": "non_diagnostic",
+                "future_risk": "disabled",
+                "clinical_warning": "profile_deviation_only",
+            },
         }
 
     probability = float(artifact["model"].predict_proba(patient_features)[:, 1][0])
@@ -849,6 +925,16 @@ def _build_patient_assessment(data_path: str, artifact: dict[str, Any], patient_
 
     top_biomarkers = artifact["biomarker_ranking"][:5]
     biomarker_names = ", ".join(item["feature"] for item in top_biomarkers[:3])
+    standout_factors = [
+        {
+            "feature": item["feature"],
+            "direction": item.get("direction", "unknown"),
+            "contribution_rank": rank,
+            "importance": round(float(item.get("importance", 0.0)), 6),
+            "mean_shift": round(float(item.get("mean_shift", 0.0)), 6),
+        }
+        for rank, item in enumerate(top_biomarkers, start=1)
+    ]
     target = artifact.get("target", "Cancer")
     explanation = (
         "The record was scored against a cross-sectional NHANES association model. "
@@ -886,6 +972,31 @@ def _build_patient_assessment(data_path: str, artifact: dict[str, Any], patient_
         "follow_up_questions": _build_follow_up_questions(optional_follow_ups, optional=True),
         "similar_cases": similar_cases,
         "explanation": explanation,
+        "current_profile_assessment": {
+            "section_title": SECTION_TITLES["current_profile_assessment"],
+            "association_target": target,
+            "cross_sectional_association_probability": round(probability, 6),
+            "warning_label": "Research association only (not diagnostic)",
+            "note": FUTURE_RISK_DISABLED_STATEMENT,
+        },
+        "association_scope": _association_scope(target),
+        "standout_factors": standout_factors,
+        "confidence_breakdown": {
+            "data_quality": "medium" if completeness >= 0.5 else "low",
+            "sample_support": "cross_sectional_only",
+            "overall_confidence_bucket": "exploratory_only",
+        },
+        "data_readiness": {
+            "section_title": SECTION_TITLES["data_readiness"],
+            "missing_fields": _data_readiness_items([], missing_optional),
+            "dataset_capability_state": dataset_capability_state,
+        },
+        "safety_contract": {
+            "diagnostic_status": "non_diagnostic",
+            "future_risk": "disabled",
+            "clinical_warning": "profile_deviation_only",
+            "non_diagnostic_warning": NON_DIAGNOSTIC_WARNING,
+        },
     }
 
 
@@ -896,6 +1007,7 @@ def execute_biomarker_discovery(
     force_retrain: bool = False,
     target: str = "Cancer",
     cohort_filter: str | None = None,
+    dataset_capability_state: str = "Cross-sectional only",
 ) -> dict[str, Any]:
     if force_retrain:
         artifact = train_biomarker_model(data_path, force=True, target=target, cohort_filter=cohort_filter)
@@ -920,11 +1032,13 @@ def execute_biomarker_discovery(
             "path": str(paths.chroma_path),
         },
         "output_type": "cross_sectional_association",
-        "non_diagnostic_warning": (
-            "Research use only. All metrics below describe association with an "
-            "already-recorded diagnosis in a cross-sectional survey. They are not "
-            "future-risk performance and not a diagnostic aid."
-        ),
+        "dataset_capability_state": dataset_capability_state,
+        "non_diagnostic_warning": NON_DIAGNOSTIC_WARNING,
+        "safety_contract": {
+            "diagnostic_status": "non_diagnostic",
+            "future_risk": "disabled",
+            "clinical_warning": "profile_deviation_only",
+        },
         "notes": [
             "AUROC/AUPRC here measure separation of PREVALENT cases, not future disease development.",
             "Pancreatic-cancer targets are permanently gated off: the corrected MCQ230 coding (29=Pancreas, 39=Other) leaves 19 prevalent cases, below the 50-event safety gate.",
@@ -934,6 +1048,11 @@ def execute_biomarker_discovery(
         ],
     }
     if patient_record is not None:
-        response["patient_assessment"] = _build_patient_assessment(data_path, artifact, patient_record)
+        response["patient_assessment"] = _build_patient_assessment(
+            data_path,
+            artifact,
+            patient_record,
+            dataset_capability_state=dataset_capability_state,
+        )
 
     return response

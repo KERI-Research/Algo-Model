@@ -9,7 +9,7 @@ import {
 	Stat,
 } from "./common.jsx";
 
-export default function Overview({ onUnauthorised }) {
+export default function Overview({ onUnauthorised, onNavigate }) {
 	const [data, setData] = useState(null);
 	const [error, setError] = useState(null);
 
@@ -44,6 +44,25 @@ export default function Overview({ onUnauthorised }) {
 			<Notice kind="info" title="Non-diagnostic discovery research.">
 				{data.posture.statement}
 			</Notice>
+
+			<section className="explainer-cta" aria-labelledby="explainer-heading">
+				<div>
+					<h2 id="explainer-heading">How the AI works</h2>
+					<p>
+						The pipeline step by step, what a deviation score does and does not
+						mean, and why longitudinal data is the blocker for any risk-over-time
+						claim.
+					</p>
+				</div>
+				<button
+					type="button"
+					className="btn"
+					onClick={() => onNavigate && onNavigate("how")}
+					data-testid="button-open-how-it-works"
+				>
+					Read the explanation
+				</button>
+			</section>
 
 			<div className="grid grid-4">
 				{data.status_cards.map((card) => (

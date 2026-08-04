@@ -197,3 +197,27 @@ allowed and denied statement lists.
 Gated off entirely: any 1/3/5-year horizon output. `/api/v1/prevention-future-risk`
 returns HTTP 409 with the event-count gate report, and
 `prevention-capabilities.longitudinal_heads_enabled` is `false`.
+
+## Professor assessment payload format (2026-08-05)
+
+Professor-facing API/UI surfaces now render a shared envelope so interpretation
+is explicit and consistent:
+
+- `current_profile_assessment`: current-state meaning (deviation band or
+  cross-sectional association framing).
+- `standout_factors`: feature-level contributions for this profile.
+- `data_readiness`: missing inputs with priority and rationale.
+- `research_association`: prevalence/proxy-only status text.
+- `safety_contract`: `diagnostic_status=non_diagnostic`, `future_risk=disabled`.
+
+### Example reading patterns
+
+1. Within reference range:
+  "Current profile assessment shows within-reference-range deviation. No model
+  warning; still not evidence that disease is absent."
+2. Elevated deviation with missing key data:
+  "Deviation is elevated, and data readiness lists missing high-impact fields
+  before deeper interpretation."
+3. High deviation with risk-disabled behavior:
+  "Profile is highly unusual, but future-risk and cancer-type outputs remain
+  disabled on cross-sectional capability state."

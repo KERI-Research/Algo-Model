@@ -64,6 +64,23 @@ so the contract cannot drift silently again.
 `cancer_risk_probability` is retained for one release as a deprecated alias of
 `cross_sectional_association_probability` and must not be used in new surfaces.
 
+## Professor-facing outputs (2026-08-05 envelope)
+
+Professor-facing responses now expose an explicit, additive structure so each
+surface can render the same interpretation contract:
+
+- `current_profile_assessment`: what this result means now (deviation band +
+   percentile on deviation routes, or prevalence-association framing on
+   cross-sectional biomarker routes).
+- `standout_factors`: top model contributions for this record.
+- `data_readiness`: missing inputs, priority and why each field matters.
+- `research_association`: research-only association status and scope text.
+- `safety_contract`: explicit non-diagnostic + future-risk disabled flags.
+
+This envelope does not change capability boundaries: no cancer-type prediction,
+no future-development probabilities, and no horizon outputs on current
+cross-sectional NHANES data.
+
 ## Safety gates implemented and tested
 
 | Gate | Behaviour |

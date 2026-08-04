@@ -108,6 +108,12 @@ class BiomarkerFlowTests(unittest.TestCase):
         self.assertEqual(assessment["status"], "needs_required_fields")
         self.assertIn("BMX_BMXBMI", assessment["missing_required_fields"])
         self.assertGreaterEqual(len(assessment["follow_up_questions"]), 1)
+        self.assertIn("data_readiness", assessment)
+        self.assertEqual(
+            assessment["data_readiness"]["dataset_capability_state"],
+            "Cross-sectional only",
+        )
+        self.assertEqual(assessment["safety_contract"]["future_risk"], "disabled")
 
     def test_complete_record_returns_cross_sectional_association(self) -> None:
         payload = execute_biomarker_discovery(
@@ -134,6 +140,15 @@ class BiomarkerFlowTests(unittest.TestCase):
         self.assertGreaterEqual(assessment["cross_sectional_association_probability"], 0.0)
         self.assertLessEqual(assessment["cross_sectional_association_probability"], 1.0)
         self.assertIn("not a probability of developing disease", assessment["explanation"])
+        self.assertIn("current_profile_assessment", assessment)
+        self.assertIn("standout_factors", assessment)
+        self.assertIn("association_scope", assessment)
+        self.assertIn("data_readiness", assessment)
+        self.assertEqual(
+            payload["dataset_capability_state"],
+            "Cross-sectional only",
+        )
+        self.assertEqual(assessment["safety_contract"]["future_risk"], "disabled")
         self.assertIn(payload["model"], payload["benchmarks"])
         self.assertEqual(len(payload["biomarker_ranking"]), 5)
 

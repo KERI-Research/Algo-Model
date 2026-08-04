@@ -117,6 +117,39 @@ describe("App shell", () => {
 		expect(screen.getByTestId("input-access-key")).toBeInTheDocument();
 	});
 
+	it("reaches How the AI works from Overview and keeps five numbered sections", async () => {
+		render(<App />);
+		const user = userEvent.setup();
+		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.click(screen.getByTestId("button-login"));
+		await screen.findByTestId("button-open-how-it-works");
+		// The sidebar still lists exactly the five working sections.
+		const numbered = ["overview", "probe", "dataset", "reliability", "evidence"];
+		numbered.forEach((id) => expect(screen.getByTestId(`nav-${id}`)).toBeInTheDocument());
+		await user.click(screen.getByTestId("button-open-how-it-works"));
+		expect(
+			await screen.findByRole("heading", { name: "How the AI works", level: 1 }),
+		).toBeInTheDocument();
+		expect(screen.getByTestId("text-longitudinal-limit")).toHaveTextContent(
+			"not trained on longitudinal data",
+		);
+		expect(screen.getByTestId("pipeline-flow")).toBeInTheDocument();
+		await user.click(screen.getByTestId("button-back-overview"));
+		expect(await screen.findByText("Cross-sectional data only")).toBeInTheDocument();
+	});
+
+	it("reaches How the AI works from the sidebar helper link", async () => {
+		render(<App />);
+		const user = userEvent.setup();
+		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.click(screen.getByTestId("button-login"));
+		await user.click(await screen.findByTestId("nav-how"));
+		expect(
+			await screen.findByRole("heading", { name: "How the AI works", level: 1 }),
+		).toBeInTheDocument();
+		expect(screen.getByTestId("capability-table")).toBeInTheDocument();
+	});
+
 	it("signs out and hides the dashboard", async () => {
 		render(<App />);
 		const user = userEvent.setup();

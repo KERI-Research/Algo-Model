@@ -1,0 +1,10 @@
+# Vercel serverless function requirements (api/index.py).
+# Trimmed on purpose: scikit-learn, SciPy, joblib and PyTorch are NOT installed.
+# Scoring uses assets/ssl_artifact/preprocessor_params.json replayed with NumPy
+# (server/inference.py); parity with the scikit-learn path is enforced by
+# tests/test_inference_parity.py and tests/test_research_constants.py.
+# Keep this list minimal: the unzipped function must stay inside the Hobby limit.
+fastapi>=0.115,<1
+python-multipart>=0.0.9,<1
+pandas>=2.2,<4
+numpy>=1.26,<3

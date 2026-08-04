@@ -11,6 +11,15 @@ Run from the repository root (or anywhere; paths are resolved from this file):
 
     .venv/bin/python deploy/professor/prepare_assets.py
 
+It also exports two derived files that let the serverless runtime drop
+scikit-learn, SciPy and joblib entirely:
+
+* ``assets/ssl_artifact/preprocessor_params.json`` - the fitted preprocessor
+  constants, replayed with NumPy by ``server/inference.py``;
+* ``assets/research_constants.json`` - the feature allowlist, plausibility ranges
+  and reliability thresholds, read by ``server/core_bridge.py`` when the vendored
+  scikit-learn modules are unavailable.
+
 Two deliberate transformations:
 
 1. ``metadata.json`` keeps every field of the authoritative artifact, but the
@@ -129,6 +138,14 @@ def main() -> int:
 
     print("evidence catalogue:")
     write_json(evidence_out / "biomarker_evidence.json", json.loads(EVIDENCE_SRC.read_text()))
+
+    print("serverless exports (NumPy-only runtime):")
+    sys.path.insert(0, str(DEPLOY_DIR))
+    from server.inference import export_preprocessor_params  # noqa: E402
+    from server.research_constants import export_constants  # noqa: E402
+
+    write_json(artifact_out / "preprocessor_params.json", export_preprocessor_params(artifact_out))
+    write_json(DEPLOY_DIR / "assets" / "research_constants.json", export_constants())
 
     print("\nassets ready. Next: pip install -r requirements-deploy.txt, "
           "cd client && npm ci && npm run build, then ./start.sh")

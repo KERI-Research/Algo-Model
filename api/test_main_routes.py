@@ -50,6 +50,7 @@ class DatasetGateTests(unittest.TestCase):
     def test_capabilities_route_is_truthful(self) -> None:
         payload = self.client.post("/api/v1/prevention-capabilities", json={}).json()
         self.assertFalse(payload["longitudinal_heads_enabled"])
+        self.assertEqual(payload["dataset_capability_state"], "Cross-sectional only")
         self.assertFalse(payload["capabilities"]["supports_future_development_prediction"])
         self.assertEqual(
             payload["capabilities"]["supported_output"],
@@ -99,12 +100,19 @@ class PreventionScoreRouteTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["output_type"], "metabolic_deviation_and_representation")
         self.assertFalse(payload["is_future_risk_probability"])
+        self.assertEqual(payload["dataset_capability_state"], "Cross-sectional only")
         self.assertIn("non-diagnostic", payload["clinical_warning"].lower())
         score = payload["score"]
         self.assertIn("metabolic_deviation_score", score)
         self.assertIn("reference_percentile", score)
         self.assertIn("latent_representation", score)
         self.assertNotIn("risk_probability", score)
+        assessment = payload["patient_assessment"]
+        self.assertIn("current_profile_assessment", assessment)
+        self.assertIn("standout_factors", assessment)
+        self.assertIn("data_readiness", assessment)
+        self.assertIn("safety_contract", assessment)
+        self.assertEqual(assessment["safety_contract"]["future_risk"], "disabled")
 
     def test_missing_artifact_returns_conflict_not_a_fallback_score(self) -> None:
         response = self.client.post(
@@ -160,7 +168,10 @@ class BiomarkerRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload["output_type"], "cross_sectional_association")
-        self.assertIn("not future-risk performance", payload["non_diagnostic_warning"])
+        self.assertEqual(payload["dataset_capability_state"], "Cross-sectional only")
+        self.assertIn("not future disease probabilities", payload["non_diagnostic_warning"])
+        self.assertIn("safety_contract", payload)
+        self.assertEqual(payload["safety_contract"]["future_risk"], "disabled")
         self.assertIn(payload["model"], payload["benchmarks"])
         self.assertEqual(len(payload["biomarker_ranking"]), 5)
         assessment = payload["patient_assessment"]
@@ -170,6 +181,11 @@ class BiomarkerRouteTests(unittest.TestCase):
         self.assertGreaterEqual(assessment["cross_sectional_association_probability"], 0.0)
         self.assertLessEqual(assessment["cross_sectional_association_probability"], 1.0)
         self.assertIn("ALREADY has", assessment["explanation"])
+        self.assertIn("current_profile_assessment", assessment)
+        self.assertIn("standout_factors", assessment)
+        self.assertIn("data_readiness", assessment)
+        self.assertIn("association_scope", assessment)
+        self.assertEqual(assessment["safety_contract"]["future_risk"], "disabled")
 
     def test_pancreatic_target_is_refused_by_the_route(self) -> None:
         response = self.client.post(
