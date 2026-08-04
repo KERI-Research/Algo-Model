@@ -288,3 +288,39 @@ python -c "import pandas as pd; d=pd.read_csv('../data/nhanes_multicycle_v2.csv'
    ([calibration review](https://pmc.ncbi.nlm.nih.gov/articles/PMC6912996/)).
 6. Seek a longitudinal cohort with serial biomarkers and CA19-9 to answer the
    true early-detection trajectory question.
+
+## Engineering decision log (2026-08-04 pass)
+
+Each decision below is implemented in code and covered by a test.
+
+| Decision | Reason |
+| --- | --- |
+| Single fail-closed validator (`api/data_integrity.py`) called by every training, benchmarking and API entry point | Coding, leakage and capability rules must be impossible to bypass by choosing a different script. Blocking findings raise instead of warning. |
+| Pancreatic-cancer label recomputed from MCQ230A–D **code 29** and compared with the stored column; a match against code 39 counts is a blocking error | Makes the historical 29/39 error a test failure rather than a memory. Corrected data: 19 pancreas rows vs 318 "Other" rows. |
+| `PancreaticCancer` / `NODM_PancreaticCancer` targets and the two pre-correction CSVs raise on both the train and the load path | A stale artifact directory on disk could otherwise be served without retraining. |
+| Participant-grouped, seeded 70/15/15 splits with a disjointness assertion | NHANES rows are one-per-participant today, but the same code must stay correct when longitudinal data arrive. Split indices are persisted in `splits.npz`. |
+| Preprocessing and the deviation reference distribution fit on the training partition only | Standard leakage control ([scikit-learn common pitfalls](https://scikit-learn.org/stable/common_pitfalls.html)); a percentile only has meaning against a fixed reference. |
+| Post-hoc association probes moved to the holdout partition and gated at 50 cases per class | Cross-validated probes on all rows overlap the encoder's training rows and inflate apparent separation. |
+| Deterministic NumPy backend added alongside PyTorch | PyTorch is not installed in `.venv` and this laptop has no network access during preparation. A pure-NumPy Adam implementation of the same architecture keeps the demonstration reproducible; both backends export identical weight names. |
+| CPU default, `mps` opt-in | Bit-for-bit reproducibility ([PyTorch randomness notes](https://pytorch.org/docs/stable/notes/randomness.html)). |
+| Run manifest (seed, backend, device, package versions, epochs, wall time, checkpoint policy) plus generated model card per artifact | An artifact must be auditable without reading the code that produced it. |
+| Timestamped run directories with an explicit `--promote` step, refused for smoke runs | Prevents an under-trained demonstration artifact from silently becoming the served model. |
+| PCA (components matched to the latent dimension) and Isolation Forest baselines under identical preprocessing/splits | The encoder must justify its complexity against simple comparators; flag-overlap statistics show how method-dependent "unusual" is. |
+| API renames the supervised output to `cross_sectional_association_probability`, keeps `cancer_risk_probability` only as a deprecated alias, and returns `is_future_risk_probability: false` | The old field name implies future risk that the data cannot support. |
+| `/api/v1/prevention-future-risk` returns HTTP 409 with the horizon gate report | Fail-closed is safer and more informative than an approximate answer. |
+| Masking objective left unchanged (no ReMasker-style observed-value-only loss yet) | A plausible upgrade ([ReMasker](https://arxiv.org/abs/2309.13793)) but not worth destabilising a demonstrable pipeline today; recorded as deferred work. |
+
+## Remaining longitudinal blocker
+
+The intended default horizons are 1, 3 and 5 years with a minimum of 50 events and
+50 non-events per horizon. `data_integrity.horizon_gate_report` evaluates that gate
+and currently reports zero events for every horizon, because:
+
+- NHANES here is a repeated cross-section: one observation per participant, no
+  event time and no follow-up indicator;
+- TCGA-CDR follow-up exists but is measured **after** diagnosis, so it is denylisted
+  from prevention scoring by column prefix.
+
+Until a linked incident-outcome cohort is ingested, deviation scores and latent
+representations are the only defensible outputs. No modelling change can substitute
+for that data.

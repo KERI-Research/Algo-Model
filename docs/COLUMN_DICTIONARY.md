@@ -140,3 +140,51 @@ The final public artifact stores its medians in `feature_schema.json` and
 
 Median imputation does not mean a missing test is clinically normal. Missingness
 often reflects which NHANES cycle or subsample measured the biomarker.
+
+## Model-input allowlist (prevention / deviation work)
+
+Defined once in `api/self_supervised.py::PREVENTION_FEATURES` and validated by
+`api/data_integrity.py`. Only these columns may enter the encoder:
+
+`DEMO_RIDAGEYR`, `DEMO_RIAGENDR`, `DEMO_RIDRETH3`, `BMX_BMXBMI`, `BMX_BMXWAIST`,
+`GHB_LBXGH`, `GLU_LBXGLU`, `INS_LBXIN`, `CPEP_LBXCPSI`, `TRIGLY_LBXTR`,
+`TRIGLY_LBDLDL`, `HDL_LBDHDD`, `TCHOL_LBXTC`, `HSCRP_LBXHSCRP`, `CBC_LBXHGB`,
+`CBC_LBXPLTSI`, `BIOPRO_LBXSATSI`, `BIOPRO_LBXSAPSI`, `BIOPRO_LBXSCR`,
+`smoking_status`, `alcohol_status`, `average_drinks_per_day`, `weight_loss_1yr_lb`,
+`weight_loss_10yr_lb`, `homa_ir`.
+
+Categorical members (`DEMO_RIAGENDR`, `DEMO_RIDRETH3`, `smoking_status`,
+`alcohol_status`) are one-hot encoded; numeric members are median-imputed with a
+missingness indicator and robust-scaled on the 10–90 percentile range. All statistics
+are fit on the training partition only.
+
+## Model-input denylist (never an input)
+
+| Column / pattern | Why it is denylisted |
+| --- | --- |
+| `Cancer`, `MCQ_MCQ220`, `MCQ_MCQ230A–D`, `MCQ_MCQ240T` | Outcome and outcome-source columns |
+| `PancreaticCancer`, `NODM_PancreaticCancer`, `pancreatic_cancer_diagnosis_age`, `pancreatic_cancer_minus_diabetes_years`, `same_year_diabetes_pancreatic_cancer` | Label-derived; also invalidated targets |
+| `Diabetes`, `DIQ_DIQ010`, `diabetes_subtype`, `new_onset_diabetes` | Outcome / label-derived |
+| any `tcga_*` column | Post-diagnosis context (stage, grade, tumour status, treatment response, follow-up time) that cannot inform prevention scoring |
+
+`data_integrity.is_denylisted_input()` enforces both the explicit list and the
+`tcga_` prefix rule, and `select_prevention_features()` asserts the resulting feature
+set is disjoint from it.
+
+## Label definitions (as implemented)
+
+| Label | Definition | Nature |
+| --- | --- | --- |
+| `Cancer` | `MCQ220 == 1` (ever told had cancer) | Prevalent, self-reported, cross-sectional |
+| `PancreaticCancer` | any of `MCQ230A–D == 29` (**Pancreas**). Code **39 is "Other"** and is never counted | Prevalent; 19 cases in 107,622 rows |
+| `Diabetes` | `DIQ010 == 1` | Prevalent, self-reported |
+| `diabetes_subtype` | `1` = research-only Type 1 proxy (young onset + insulin), `2` = Type 2 proxy, `0` = no diabetes | Proxy only: no autoantibodies, no approved genetics, no confirmatory C-peptide criteria |
+
+## Identifiers, splits and capability columns
+
+| Column | Meaning |
+| --- | --- |
+| `SEQN` | NHANES respondent sequence number, unique within a cycle |
+| `global_participant_id` | `"<cycle>:<SEQN>"`, the participant key used for grouped splitting; 107,622 unique values, no duplicates |
+| `survey_cycle`, `survey_cycle_index`, `survey_year_midpoint` | Pooling metadata; `survey_cycle_index` is a repeated-cross-section proxy, not a within-patient trajectory |
+| *(absent)* `event_time_days`, `event` | Required for horizon gating. Their absence is why 1/3/5-year heads are disabled |

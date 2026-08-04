@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 import hashlib
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -15,6 +18,12 @@ import pandas as pd
 os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
 
 from chromadb import PersistentClient
+from chromadb.api.client import SharedSystemClient
+from chromadb.config import Settings
+from chromadb.db.impl.sqlite import SqliteDB
+from chromadb.api.client import SharedSystemClient
+from chromadb.config import Settings
+from chromadb.db.impl.sqlite import SqliteDB
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
@@ -26,6 +35,8 @@ try:
 except Exception:  # pragma: no cover - optional at import time during partial installs
     XGBClassifier = None
 
+
+from data_integrity import assert_dataset_allowed, assert_target_allowed
 
 ARTIFACT_VERSION = "v1"
 MODEL_NAME = "metaboguard_hist_gradient_boosting_v1"
@@ -362,9 +373,6 @@ def _store_training_memory(
     if chroma_path.exists():
         shutil.rmtree(chroma_path)
     chroma_path.mkdir(parents=True, exist_ok=True)
-    client = PersistentClient(path=str(chroma_path))
-    collection = client.get_or_create_collection(name="biomarker_cases")
-
     selected_columns = [*features, target]
     if "Diabetes" in prepared.columns and "Diabetes" not in features and "Diabetes" != target:
         selected_columns.append("Diabetes")
@@ -394,8 +402,88 @@ def _store_training_memory(
         for _, row in memory_df.iterrows()
     ]
 
-    collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
+    with _chroma_client(chroma_path) as client:
+        collection = client.get_or_create_collection(name="biomarker_cases")
+        collection.upsert(
+            ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas
+        )
     return {"collection": "biomarker_cases", "stored_cases": len(memory_df)}
+
+
+# Chroma 0.6.3 ships a product-telemetry client that is incompatible with the installed
+# posthog version, so every call logs "Failed to send telemetry event ...:
+# capture() takes 1 positional argument but 3 were given" at ERROR level. That message is
+# pure third-party noise: no data leaves the machine (the call fails before any request)
+# and nothing in MetaboGuard depends on it. Only this one logger is silenced, so real
+# warnings from Chroma, sklearn, pydantic or project code are still shown.
+logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
+
+
+@contextmanager
+def _chroma_client(chroma_path: Path):
+    """Open a Chroma persistent client with telemetry off and close its SQLite handle.
+
+    1. ``anonymized_telemetry=False`` opts out of Chroma's PostHog product telemetry.
+       Appropriate for a clinical research codebase, which must not phone home.
+    2. Chroma 0.6 exposes no public ``close()``. A per-call client therefore leaks its
+       persistent SQLite connection, which surfaces as
+       ``ResourceWarning: unclosed database``. Stopping the ``SqliteDB`` component closes
+       the connection pool, and ``clear_system_cache()`` drops the cached system so the
+       next call starts clean. Clients are created per call here, so this is safe.
+    """
+    client = PersistentClient(
+        path=str(chroma_path),
+        settings=Settings(anonymized_telemetry=False, is_persistent=True),
+    )
+    try:
+        yield client
+    finally:
+        try:
+            client._system.instance(SqliteDB).stop()
+        except Exception:  # pragma: no cover - cleanup must never mask a real error
+            pass
+        try:
+            SharedSystemClient.clear_system_cache()
+        except Exception:  # pragma: no cover
+            pass
+
+
+# Chroma 0.6.3 ships a product-telemetry client that is incompatible with the installed
+# posthog version, so every call logs "Failed to send telemetry event ...:
+# capture() takes 1 positional argument but 3 were given" at ERROR level. That message is
+# pure third-party noise: no data leaves the machine (the call fails before any request)
+# and nothing in MetaboGuard depends on it. Only this one logger is silenced, so real
+# warnings from Chroma, sklearn, pydantic or project code are still shown.
+logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
+
+
+@contextmanager
+def _chroma_client(chroma_path: Path):
+    """Open a Chroma persistent client with telemetry off and close its SQLite handle.
+
+    1. ``anonymized_telemetry=False`` opts out of Chroma's PostHog product telemetry.
+       Appropriate for a clinical research codebase, which must not phone home.
+    2. Chroma 0.6 exposes no public ``close()``. A per-call client therefore leaks its
+       persistent SQLite connection, which surfaces as
+       ``ResourceWarning: unclosed database``. Stopping the ``SqliteDB`` component closes
+       the connection pool, and ``clear_system_cache()`` drops the cached system so the
+       next call starts clean. Clients are created per call here, so this is safe.
+    """
+    client = PersistentClient(
+        path=str(chroma_path),
+        settings=Settings(anonymized_telemetry=False, is_persistent=True),
+    )
+    try:
+        yield client
+    finally:
+        try:
+            client._system.instance(SqliteDB).stop()
+        except Exception:  # pragma: no cover - cleanup must never mask a real error
+            pass
+        try:
+            SharedSystemClient.clear_system_cache()
+        except Exception:  # pragma: no cover
+            pass
 
 
 def _build_candidate_models(positive_rate: float = 0.5) -> list[tuple[str, Any]]:
@@ -489,6 +577,10 @@ def train_biomarker_model(
     This is used for the pancreatic-in-diabetics risk-stratification model per
     the MetaboGuard brief.
     """
+    # Fail closed before any I/O: invalidated files and invalidated supervised
+    # targets (pancreatic cancer after the MCQ230 29/39 correction) are blocked.
+    assert_dataset_allowed(data_path)
+    assert_target_allowed(target)
     paths = _artifact_paths(
         data_path, target=target, cohort_filter=cohort_filter, create=False
     )
@@ -628,6 +720,10 @@ def train_biomarker_model(
 
 
 def load_biomarker_model(data_path: str, target: str = "Cancer", cohort_filter: str | None = None) -> dict[str, Any]:
+    # Gate on load as well as on train, so a stale artifact directory on disk can
+    # never be served for an invalidated dataset or target.
+    assert_dataset_allowed(data_path)
+    assert_target_allowed(target)
     paths = _artifact_paths(
         data_path, target=target, cohort_filter=cohort_filter, create=False
     )
@@ -678,13 +774,15 @@ def _query_similar_cases(data_path: str, artifact: dict[str, Any], patient_featu
     )
     if not paths.chroma_path.exists():
         return []
-    client = PersistentClient(path=str(paths.chroma_path))
-    try:
-        collection = client.get_collection(name="biomarker_cases")
-    except Exception:
-        return []
-    embedding = artifact["retrieval_scaler"].transform(patient_features.astype(float)).tolist()[0]
-    result = collection.query(query_embeddings=[embedding], n_results=3)
+    with _chroma_client(paths.chroma_path) as client:
+        try:
+            collection = client.get_collection(name="biomarker_cases")
+        except Exception:
+            return []
+        embedding = (
+            artifact["retrieval_scaler"].transform(patient_features.astype(float)).tolist()[0]
+        )
+        result = collection.query(query_embeddings=[embedding], n_results=3)
     matches: list[dict[str, Any]] = []
     for index, document in enumerate(result.get("documents", [[]])[0]):
         matches.append(
@@ -741,15 +839,34 @@ def _build_patient_assessment(data_path: str, artifact: dict[str, Any], patient_
 
     top_biomarkers = artifact["biomarker_ranking"][:5]
     biomarker_names = ", ".join(item["feature"] for item in top_biomarkers[:3])
+    target = artifact.get("target", "Cancer")
     explanation = (
-        f"The record was scored against the NHANES-trained biomarker model. "
-        f"Current cancer-linked risk probability is {probability:.3f}, with { _confidence_label(confidence) } confidence. "
-        f"The strongest cohort biomarkers in this model are {biomarker_names}."
+        "The record was scored against a cross-sectional NHANES association model. "
+        f"The model output is the estimated probability that a participant with this "
+        f"profile ALREADY has a recorded {target} diagnosis in NHANES "
+        f"({probability:.3f}), with { _confidence_label(confidence) } confidence. "
+        "It is not a probability of developing disease in the future and it is not a "
+        f"diagnosis. The strongest cohort features in this model are {biomarker_names}."
     )
 
     return {
         "status": status,
+        # Truthful primary field: this is a prevalence (already-present) association.
+        "cross_sectional_association_probability": round(probability, 6),
+        "association_target": target,
+        "output_type": "cross_sectional_association",
+        "is_future_risk_probability": False,
+        "non_diagnostic_warning": (
+            "Research use only. Cross-sectional association with an already-recorded "
+            "diagnosis. Not a diagnosis and not a future-risk probability."
+        ),
+        # Deprecated alias kept for one release so existing clients do not break.
+        # Do not use in any new surface: the name implies future risk, which this is not.
         "cancer_risk_probability": round(probability, 6),
+        "deprecated_fields": {
+            "cancer_risk_probability": "Renamed to cross_sectional_association_probability.",
+            "diabetes_cancer_link_score": "Ad-hoc composite; not a calibrated quantity.",
+        },
         "diabetes_cancer_link_score": round(float((probability + patient_features.iloc[0].get("Diabetes", 0.0)) / 2.0), 6),
         "confidence": confidence,
         "confidence_label": _confidence_label(confidence),
@@ -792,7 +909,15 @@ def execute_biomarker_discovery(
             **artifact["memory_summary"],
             "path": str(paths.chroma_path),
         },
+        "output_type": "cross_sectional_association",
+        "non_diagnostic_warning": (
+            "Research use only. All metrics below describe association with an "
+            "already-recorded diagnosis in a cross-sectional survey. They are not "
+            "future-risk performance and not a diagnostic aid."
+        ),
         "notes": [
+            "AUROC/AUPRC here measure separation of PREVALENT cases, not future disease development.",
+            "Pancreatic-cancer targets are permanently gated off: the corrected MCQ230 coding (29=Pancreas, 39=Other) leaves 19 prevalent cases, below the 50-event safety gate.",
             "NHANES biomarker workflow now includes lab features such as HbA1c, fasting glucose, insulin, lipids, and hs-CRP when present in the 2017-2018 public files.",
             "The training pipeline benchmarks HistGradientBoosting against XGBoost and preserves the same artifact contract while selecting the stronger model by AUPRC, then AUROC.",
             "A small local LLM can be layered on top of this output for explanation and question phrasing, but the predictor itself is tabular-first.",

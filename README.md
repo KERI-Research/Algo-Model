@@ -5,6 +5,27 @@ prevention.**
 
 Developed within the **KERI department**.
 
+## Quick start (validated 2026-08-04)
+
+```bash
+cd api
+python data_integrity.py --dataset ../data/nhanes_multicycle_v2.csv   # fail-closed validation
+python run_meeting_demo.py                                            # validate + smoke train + baselines (~25s)
+python run_meeting_demo.py --full                                     # full current SSL configuration (~30s)
+python -m unittest discover -p "test_*.py"                            # safety + pipeline tests
+cd ../frontend && npm run build                                       # production build
+```
+
+See [`TODAY_MEETING_DEMO.md`](TODAY_MEETING_DEMO.md) for the demonstration runbook,
+verified numbers and the sentences that are safe to say about them.
+
+A complete verified full run (40 epochs, NumPy backend) is stored at
+[`model_artifacts/metaboguard_ssl/meeting_2026-08-04/`](model_artifacts/metaboguard_ssl/meeting_2026-08-04/)
+with weights, training-only preprocessor, split indices, run manifest, metrics, model card
+and benchmark report. It is deliberately **not promoted** for API serving and is not a
+clinical or future-risk model. PyTorch is not installed, so torch-backend parity is
+unverified.
+
 ## Intended use
 
 MetaboGuard learns common metabolic patterns from clinical and behavioural
@@ -168,14 +189,44 @@ pip install -r requirements-ssl.txt
 
 ## Training
 
+Every entry point validates the dataset first and refuses invalidated files,
+denylisted inputs and ungated future-risk heads. Full guide:
+[`docs/TRAINING.md`](docs/TRAINING.md).
+
 ```bash
 cd api
 
-python train_self_supervised.py \
-  --dataset ../data/nhanes_multicycle_v2.csv \
-  --epochs 25 \
-  --latent-dim 16
+# bounded smoke run (minutes, CPU, PyTorch optional)
+python train_self_supervised.py --smoke
+
+# full run from the committed configuration
+python train_self_supervised.py --config configs/ssl_full.json
+
+# promote a full run for API serving (smoke runs are refused)
+python train_self_supervised.py --config configs/ssl_full.json --promote
 ```
+
+Artifacts are written to
+`model_artifacts/metaboguard_ssl/runs/<dataset>__<run_label>__<UTC timestamp>/`
+with weights, the training-only preprocessor, `metadata.json` (config, split policy,
+run manifest with seed/backend/device/package versions/timings), a generated
+`MODEL_CARD.md`, `splits.npz` and a resumable checkpoint.
+
+Backends: `torch` when installed, otherwise a deterministic NumPy implementation of
+the same architecture (`--backend numpy`). Default device is CPU for reproducibility;
+`--device mps` is available on the torch backend and is not bit-for-bit reproducible.
+
+## Benchmarks
+
+```bash
+cd api
+python baselines.py --dataset ../data/nhanes_multicycle_v2.csv \
+  --ssl-artifact ../model_artifacts/metaboguard_ssl/nhanes_multicycle_v2
+```
+
+PCA reconstruction (components matched to the latent dimension) and Isolation Forest,
+evaluated under the identical preprocessing and split boundaries. Unsupervised
+deviation only — no disease prediction. See [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 
 ## Scoring
 
@@ -194,8 +245,10 @@ uvicorn main:app --reload --port 8000
 Relevant endpoints:
 
 - `GET /api/v1/datasets`
-- `POST /api/v1/prevention-capabilities`
-- `POST /api/v1/prevention-score`
+- `POST /api/v1/prevention-capabilities` — capability + horizon gate report
+- `POST /api/v1/prevention-score` — deviation score, percentile, latent representation
+- `POST /api/v1/data-integrity` — coding, leakage, duplicate, missingness and split report
+- `POST /api/v1/prevention-future-risk` — intentionally fail-closed (HTTP 409) until gates pass
 - `POST /api/v1/analyze`
 - `POST /api/v1/predictive-baseline`
 - `POST /api/v1/biomarker-discovery`
@@ -214,9 +267,18 @@ not provide a diagnosis or future-risk claim.
 - Dataset fingerprints for supervised artifacts
 - Public-export blocking for invalid/underpowered models
 - Research-only Type 1 proxy
+- Fail-closed validation on every training and scoring entry point (`api/data_integrity.py`)
+- Invalidated datasets and pancreatic-cancer targets blocked on both train and load paths
+- Participant-grouped, seeded splits with training-only preprocessing and deviation reference
+- Run manifests (seed, backend, device, package versions, timings) and generated model cards
+- Automated tests for coding, leakage, gates, split boundaries and API terminology
 
 ## Documentation
 
+- [`TODAY_MEETING_DEMO.md`](TODAY_MEETING_DEMO.md) — demonstration runbook and verified numbers
+- [`docs/TRAINING.md`](docs/TRAINING.md) — training, configs, backends, reproducibility rules
+- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — PCA / Isolation Forest baselines and deferred comparisons
+- [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) — safety card, gates, limitations, blocker
 - [`docs/PREVENTION_MODEL_SPEC.md`](docs/PREVENTION_MODEL_SPEC.md)
 - [`docs/RESULTS_GUIDE.md`](docs/RESULTS_GUIDE.md)
 - [`docs/COLUMN_DICTIONARY.md`](docs/COLUMN_DICTIONARY.md)

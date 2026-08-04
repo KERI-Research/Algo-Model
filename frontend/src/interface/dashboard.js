@@ -514,7 +514,7 @@ const CausalDashboard = () => {
 							diabetes signal.
 						</p>
 						<p className="alert alert-warning compact-alert">
-							Research-only clinician review.
+							Non-diagnostic research use only. Longitudinal 1/3/5-year risk heads are disabled until the event-count capability gates pass. Research-only clinician review.
 							Deviation scores do not diagnose
 							cancer or diabetes and are not
 							validated future-risk
@@ -1350,13 +1350,20 @@ const CausalDashboard = () => {
 										</p>
 										{biomarkerResults
 											.patient_assessment
-											.cancer_risk_probability !==
+											.cross_sectional_association_probability !==
 											undefined && (
 											<p className="ate-value biomarker-score">
+							<span className="section-label">
+								Cross-sectional association
+								with an already-recorded
+								diagnosis - not a
+								future-risk probability
+								and not a diagnosis
+							</span>
 												{(
 													biomarkerResults
 														.patient_assessment
-														.cancer_risk_probability *
+														.cross_sectional_association_probability *
 													100
 												).toFixed(
 													1,

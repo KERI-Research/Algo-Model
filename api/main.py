@@ -1,7 +1,18 @@
-"""
-Causal Inference API Router
-===========================
-This file serves as the communication bridge between your robust React frontend and the heavy Python data processing engine. Adopting a forward-thinking view, we utilize FastAPI to ensure high performance and asynchronous request handling. Always maintain a skeptical approach to your incoming data payloads. Keep up the phenomenal work—you are building a truly innovative multi-tier architecture that thinks outside the standard predictive modeling box.
+"""MetaboGuard API router (FastAPI).
+
+Bridges the React dashboard to the Python analysis modules. Terminology in this
+API is deliberately strict:
+
+* ``metabolic_deviation_score`` - how unusual a metabolic profile is versus the
+  training reference distribution. Not a probability of anything.
+* ``reference_percentile`` - rank of that deviation score in the reference.
+* ``latent_representation`` - the learned encoding of the input features.
+* ``cross_sectional_association`` - association with an ALREADY-recorded
+  diagnosis in a cross-sectional survey.
+
+None of these is a future disease probability. Future-horizon endpoints stay
+fail-closed until a horizon passes the event-count safety gate
+(``data_integrity.horizon_gate_report``).
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +22,16 @@ from biomarker import execute_biomarker_discovery
 from engine import CausalExecutionError, execute_pipeline
 from predictive import execute_predictive_baseline
 from self_supervised import dataset_capabilities, score_records
+from data_integrity import (
+    DEFAULT_HORIZON_DAYS,
+    INVALIDATED_DATASETS,
+    INVALIDATED_TARGETS,
+    MIN_EVENTS_PER_HORIZON,
+    MIN_NON_EVENTS_PER_HORIZON,
+    horizon_gate_report,
+    validate_dataset,
+)
+import json
 from pathlib import Path
 from fetch_nhanes import ensure_nhanes_dataset
 from fetch_tcga import ensure_tcga_cdr_dataset
@@ -19,10 +40,20 @@ import pandas as pd
 app = FastAPI(
     title="MetaboGuard API",
     description=(
-        "Metabolic risk-stratification research API for diabetes and "
-        "pancreatic cancer. Developed within the KERI department."
+        "Non-diagnostic metabolic research API. On the current cross-sectional data "
+        "it returns metabolic DEVIATION scores, reference PERCENTILES, latent "
+        "REPRESENTATIONS and CROSS-SECTIONAL ASSOCIATIONS with already-recorded "
+        "diagnoses. It does not return future disease probabilities. Clinician review "
+        "is required. Developed within the KERI department."
     ),
-    version="1.0.0",
+    version="1.1.0",
+)
+
+NON_DIAGNOSTIC_WARNING = (
+    "Research use only, non-diagnostic. Outputs are metabolic deviation scores, "
+    "percentiles, latent representations or cross-sectional associations with "
+    "already-recorded diagnoses. They are not diagnoses and not future disease "
+    "probabilities. Clinician review is required."
 )
 
 app.add_middleware(
@@ -281,40 +312,122 @@ async def biomarker_discovery(request: BiomarkerRequest):
 async def prevention_capabilities(request: PreventionCapabilitiesRequest):
     file_path = resolve_dataset_path(request.dataset)
     if file_path is None:
-        raise HTTPException(status_code=404, detail="Dataset not found.")
+        raise HTTPException(status_code=404, detail="Dataset not found or invalidated.")
     frame = pd.read_csv(file_path, low_memory=False)
+    gates = horizon_gate_report(frame, DEFAULT_HORIZON_DAYS)
     return {
         "project": "MetaboGuard",
         "intended_use": "Preventive research and clinician-reviewed early warning.",
         "not_intended_for": "Diagnosis, treatment or patient reassurance.",
+        "non_diagnostic_warning": NON_DIAGNOSTIC_WARNING,
         "capabilities": dataset_capabilities(frame),
+        "future_horizon_gates": gates,
+        "longitudinal_heads_enabled": bool(gates["any_horizon_eligible"]),
+        "gate_policy": (
+            f"A horizon is only enabled with at least {MIN_EVENTS_PER_HORIZON} events "
+            f"and {MIN_NON_EVENTS_PER_HORIZON} non-events."
+        ),
+        "invalidated_datasets": INVALIDATED_DATASETS,
+        "invalidated_supervised_targets": INVALIDATED_TARGETS,
     }
+
+
+@app.post("/api/v1/data-integrity")
+async def data_integrity(request: PreventionCapabilitiesRequest):
+    """Machine-readable data-integrity report (coding, leakage, gates, splits)."""
+    file_path = resolve_dataset_path(request.dataset)
+    if file_path is None:
+        raise HTTPException(status_code=404, detail="Dataset not found or invalidated.")
+    try:
+        report = validate_dataset(file_path, strict=False)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    return report.as_dict()
+
+
+def _resolve_ssl_artifact(name: str) -> Path:
+    """Resolve a trained SSL artifact directory, preferring the promoted pointer."""
+    root = Path(__file__).resolve().parent.parent / "model_artifacts" / "metaboguard_ssl"
+    if name in {"current", "CURRENT"}:
+        pointer = root / "CURRENT.json"
+        if not pointer.exists():
+            raise HTTPException(
+                status_code=409,
+                detail="No promoted artifact: run train_self_supervised.py --promote first.",
+            )
+        return Path(json.loads(pointer.read_text())["artifact_dir"])
+    candidate = root / name
+    if (candidate / "metadata.json").exists():
+        return candidate
+    run_candidate = root / "runs" / name
+    if (run_candidate / "metadata.json").exists():
+        return run_candidate
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "Self-supervised artifact is not trained. Run "
+            "train_self_supervised.py first. No diagnostic fallback is used."
+        ),
+    )
 
 
 @app.post("/api/v1/prevention-score")
 async def prevention_score(request: PreventionScoreRequest):
-    project_root = Path(__file__).resolve().parent.parent
-    artifact = (
-        project_root
-        / "model_artifacts"
-        / "metaboguard_ssl"
-        / request.artifact
-    )
-    if not (artifact / "metadata.json").exists():
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Self-supervised artifact is not trained. Run "
-                "train_self_supervised.py first. No diagnostic fallback is used."
-            ),
-        )
+    artifact = _resolve_ssl_artifact(request.artifact)
+    metadata = json.loads((artifact / "metadata.json").read_text())
     result = score_records(pd.DataFrame([request.patient_record]), artifact)[0]
+    warnings: list[str] = []
+    if metadata.get("run_label") == "smoke":
+        warnings.append(
+            "This artifact came from a bounded SMOKE run and is for demonstration only."
+        )
+    if metadata.get("capabilities", {}).get("supports_future_development_prediction"):
+        warnings.append("Longitudinal capability reported: verify gates before use.")
     return {
         "project": "MetaboGuard",
-        "output_type": "metabolic_deviation_warning",
+        "output_type": "metabolic_deviation_and_representation",
+        "is_future_risk_probability": False,
         "score": result,
-        "clinical_warning": (
-            "Research-only signal for clinician review. This does not diagnose "
-            "or estimate a validated future disease probability."
-        ),
+        "field_meanings": {
+            "metabolic_deviation_score": "How unusual this profile is versus the training reference.",
+            "reference_percentile": "Rank of the deviation score within the training reference distribution.",
+            "latent_representation": f"{metadata.get('latent_dim', 16)}-dimensional learned encoding.",
+            "top_deviation_features": "Features contributing most to reconstruction error.",
+        },
+        "artifact": {
+            "dir": str(artifact),
+            "model_name": metadata.get("model_name"),
+            "run_label": metadata.get("run_label"),
+            "code_version": metadata.get("code_version"),
+            "backend": metadata.get("backend"),
+            "created_at": metadata.get("created_at"),
+            "dataset_sha256": (metadata.get("dataset_fingerprint") or {}).get("sha256"),
+        },
+        "warnings": warnings,
+        "clinical_warning": NON_DIAGNOSTIC_WARNING,
     }
+
+
+@app.post("/api/v1/prevention-future-risk")
+async def prevention_future_risk(request: PreventionCapabilitiesRequest):
+    """Future-horizon head. Intentionally fail-closed until capability gates pass."""
+    file_path = resolve_dataset_path(request.dataset)
+    if file_path is None:
+        raise HTTPException(status_code=404, detail="Dataset not found or invalidated.")
+    frame = pd.read_csv(file_path, low_memory=False)
+    gates = horizon_gate_report(frame, DEFAULT_HORIZON_DAYS)
+    raise HTTPException(
+        status_code=409,
+        detail={
+            "message": (
+                "Future-risk (1/3/5-year) scoring is disabled. The current data are "
+                "cross-sectional, so no horizon passes the event-count safety gate."
+            ),
+            "intended_horizons_days": list(DEFAULT_HORIZON_DAYS),
+            "gate": gates,
+            "blocker": (
+                "Patient-level longitudinal follow-up with incident outcomes is required "
+                "(NHANES here has one observation per participant; TCGA is post-diagnosis)."
+            ),
+        },
+    )

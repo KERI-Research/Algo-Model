@@ -131,3 +131,24 @@ The brief requires a cohort containing:
 UK Biobank or an equivalent linked clinical/genetic cohort is required for the
 primary MetaboGuard model. NHANES should remain a feature-engineering and
 population-context dataset.
+
+## How to read each output (2026-08-04 terminology contract)
+
+| Output | What it is | What it is not | Safe sentence |
+| --- | --- | --- | --- |
+| `metabolic_deviation_score` | Distance of a profile from the training reference (0.7 × reconstruction + 0.3 × latent distance, both robust-scaled) | A probability, a severity grade, or a diagnosis | "This profile is unusual relative to our reference sample." |
+| `reference_percentile` | Rank of that score inside the **training** reference distribution | A population percentile (survey weights are not applied) | "It sits above the 95th percentile of our training reference." |
+| `latent_representation` | 16 learned numbers summarising the inputs | Interpretable biology; individual dimensions have no assigned meaning | "It is the encoding we use for downstream research." |
+| `top_deviation_features` | Features contributing most to reconstruction error | Causes, or clinically abnormal values | "Most of the unusualness comes from HbA1c and triglycerides." |
+| `cross_sectional_association_probability` | Probability that someone with this profile **already has** a recorded diagnosis in NHANES | A future-risk probability; a screening result | "Profiles like this are more common among people who already report a diagnosis." |
+| Post-hoc AUROC / AUPRC | Separation of **prevalent** cases on the holdout partition | Prevention or early-warning performance | "The representation carries cross-sectional signal." |
+| Baseline reconstruction MSE | How well an unsupervised method models the feature distribution | Disease prediction skill | "The encoder models the data slightly better than a matched PCA." |
+| Flag Jaccard between methods | Overlap of the top-5 % most-unusual profiles | Agreement about disease | "Which profiles look unusual depends on the method, so clinicians adjudicate." |
+
+Deprecated: `cancer_risk_probability` is retained for one release as an alias of
+`cross_sectional_association_probability`. Do not quote it; the name implies future
+risk the data cannot support.
+
+Gated off entirely: any 1/3/5-year horizon output. `/api/v1/prevention-future-risk`
+returns HTTP 409 with the event-count gate report, and
+`prevention-capabilities.longitudinal_heads_enabled` is `false`.

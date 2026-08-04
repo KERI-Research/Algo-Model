@@ -1,0 +1,16 @@
+{
+  "latent_dim": 16,
+  "hidden_dim": 96,
+  "epochs": 3,
+  "batch_size": 256,
+  "learning_rate": 0.001,
+  "mask_probability": 0.15,
+  "gaussian_noise": 0.03,
+  "patience": 2,
+  "max_train_rows": 6000,
+  "random_seed": 42,
+  "backend": "auto",
+  "device": "cpu",
+  "checkpoint_every": 1,
+  "run_label": "smoke"
+}
