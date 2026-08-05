@@ -1,0 +1,31 @@
+{
+  "split_manifest_version": "future-risk-splits-v1",
+  "created_at": "2026-08-05T15:44:58.729455+00:00",
+  "level": "patient",
+  "seed": 20260805,
+  "fractions": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15
+  },
+  "temporal_holdout_from_year": 2016,
+  "temporal_holdout_rule": "cohort-relative cutoff: index date >= 2021-06-05T05:58:52.500000+00:00 (the 75% index-date quantile; the fixed 2016 year cutoff would have held out 87.2% of the cohort, above the 25% cap)",
+  "sizes": {
+    "train": 3005,
+    "validation": 658,
+    "test": 675,
+    "temporal_holdout": 1446
+  },
+  "overlaps": {
+    "train__validation": 0,
+    "test__train": 0,
+    "test__validation": 0
+  },
+  "patient_id_fingerprints": {
+    "train": "429911b5fa775586c7b787b0c8f0c41fd9f64f66cd6718939a85e00d23484f5e",
+    "validation": "8e9c8c679cd8d8a607bab8f52a25ba0046bd7b83261ee8592b6198208a1c8606",
+    "test": "f40ac815059d8138ebe65efea214f732b958bf6dfceea9b04e8a8323e902aa9f",
+    "temporal_holdout": "3d92f0852a74c25919284bf7d972f65cd8555138656b49d397bc16632cab4fcc"
+  },
+  "note": "Written before any preprocessing is fit. Preprocessing statistics are fit on train only; the temporal holdout is disjoint from train and validation."
+}

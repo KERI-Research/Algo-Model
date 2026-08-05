@@ -1,0 +1,30 @@
+{
+  "split_manifest_version": "future-risk-splits-v1",
+  "created_at": "2026-08-05T14:35:30.939410+00:00",
+  "level": "patient",
+  "seed": 20260805,
+  "fractions": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15
+  },
+  "temporal_holdout_from_year": 2016,
+  "sizes": {
+    "train": 3394,
+    "validation": 700,
+    "test": 698,
+    "temporal_holdout": 1208
+  },
+  "overlaps": {
+    "train__validation": 0,
+    "test__train": 0,
+    "test__validation": 0
+  },
+  "patient_id_fingerprints": {
+    "train": "f77bf56aae0e1ff66c606aeedbc8ad79ecfc629eb19dd8905c3e33b8242de540",
+    "validation": "b912b14014f61f21177514e25cf7de56d344fdcd7e141011bd8be842c5aeef11",
+    "test": "854e7c214e6240099802fd40047895ac601589f5185c3fc5b7b37100e47ad075",
+    "temporal_holdout": "7d36cf32f0e7e477e844056ea05fd792e604858dabf4d5d9cca18a8e1b873967"
+  },
+  "note": "Written before any preprocessing is fit. Preprocessing statistics are fit on train only; the temporal holdout is disjoint from train and validation."
+}

@@ -196,6 +196,81 @@ The current MetaboGuard-SSL artifact demonstrates technical feasibility:
 Cross-sectional association checks must not be interpreted as future
 development performance.
 
+## Future-risk layer (simulation only)
+
+A future-risk layer exists in code and is **disabled for real patients**. It is documented in
+`docs/FUTURE_RISK_PROTOCOL.md` (endpoints, splits, gates), `docs/LONGITUDINAL_SCHEMA.md` (data
+contract) and `docs/FUTURE_RISK_EVALUATION.md` (metrics and controls).
+
+- **Data**: synthetic longitudinal cohorts only. Preferred generator is official Synthea v3.3.0
+  (Apache-2.0; methodology DOI 10.1093/jamia/ocx079; validity limits DOI 10.1186/s12911-019-0793-0).
+  A declared-enrichment in-repo simulator is the alternative, with sampling strata and weights
+  retained. Ordinary-incidence and enriched metrics are never pooled.
+- **Outputs**: cause-specific cumulative incidence at 1, 3 and 5 years, raw and calibrated, with
+  death handled as a competing event.
+- **Gating**: each horizon needs ≥50 events and ≥50 non-events among eligible patients or it
+  abstains. Type 1 diabetes is never enabled. Site-specific cancer heads stay disabled below the
+  same gate.
+- **Selection**: calibration-first (smallest |calibration slope − 1|, ties by AUROC). A temporal
+  sequence model is admissible only if reversing visit order degrades AUROC by ≥0.02; otherwise it
+  is marked experimental and rejected, and a calibrated baseline is used.
+- **Access**: `POST /api/v1/simulation/future-risk-score` requires an explicit
+  `simulation_mode=true` and a simulation-only artefact. `POST /api/v1/prevention-future-risk`
+  returns HTTP 409 and will continue to until an approved real cohort exists.
+
+No synthetic metric from this layer is evidence of clinical performance, calibration transfer or
+early detection.
+
+
+
+A future-risk layer exists in code and is **disabled for real patients**. It is documented in
+`docs/FUTURE_RISK_PROTOCOL.md` (endpoints, splits, gates), `docs/LONGITUDINAL_SCHEMA.md` (data
+contract) and `docs/FUTURE_RISK_EVALUATION.md` (metrics and controls).
+
+- **Data**: synthetic longitudinal cohorts only. Preferred generator is official Synthea v3.3.0
+  (Apache-2.0; methodology DOI 10.1093/jamia/ocx079; validity limits DOI 10.1186/s12911-019-0793-0).
+  A declared-enrichment in-repo simulator is the alternative, with sampling strata and weights
+  retained. Ordinary-incidence and enriched metrics are never pooled.
+- **Outputs**: cause-specific cumulative incidence at 1, 3 and 5 years, raw and calibrated, with
+  death handled as a competing event.
+- **Gating**: each horizon needs ≥50 events and ≥50 non-events among eligible patients or it
+  abstains. Type 1 diabetes is never enabled. Site-specific cancer heads stay disabled below the
+  same gate.
+- **Selection**: calibration-first (smallest |calibration slope − 1|, ties by AUROC). A temporal
+  sequence model is admissible only if reversing visit order degrades AUROC by ≥0.02; otherwise it
+  is marked experimental and rejected, and a calibrated baseline is used.
+- **Access**: `POST /api/v1/simulation/future-risk-score` requires an explicit
+  `simulation_mode=true` and a simulation-only artefact. `POST /api/v1/prevention-future-risk`
+  returns HTTP 409 and will continue to until an approved real cohort exists.
+
+No synthetic metric from this layer is evidence of clinical performance, calibration transfer or
+early detection.
+
+
+
+A future-risk layer exists in code and is **disabled for real patients**. It is documented in
+`docs/FUTURE_RISK_PROTOCOL.md` (endpoints, splits, gates), `docs/LONGITUDINAL_SCHEMA.md` (data
+contract) and `docs/FUTURE_RISK_EVALUATION.md` (metrics and controls).
+
+- **Data**: synthetic longitudinal cohorts only. Preferred generator is official Synthea v3.3.0
+  (Apache-2.0; methodology DOI 10.1093/jamia/ocx079; validity limits DOI 10.1186/s12911-019-0793-0).
+  A declared-enrichment in-repo simulator is the alternative, with sampling strata and weights
+  retained. Ordinary-incidence and enriched metrics are never pooled.
+- **Outputs**: cause-specific cumulative incidence at 1, 3 and 5 years, raw and calibrated, with
+  death handled as a competing event.
+- **Gating**: each horizon needs ≥50 events and ≥50 non-events among eligible patients or it
+  abstains. Type 1 diabetes is never enabled. Site-specific cancer heads stay disabled below the
+  same gate.
+- **Selection**: calibration-first (smallest |calibration slope − 1|, ties by AUROC). A temporal
+  sequence model is admissible only if reversing visit order degrades AUROC by ≥0.02; otherwise it
+  is marked experimental and rejected, and a calibrated baseline is used.
+- **Access**: `POST /api/v1/simulation/future-risk-score` requires an explicit
+  `simulation_mode=true` and a simulation-only artefact. `POST /api/v1/prevention-future-risk`
+  returns HTTP 409 and will continue to until an approved real cohort exists.
+
+No synthetic metric from this layer is evidence of clinical performance, calibration transfer or
+early detection.
+
 ## Release policy
 
 An artifact may be shared for representation benchmarking if its model card

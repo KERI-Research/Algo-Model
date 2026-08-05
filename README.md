@@ -284,6 +284,33 @@ Relevant endpoints:
 - `POST /api/v1/prevention-score` — deviation score, percentile, latent representation
 - `POST /api/v1/data-integrity` — coding, leakage, duplicate, missingness and split report
 - `POST /api/v1/prevention-future-risk` — intentionally fail-closed (HTTP 409) until gates pass
+- `GET /api/v1/future-risk-capability` — what future-risk output is possible right now and why:
+  capability state, the 50-event gate, permanently disabled outcomes, and whether a
+  simulation-only artefact exists. Real patient future risk is always reported as disabled.
+- `POST /api/v1/simulation/future-risk-score` — **simulation only**. Requires an explicit
+  `simulation_mode=true` flag plus a simulation-only artefact, refuses cross-sectional payloads
+  (HTTP 422) and single-visit histories, and returns raw plus calibrated cumulative incidence per
+  horizon with an abstention wherever a horizon failed its gate. See
+  `docs/FUTURE_RISK_PROTOCOL.md`, `docs/LONGITUDINAL_SCHEMA.md`, `docs/FUTURE_RISK_EVALUATION.md`
+  and `docs/SYNTHEA_GENERATION.md`.
+ — what future-risk output is possible right now and why:
+  capability state, the 50-event gate, permanently disabled outcomes, and whether a
+  simulation-only artefact exists. Real patient future risk is always reported as disabled.
+- `POST /api/v1/simulation/future-risk-score` — **simulation only**. Requires an explicit
+  `simulation_mode=true` flag plus a simulation-only artefact, refuses cross-sectional payloads
+  (HTTP 422) and single-visit histories, and returns raw plus calibrated cumulative incidence per
+  horizon with an abstention wherever a horizon failed its gate. See
+  `docs/FUTURE_RISK_PROTOCOL.md`, `docs/LONGITUDINAL_SCHEMA.md`, `docs/FUTURE_RISK_EVALUATION.md`
+  and `docs/SYNTHEA_GENERATION.md`.
+ — what future-risk output is possible right now and why:
+  capability state, the 50-event gate, permanently disabled outcomes, and whether a
+  simulation-only artefact exists. Real patient future risk is always reported as disabled.
+- `POST /api/v1/simulation/future-risk-score` — **simulation only**. Requires an explicit
+  `simulation_mode=true` flag plus a simulation-only artefact, refuses cross-sectional payloads
+  (HTTP 422) and single-visit histories, and returns raw plus calibrated cumulative incidence per
+  horizon with an abstention wherever a horizon failed its gate. See
+  `docs/FUTURE_RISK_PROTOCOL.md`, `docs/LONGITUDINAL_SCHEMA.md`, `docs/FUTURE_RISK_EVALUATION.md`
+  and `docs/SYNTHEA_GENERATION.md`.
 - `POST /api/v1/analyze`
 - `POST /api/v1/predictive-baseline`
 - `POST /api/v1/biomarker-discovery`

@@ -1,0 +1,145 @@
+{
+  "protocol": {
+    "protocol_version": "future-risk-protocol-v1",
+    "horizons_days": [
+      365,
+      1095,
+      1825
+    ],
+    "minimum_history_days": 365,
+    "minimum_visits": 2,
+    "outcomes": [
+      "type2_diabetes",
+      "pan_cancer"
+    ],
+    "competing_events": [
+      "death"
+    ],
+    "splits": {
+      "train_fraction": 0.7,
+      "validation_fraction": 0.15,
+      "test_fraction": 0.15,
+      "seed": 20260805,
+      "level": "patient",
+      "temporal_holdout_from_year": 2016
+    },
+    "label_rules": {
+      "positive": "target outcome occurs within the horizon after the index date",
+      "negative": "followed without the target outcome for at least the full horizon",
+      "ineligible": "censored, died, or follow-up ended before the horizon without the target outcome. Never scored as a negative."
+    }
+  },
+  "patients_before_exclusions": 6000,
+  "patients_in_cohort": 6000,
+  "exclusions": {
+    "prevalent_type2_diabetes": 0,
+    "prevalent_pan_cancer": 0,
+    "short_history": 0,
+    "insufficient_visits": 0
+  },
+  "follow_up_days": {
+    "median": 1733.09,
+    "p10": 1072.55,
+    "p90": 2386.78,
+    "max": 2556.62
+  },
+  "index_year_counts": {
+    "2012": 1211,
+    "2013": 1192,
+    "2014": 1177,
+    "2015": 1212,
+    "2016": 1208
+  },
+  "gates": {
+    "type2_diabetes": {
+      "outcome": "type2_diabetes",
+      "minimum_events": 50,
+      "minimum_non_events": 50,
+      "per_horizon": {
+        "1y": {
+          "eligible": true,
+          "events": 345,
+          "non_events": 4709,
+          "eligible_patients": 5054,
+          "reason": null
+        },
+        "3y": {
+          "eligible": true,
+          "events": 911,
+          "non_events": 4048,
+          "eligible_patients": 4959,
+          "reason": null
+        },
+        "5y": {
+          "eligible": true,
+          "events": 1166,
+          "non_events": 1934,
+          "eligible_patients": 3100,
+          "reason": null
+        }
+      },
+      "any_horizon_eligible": true
+    },
+    "pan_cancer": {
+      "outcome": "pan_cancer",
+      "minimum_events": 50,
+      "minimum_non_events": 50,
+      "per_horizon": {
+        "1y": {
+          "eligible": true,
+          "events": 137,
+          "non_events": 5413,
+          "eligible_patients": 5550,
+          "reason": null
+        },
+        "3y": {
+          "eligible": true,
+          "events": 367,
+          "non_events": 4692,
+          "eligible_patients": 5059,
+          "reason": null
+        },
+        "5y": {
+          "eligible": true,
+          "events": 497,
+          "non_events": 2269,
+          "eligible_patients": 2766,
+          "reason": null
+        }
+      },
+      "any_horizon_eligible": true
+    }
+  },
+  "cancer_site_gates": {
+    "lung": {
+      "events": 153,
+      "enabled": true,
+      "reason": null
+    },
+    "colorectal": {
+      "events": 130,
+      "enabled": true,
+      "reason": null
+    },
+    "breast": {
+      "events": 126,
+      "enabled": true,
+      "reason": null
+    },
+    "prostate": {
+      "events": 123,
+      "enabled": true,
+      "reason": null
+    }
+  },
+  "site_heads_enabled": [
+    "lung",
+    "colorectal",
+    "breast",
+    "prostate"
+  ],
+  "disabled_heads": {
+    "type1_diabetes": "permanently disabled: needs autoantibodies/C-peptide/approved genetics",
+    "pancreatic_cancer": "site head disabled until a real cohort passes the site gate"
+  }
+}

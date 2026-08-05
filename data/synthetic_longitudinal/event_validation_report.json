@@ -1,0 +1,165 @@
+{
+  "report_type": "longitudinal_event_validation",
+  "schema_version": "metaboguard-longitudinal-v1",
+  "dataset": "metaboguard_simulator_events",
+  "generated_at": "2026-08-05T14:29:32.421466+00:00",
+  "status": "ok",
+  "row_counts": {
+    "rows": 369264,
+    "patients": 6000,
+    "visits": 33024,
+    "observation_rows": 363264,
+    "outcome_rows": 6000
+  },
+  "unit_harmonisation": {
+    "converted": {},
+    "unknown_units": {},
+    "canonical_units": {
+      "GLU_LBXGLU": "mg/dL",
+      "GHB_LBXGH": "%",
+      "TCHOL_LBXTC": "mg/dL",
+      "HDL_LBDHDD": "mg/dL",
+      "TRIGLY_LBXTR": "mg/dL",
+      "BMX_BMXBMI": "kg/m2",
+      "BMX_BMXWAIST": "cm",
+      "BMX_BMXWT": "kg",
+      "BPX_SYSTOLIC": "mmHg",
+      "INS_LBXIN": "uU/mL",
+      "DEMO_RIDAGEYR": "years"
+    }
+  },
+  "duplicates": {
+    "duplicate_rows_removed": 0,
+    "resolution_rule": "keep last row per (patient_id, observation_timestamp, feature_code, outcome_type)"
+  },
+  "timestamp_ordering": {
+    "sorted_by": "patient_id, observation_timestamp",
+    "out_of_order_pairs_after_sort": 0
+  },
+  "impossible_values": {
+    "DEMO_RIDAGEYR": {
+      "window": [
+        0,
+        120
+      ],
+      "observed": 33024,
+      "removed": 0
+    },
+    "BMX_BMXBMI": {
+      "window": [
+        8,
+        100
+      ],
+      "observed": 31391,
+      "removed": 0
+    },
+    "BMX_BMXWAIST": {
+      "window": [
+        30,
+        220
+      ],
+      "observed": 18156,
+      "removed": 0
+    },
+    "BMX_BMXWT": {
+      "window": [
+        2,
+        400
+      ],
+      "observed": 29717,
+      "removed": 0
+    },
+    "GHB_LBXGH": {
+      "window": [
+        2.5,
+        20
+      ],
+      "observed": 23022,
+      "removed": 0
+    },
+    "GLU_LBXGLU": {
+      "window": [
+        20,
+        800
+      ],
+      "observed": 21389,
+      "removed": 0
+    },
+    "INS_LBXIN": {
+      "window": [
+        0,
+        400
+      ],
+      "observed": 9780,
+      "removed": 0
+    },
+    "TCHOL_LBXTC": {
+      "window": [
+        50,
+        600
+      ],
+      "observed": 19778,
+      "removed": 0
+    },
+    "HDL_LBDHDD": {
+      "window": [
+        5,
+        200
+      ],
+      "observed": 19813,
+      "removed": 0
+    },
+    "TRIGLY_LBXTR": {
+      "window": [
+        10,
+        3000
+      ],
+      "observed": 18087,
+      "removed": 0
+    },
+    "BPX_SYSTOLIC": {
+      "window": [
+        50,
+        260
+      ],
+      "observed": 29663,
+      "removed": 0
+    }
+  },
+  "missingness": {
+    "rows_with_missing_value": 109444,
+    "by_reason": {
+      "observed": 253820,
+      "not_measured_at_visit": 109444
+    },
+    "per_feature_coverage": {
+      "BMX_BMXBMI": 0.950551,
+      "BMX_BMXWAIST": 0.549782,
+      "BMX_BMXWT": 0.899861,
+      "BPX_SYSTOLIC": 0.898226,
+      "DEMO_RIDAGEYR": 1.0,
+      "GHB_LBXGH": 0.697129,
+      "GLU_LBXGLU": 0.64768,
+      "HDL_LBDHDD": 0.599958,
+      "INS_LBXIN": 0.296148,
+      "TCHOL_LBXTC": 0.598898,
+      "TRIGLY_LBXTR": 0.547693
+    }
+  },
+  "outcomes": {
+    "counts": {
+      "censored": 4033,
+      "type2_diabetes": 1236,
+      "pan_cancer": 532,
+      "death": 199
+    },
+    "patients_with_any_outcome": 6000,
+    "cancer_sites": {
+      "lung": 153,
+      "colorectal": 130,
+      "breast": 126,
+      "prostate": 123
+    }
+  },
+  "issues": []
+}

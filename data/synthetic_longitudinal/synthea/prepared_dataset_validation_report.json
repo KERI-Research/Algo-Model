@@ -1,0 +1,160 @@
+{
+  "report_type": "longitudinal_dataset_validation",
+  "generated_at": "2026-08-05T15:34:27.870536+00:00",
+  "capability_state": "simulation_only_longitudinal",
+  "simulation_only": true,
+  "event_rows": 1542237,
+  "patients_in_cohort": 5784,
+  "visit_rows": 132112,
+  "visits_per_patient": {
+    "median": 10.0,
+    "min": 3,
+    "max": 459
+  },
+  "feature_coverage_last_value": {
+    "DEMO_RIDAGEYR_last": 1.0,
+    "BMX_BMXBMI_last": 1.0,
+    "BMX_BMXWAIST_last": 0.0,
+    "BMX_BMXWT_last": 1.0,
+    "GHB_LBXGH_last": 0.669087,
+    "GLU_LBXGLU_last": 0.752593,
+    "INS_LBXIN_last": 0.0,
+    "TCHOL_LBXTC_last": 1.0,
+    "HDL_LBDHDD_last": 1.0,
+    "TRIGLY_LBXTR_last": 1.0,
+    "BPX_SYSTOLIC_last": 1.0
+  },
+  "missingness_burden": {
+    "mean": 0.510224,
+    "p90": 0.654545
+  },
+  "follow_up_days": {
+    "median": 1855.0,
+    "iqr": [
+      1484.0,
+      1855.0
+    ]
+  },
+  "class_balance": {
+    "type2_diabetes": {
+      "1y": {
+        "eligible_patients": 4870,
+        "events": 5,
+        "non_events": 4865,
+        "prevalence_among_eligible": 0.001027,
+        "censored_before_horizon": 748,
+        "competing_death_before_horizon": 83
+      },
+      "3y": {
+        "eligible_patients": 4503,
+        "events": 52,
+        "non_events": 4451,
+        "prevalence_among_eligible": 0.011548,
+        "censored_before_horizon": 1157,
+        "competing_death_before_horizon": 88
+      },
+      "5y": {
+        "eligible_patients": 3526,
+        "events": 79,
+        "non_events": 3447,
+        "prevalence_among_eligible": 0.022405,
+        "censored_before_horizon": 2154,
+        "competing_death_before_horizon": 95
+      }
+    },
+    "pan_cancer": {
+      "1y": {
+        "eligible_patients": 4868,
+        "events": 24,
+        "non_events": 4844,
+        "prevalence_among_eligible": 0.00493,
+        "censored_before_horizon": 744,
+        "competing_death_before_horizon": 83
+      },
+      "3y": {
+        "eligible_patients": 4504,
+        "events": 68,
+        "non_events": 4436,
+        "prevalence_among_eligible": 0.015098,
+        "censored_before_horizon": 1147,
+        "competing_death_before_horizon": 88
+      },
+      "5y": {
+        "eligible_patients": 3551,
+        "events": 109,
+        "non_events": 3442,
+        "prevalence_among_eligible": 0.030696,
+        "censored_before_horizon": 2134,
+        "competing_death_before_horizon": 95
+      }
+    }
+  },
+  "timeline_checks": {
+    "problems": [],
+    "status": "ok"
+  },
+  "gates": {
+    "type2_diabetes": {
+      "outcome": "type2_diabetes",
+      "minimum_events": 50,
+      "minimum_non_events": 50,
+      "per_horizon": {
+        "1y": {
+          "eligible": false,
+          "events": 5,
+          "non_events": 4865,
+          "eligible_patients": 4870,
+          "reason": "below the 50/50 gate"
+        },
+        "3y": {
+          "eligible": true,
+          "events": 52,
+          "non_events": 4451,
+          "eligible_patients": 4503,
+          "reason": null
+        },
+        "5y": {
+          "eligible": true,
+          "events": 79,
+          "non_events": 3447,
+          "eligible_patients": 3526,
+          "reason": null
+        }
+      },
+      "any_horizon_eligible": true
+    },
+    "pan_cancer": {
+      "outcome": "pan_cancer",
+      "minimum_events": 50,
+      "minimum_non_events": 50,
+      "per_horizon": {
+        "1y": {
+          "eligible": false,
+          "events": 24,
+          "non_events": 4844,
+          "eligible_patients": 4868,
+          "reason": "below the 50/50 gate"
+        },
+        "3y": {
+          "eligible": true,
+          "events": 68,
+          "non_events": 4436,
+          "eligible_patients": 4504,
+          "reason": null
+        },
+        "5y": {
+          "eligible": true,
+          "events": 109,
+          "non_events": 3442,
+          "eligible_patients": 3551,
+          "reason": null
+        }
+      },
+      "any_horizon_eligible": true
+    }
+  },
+  "minimum_gate": {
+    "events": 50,
+    "non_events": 50
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "schema_version": "metaboguard-longitudinal-v1",
+  "dataset_name": "synthetic_longitudinal_metaboguard_simulator",
+  "created_at": "2026-08-05T14:29:37.355178Z",
+  "capability_state": "simulation_only_longitudinal",
+  "simulation_only": true,
+  "generator": {
+    "generator": "metaboguard_simulator",
+    "generator_version": "v1",
+    "why_not_synthea": [
+      "java is present but no working JRE (java -version failed).",
+      "Synthea jar not found at /Volumes/Personal-Projects/KERI/vendor/synthea-with-dependencies.jar."
+    ],
+    "config": {
+      "patients": 6000,
+      "seed": 20260805,
+      "start_date": "2008-01-01",
+      "index_window_years": [
+        2012,
+        2016
+      ],
+      "max_follow_up_years": 7.0,
+      "visits": {
+        "min": 3,
+        "max": 10,
+        "interval_days": [
+          150,
+          500
+        ]
+      },
+      "measurement_probability": {
+        "DEMO_RIDAGEYR": 1.0,
+        "BMX_BMXBMI": 0.95,
+        "BMX_BMXWT": 0.9,
+        "BMX_BMXWAIST": 0.55,
+        "BPX_SYSTOLIC": 0.9,
+        "GHB_LBXGH": 0.7,
+        "GLU_LBXGLU": 0.65,
+        "INS_LBXIN": 0.3,
+        "TCHOL_LBXTC": 0.6,
+        "HDL_LBDHDD": 0.6,
+        "TRIGLY_LBXTR": 0.55
+      },
+      "enrichment_strata": {
+        "population_typical": {
+          "share": 0.55,
+          "diabetes_multiplier": 1.0,
+          "cancer_multiplier": 1.0,
+          "weight": 1.0
+        },
+        "metabolic_high_risk": {
+          "share": 0.3,
+          "diabetes_multiplier": 6.0,
+          "cancer_multiplier": 2.5,
+          "weight": 0.18
+        },
+        "older_high_risk": {
+          "share": 0.15,
+          "diabetes_multiplier": 3.0,
+          "cancer_multiplier": 6.0,
+          "weight": 0.12
+        }
+      },
+      "baseline_yearly_hazard": {
+        "type2_diabetes": 0.01,
+        "pan_cancer": 0.006,
+        "death": 0.008
+      },
+      "site_mix": {
+        "lung": 0.28,
+        "colorectal": 0.26,
+        "breast": 0.24,
+        "prostate": 0.22
+      }
+    },
+    "enrichment_declared": true,
+    "calibration_warning": "Event rates were deliberately enriched through the declared sampling strata. Raw predicted probabilities are therefore NOT population-calibrated; only within-sample discrimination and re-calibrated outputs are meaningful, and neither transfers to real patients.",
+    "features": [
+      "DEMO_RIDAGEYR",
+      "BMX_BMXBMI",
+      "BMX_BMXWAIST",
+      "BMX_BMXWT",
+      "GHB_LBXGH",
+      "GLU_LBXGLU",
+      "INS_LBXIN",
+      "TCHOL_LBXTC",
+      "HDL_LBDHDD",
+      "TRIGLY_LBXTR",
+      "BPX_SYSTOLIC"
+    ],
+    "synthea_availability": {
+      "synthea_available": false,
+      "java_path": "/usr/bin/java",
+      "java_version": [
+        "The operation couldn’t be completed. Unable to locate a Java Runtime."
+      ],
+      "jar_path": "/Volumes/Personal-Projects/KERI/vendor/synthea-with-dependencies.jar",
+      "jar_present": false,
+      "reasons_unavailable": [
+        "java is present but no working JRE (java -version failed).",
+        "Synthea jar not found at /Volumes/Personal-Projects/KERI/vendor/synthea-with-dependencies.jar."
+      ],
+      "config": {
+        "repository": "https://github.com/synthetichealth/synthea",
+        "licence": "Apache-2.0",
+        "pinned_release": "v3.3.0",
+        "pinned_jar": "synthea-with-dependencies.jar",
+        "jar_download": "https://github.com/synthetichealth/synthea/releases/download/v3.3.0/synthea-with-dependencies.jar",
+        "methodology_paper": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7651916/",
+        "methodology_doi": "10.1093/jamia/ocx079",
+        "validity_limitations": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6416981/",
+        "validity_doi": "10.1186/s12911-019-0793-0",
+        "seed": 20260805,
+        "clinician_seed": 20260805,
+        "population": 20000,
+        "state": "Massachusetts",
+        "modules": [
+          "metabolic_syndrome_care",
+          "diabetes",
+          "lung_cancer",
+          "colorectal_cancer",
+          "breast_cancer"
+        ],
+        "export_settings": {
+          "exporter.csv.export": true,
+          "exporter.fhir.export": false,
+          "exporter.years_of_history": 0,
+          "generate.only_alive_patients": false
+        },
+        "command_template": "java -jar {jar} -s {seed} -cs {clinician_seed} -p {population} --exporter.csv.export true --exporter.fhir.export false --exporter.years_of_history 0 --exporter.baseDirectory {output} {state}"
+      },
+      "how_to_enable": "Install a JRE (for example `brew install openjdk@21`), download https://github.com/synthetichealth/synthea/releases/download/v3.3.0/synthea-with-dependencies.jar into vendor/, then re-run with --generator synthea. The pinned seed makes the cohort reproducible."
+    },
+    "requested_generator": "simulator",
+    "used_generator": "metaboguard_simulator"
+  },
+  "row_counts": {
+    "event_rows": 369264,
+    "patients": 6000,
+    "fixture_rows": 3888,
+    "fixture_patients": 60
+  },
+  "fingerprints": {
+    "events_frame": "894f6586925c588727dc89869635eba985e6fec53397ff291ac3655402023aac",
+    "events_file": "",
+    "fixture_frame": "8685023b7529d7fe708b02c752c6a0b81c975f50e604059bf78463d3e6caae14"
+  },
+  "horizons_days": [
+    365,
+    1095,
+    1825
+  ],
+  "outcomes": [
+    "type2_diabetes",
+    "pan_cancer"
+  ],
+  "disabled_outcomes": {
+    "type1_diabetes": "Research-only: requires autoantibodies, appropriate C-peptide and approved genetics. Never enabled from questionnaire or simulated proxies.",
+    "pancreatic_cancer": "Site-specific pancreatic head stays disabled until a real cohort passes the 50-event gate for the site. Historical supervised artifacts remain invalidated."
+  },
+  "notes": [
+    "SIMULATION ONLY. Not real patients. Cannot establish real-world calibration, clinical utility or early detection.",
+    "Synthea preferred source: https://github.com/synthetichealth/synthea (Apache-2.0), methodology DOI 10.1093/jamia/ocx079, validity limits DOI 10.1186/s12911-019-0793-0.",
+    "Event rates were deliberately enriched through the declared sampling strata. Raw predicted probabilities are therefore NOT population-calibrated; only within-sample discrimination and re-calibrated outputs are meaningful, and neither transfers to real patients."
+  ]
+}

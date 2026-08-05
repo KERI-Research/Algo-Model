@@ -221,3 +221,66 @@ is explicit and consistent:
 3. High deviation with risk-disabled behavior:
   "Profile is highly unusual, but future-risk and cancer-type outputs remain
   disabled on cross-sectional capability state."
+## Future-risk rows (simulation only)
+
+The dashboard's future-risk panel shows one row per horizon (1, 3 and 5 years). Every row is one
+of exactly two things:
+
+1. **A simulated calibrated estimate** — cumulative incidence from a simulation-only artefact,
+   shown alongside the raw uncalibrated value and the selected model name. It is synthetic. It is
+   not a patient's risk, not a diagnosis and not evidence of early detection.
+2. **An explicit abstention** — the horizon did not pass the 50-event / 50-non-event gate, so no
+   number is produced. Abstention is a result, not a failure to load.
+
+Reading the numbers:
+
+- **Calibrated vs raw**: calibration is fitted on a synthetic validation split. Absolute values
+  are not population-calibrated when the cohort used declared enrichment strata.
+- **Competing outcomes**: incidence is cause-specific with death treated as a competing event, so
+  the target-outcome curve does not absorb deaths.
+- **Uncertainty**: bootstrap confidence intervals, calibration slope/intercept, Brier, average
+  precision, subgroup metrics and negative controls live in the run artefact's `results.json` —
+  not per individual synthetic history.
+- **Real patients**: the clinical future-risk endpoint returns HTTP 409. The panel states this.
+
+
+The dashboard's future-risk panel shows one row per horizon (1, 3 and 5 years). Every row is one
+of exactly two things:
+
+1. **A simulated calibrated estimate** — cumulative incidence from a simulation-only artefact,
+   shown alongside the raw uncalibrated value and the selected model name. It is synthetic. It is
+   not a patient's risk, not a diagnosis and not evidence of early detection.
+2. **An explicit abstention** — the horizon did not pass the 50-event / 50-non-event gate, so no
+   number is produced. Abstention is a result, not a failure to load.
+
+Reading the numbers:
+
+- **Calibrated vs raw**: calibration is fitted on a synthetic validation split. Absolute values
+  are not population-calibrated when the cohort used declared enrichment strata.
+- **Competing outcomes**: incidence is cause-specific with death treated as a competing event, so
+  the target-outcome curve does not absorb deaths.
+- **Uncertainty**: bootstrap confidence intervals, calibration slope/intercept, Brier, average
+  precision, subgroup metrics and negative controls live in the run artefact's `results.json` —
+  not per individual synthetic history.
+- **Real patients**: the clinical future-risk endpoint returns HTTP 409. The panel states this.
+
+
+The dashboard's future-risk panel shows one row per horizon (1, 3 and 5 years). Every row is one
+of exactly two things:
+
+1. **A simulated calibrated estimate** — cumulative incidence from a simulation-only artefact,
+   shown alongside the raw uncalibrated value and the selected model name. It is synthetic. It is
+   not a patient's risk, not a diagnosis and not evidence of early detection.
+2. **An explicit abstention** — the horizon did not pass the 50-event / 50-non-event gate, so no
+   number is produced. Abstention is a result, not a failure to load.
+
+Reading the numbers:
+
+- **Calibrated vs raw**: calibration is fitted on a synthetic validation split. Absolute values
+  are not population-calibrated when the cohort used declared enrichment strata.
+- **Competing outcomes**: incidence is cause-specific with death treated as a competing event, so
+  the target-outcome curve does not absorb deaths.
+- **Uncertainty**: bootstrap confidence intervals, calibration slope/intercept, Brier, average
+  precision, subgroup metrics and negative controls live in the run artefact's `results.json` —
+  not per individual synthetic history.
+- **Real patients**: the clinical future-risk endpoint returns HTTP 409. The panel states this.

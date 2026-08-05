@@ -41,6 +41,12 @@ from research_contract import (
 )
 import json
 from pathlib import Path
+from typing import Any
+from typing import Any
+from typing import Any
+from typing import Any
+from typing import Any
+from typing import Any
 from fetch_nhanes import ensure_nhanes_dataset
 from fetch_tcga import ensure_tcga_cdr_dataset
 import pandas as pd
@@ -680,3 +686,265 @@ async def research_clusters(request: ResearchClusterRequest):
         response["posthoc_label_summary"] = report["characterisation"]["posthoc_label_summary"]
         response["panel_framing"] = report["characterisation"]["panel_framing"]
     return response
+
+# ---------------------------------------------------------------------------
+# Future risk: capability reporting and SIMULATION-ONLY scoring
+# ---------------------------------------------------------------------------
+
+
+class SimulationRiskRequest(BaseModel):
+    simulation_mode: bool = False
+    artifact: str = "latest"
+    outcome: str = "type2_diabetes"
+    #: Longitudinal history: list of visits, each {"days_before_index": int, features...}
+    patient_history: list[dict[str, Any]] = []
+    #: Explicitly reject cross-sectional payloads for future-risk scoring.
+    patient_record: dict[str, Any] | None = None
+
+
+def _future_risk_artifact(name: str) -> Path:
+    root = Path(__file__).resolve().parent.parent / "model_artifacts" / "future_risk"
+    if not root.exists():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No future-risk artifact exists. Run api/run_future_risk_pipeline.py on a "
+                "simulated cohort first. No fallback risk is produced."
+            ),
+        )
+    if name not in {"latest", "LATEST"}:
+        candidate = root / name / "artifact"
+        if not candidate.exists():
+            raise HTTPException(status_code=404, detail=f"Future-risk artifact '{name}' not found.")
+        return candidate
+    # A run only counts when its artifact actually carries metadata; placeholder or partial
+    # directories must not be resolved as "latest".
+    runs = sorted(
+        path
+        for path in root.glob("simulation*")
+        if (path / "artifact" / "metadata.json").exists()
+    )
+    if not runs:
+        raise HTTPException(status_code=409, detail="No completed future-risk run found.")
+    return runs[-1] / "artifact"
+
+
+@app.get("/api/v1/future-risk-capability")
+async def future_risk_capability():
+    """What future-risk output is possible right now, and why."""
+    from longitudinal_schema import (
+        CAPABILITY_PERMISSIONS,
+        CapabilityState,
+        DISABLED_OUTCOMES,
+        HORIZON_DAYS,
+        MIN_EVENTS_PER_HORIZON,
+    )
+
+    artifact_state = None
+    try:
+        artifact = _future_risk_artifact("latest")
+        metadata = json.loads((artifact / "metadata.json").read_text())
+        artifact_state = {
+            "artifact_dir": str(artifact),
+            "capability_state": metadata["capability_state"],
+            "simulation_only": metadata["simulation_only"],
+            "clinical_use": metadata["clinical_use"],
+            "outcomes_trained": metadata["outcomes_trained"],
+            "selection": metadata["selection"],
+            "created_at": metadata["created_at"],
+        }
+    except HTTPException as error:
+        artifact_state = {"available": False, "reason": error.detail}
+
+    return {
+        "explanation_class": "model_association",
+        "non_diagnostic_warning": NON_DIAGNOSTIC_WARNING,
+        "clinical_future_risk_enabled": False,
+        "clinical_future_risk_blocker": (
+            "No real longitudinal cohort with incident outcomes exists in this repository. "
+            "The clinical endpoint /api/v1/prevention-future-risk therefore returns HTTP 409."
+        ),
+        "simulated_future_risk_enabled": True,
+        "simulated_future_risk_requires": "simulation_mode=true plus a simulation-only artifact",
+        "capability_states": {
+            state.value: CAPABILITY_PERMISSIONS[state] for state in CapabilityState
+        },
+        "horizons_days": list(HORIZON_DAYS),
+        "event_gate": {"minimum_events": MIN_EVENTS_PER_HORIZON, "minimum_non_events": MIN_EVENTS_PER_HORIZON},
+        "disabled_outcomes": DISABLED_OUTCOMES,
+        "artifact": artifact_state,
+        "simulation_banner": (
+            "Simulated risk is produced from synthetic data for software verification only. "
+            "It is not validated for patient risk and must never be shown as a patient's risk."
+        ),
+    }
+
+
+@app.post("/api/v1/simulation/future-risk-score")
+async def simulation_future_risk_score(request: SimulationRiskRequest):
+    """Score a synthetic longitudinal history. Simulation only, double-gated."""
+    import joblib
+    import numpy as np
+    import pandas as pd
+
+    from longitudinal_schema import (
+        HORIZON_DAYS,
+        HORIZON_LABELS,
+        PREVENTION_SAFE_FEATURES,
+        assert_outcome_allowed,
+        assert_simulated_future_risk_allowed,
+    )
+
+    if request.patient_record is not None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Cross-sectional records cannot be scored for future risk. Supply "
+                "patient_history as a list of visits with days_before_index."
+            ),
+        )
+    if not request.simulation_mode:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "This endpoint is simulation only and requires an explicit simulation_mode=true "
+                "flag. Real patient future-risk scoring stays disabled (HTTP 409)."
+            ),
+        )
+    if not request.patient_history:
+        raise HTTPException(status_code=422, detail="patient_history is required and must be longitudinal.")
+    if len({visit.get("days_before_index") for visit in request.patient_history}) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="At least two distinct visit times are required; a single visit is cross-sectional.",
+        )
+
+    artifact = _future_risk_artifact(request.artifact)
+    metadata = json.loads((artifact / "metadata.json").read_text())
+    try:
+        assert_simulated_future_risk_allowed(metadata["capability_state"], request.simulation_mode)
+        assert_outcome_allowed(request.outcome)
+    except PermissionError as error:
+        raise HTTPException(status_code=403, detail=str(error))
+    if request.outcome not in metadata["outcomes_trained"]:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Outcome '{request.outcome}' was not trained in this artifact.",
+        )
+
+    bundle = joblib.load(artifact / "future_risk_models.joblib")[request.outcome]
+    columns = json.loads((artifact / "feature_columns.json").read_text())
+
+    visits = sorted(request.patient_history, key=lambda item: -float(item.get("days_before_index", 0)))
+    frame_rows = []
+    for index, visit in enumerate(visits):
+        row = {"visit_index": index, "relative_time_days": -abs(float(visit.get("days_before_index", 0)))}
+        for feature in PREVENTION_SAFE_FEATURES:
+            value = visit.get(feature)
+            row[f"feature_{feature}"] = None if value is None else float(value)
+            row[f"mask_{feature}"] = int(value is not None)
+        frame_rows.append(row)
+    visit_frame = pd.DataFrame(frame_rows)
+    visit_frame["delta_days_since_previous_visit"] = (
+        visit_frame["relative_time_days"].diff().fillna(0.0).abs()
+    )
+
+    # Baseline tabular features, mirroring longitudinal_dataset.build_patient_features.
+    feature_row: dict[str, Any] = {
+        "visit_count": len(visit_frame),
+        "visit_density_per_year": float(
+            len(visit_frame) / max((-visit_frame["relative_time_days"].min()) / 365.25, 0.25)
+        ),
+        "history_days": float(-visit_frame["relative_time_days"].min()),
+        "median_visit_gap_days": float(visit_frame["delta_days_since_previous_visit"].iloc[1:].median() or 0.0),
+        "missingness_burden": float(
+            1.0 - visit_frame[[f"mask_{f}" for f in PREVENTION_SAFE_FEATURES]].to_numpy().mean()
+        ),
+    }
+    for feature in PREVENTION_SAFE_FEATURES:
+        values = visit_frame[f"feature_{feature}"].astype(float)
+        times = visit_frame["relative_time_days"].astype(float) / 365.25
+        observed = values.notna()
+        feature_row[f"{feature}_observed_count"] = int(observed.sum())
+        if observed.sum() == 0:
+            for suffix in ("last", "mean", "slope_per_year", "delta"):
+                feature_row[f"{feature}_{suffix}"] = float("nan")
+            continue
+        feature_row[f"{feature}_last"] = float(values[observed].iloc[-1])
+        feature_row[f"{feature}_mean"] = float(values[observed].mean())
+        feature_row[f"{feature}_delta"] = float(values[observed].iloc[-1] - values[observed].iloc[0])
+        feature_row[f"{feature}_slope_per_year"] = (
+            float(np.polyfit(times[observed], values[observed], 1)[0])
+            if observed.sum() >= 2 and times[observed].std() > 0
+            else 0.0
+        )
+    design = pd.DataFrame([feature_row])
+    for column in columns:
+        if column not in design:
+            design[column] = float("nan")
+    matrix = design[columns].astype(float).to_numpy()
+
+    horizons: dict[str, Any] = {}
+    for horizon in HORIZON_DAYS:
+        suffix = HORIZON_LABELS[horizon]
+        baseline = bundle["baselines"].get(suffix, {}).get("models", {})
+        selected = (metadata.get("selection") or {}).get(f"{request.outcome}:{suffix}", {})
+        selected_model = selected.get("selected_model")
+        entry: dict[str, Any] = {"selected_model": selected_model, "models": {}}
+        for name, model in baseline.items():
+            raw = float(model.predict_proba(matrix)[0, 1])
+            calibrator = bundle["calibrators"].get(f"{name}:{suffix}")
+            calibrated = raw
+            if calibrator is not None:
+                if calibrator["method"] == "isotonic":
+                    calibrated = float(np.clip(calibrator["model"].predict([raw])[0], 0, 1))
+                else:
+                    calibrated = float(calibrator["model"].predict_proba([[raw]])[0, 1])
+            entry["models"][name] = {
+                "raw_cumulative_incidence": round(raw, 6),
+                "calibrated_cumulative_incidence": round(calibrated, 6),
+                "calibration_method": calibrator["method"] if calibrator else None,
+            }
+        if bundle.get("hazard", {}).get("status") == "fitted":
+            from future_risk_models import hazard_cumulative_incidence
+
+            hazard_value = float(hazard_cumulative_incidence(bundle["hazard"], design, horizon)[0])
+            entry["models"]["discrete_time_hazard"] = {
+                "raw_cumulative_incidence": round(hazard_value, 6),
+                "calibrated_cumulative_incidence": None,
+                "competing_event_adjusted": bundle["hazard"].get("competing_handled", False),
+            }
+        horizons[suffix] = entry
+
+    return {
+        "output_type": "simulated_cumulative_incidence",
+        "simulation_only": True,
+        "clinical_use": "prohibited",
+        "explanation_class": "model_association",
+        "causal_status": "causal_claim_not_established",
+        "outcome": request.outcome,
+        "artifact": {
+            "dir": str(artifact),
+            "capability_state": metadata["capability_state"],
+            "code_version": metadata["code_version"],
+            "created_at": metadata["created_at"],
+        },
+        "input_summary": {
+            "visits": len(visit_frame),
+            "history_days": feature_row["history_days"],
+            "missingness_burden": round(feature_row["missingness_burden"], 4),
+        },
+        "horizons": horizons,
+        "competing_outcomes_note": (
+            "Cumulative incidence from the discrete-time model is cause-specific with death "
+            "treated as a competing event. Site-specific cancer outputs are disabled."
+        ),
+        "calibration_state": (
+            "Calibrated on a synthetic validation split. Absolute probabilities are not "
+            "population-calibrated because the simulated cohort used declared enrichment strata."
+        ),
+        "banner": (
+            "SIMULATION ONLY - synthetic data, software verification only. Not validated for "
+            "patient risk, not a diagnosis, and not evidence of early detection."
+        ),
+    }

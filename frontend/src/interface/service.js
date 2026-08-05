@@ -229,3 +229,29 @@ export const fetchResearchClusters = async (
 	}
 	return await response.json();
 };
+export const fetchFutureRiskCapability = async () => {
+	const response = await fetch(`${API_BASE_URL}/api/v1/future-risk-capability`);
+	if (!response.ok) {
+		throw await buildApiError(response, "Future-risk capability report unavailable");
+	}
+	return await response.json();
+};
+
+/**
+ * Simulation-only scoring. `simulation_mode` must be explicitly true, and the payload must be a
+ * longitudinal history; a cross-sectional record is refused by the API with HTTP 422.
+ */
+export const fetchSimulatedFutureRisk = async (request) => {
+	const response = await fetch(
+		`${API_BASE_URL}/api/v1/simulation/future-risk-score`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ artifact: "latest", ...request, simulation_mode: true }),
+		},
+	);
+	if (!response.ok) {
+		throw await buildApiError(response, "Simulated future-risk scoring unavailable");
+	}
+	return await response.json();
+};
