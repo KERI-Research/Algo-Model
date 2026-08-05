@@ -16,7 +16,7 @@ identifiable or clinical patient data.**
 | Section                    | Contents                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Overview**               | Non-diagnostic discovery posture, model/version/capability, architecture, status cards, current data limitations.               |
-| **Patient Probe**          | The existing probe form plus `Generate synthetic patient`. Explicit scoring only; deviation score, percentile, feature contributions, evidence boundaries. |
+| **Patient Probe**          | Explicit single-record scoring with a plain-language deviation band, NHANES reference percentile, submitted diabetes context, human-readable standout measurements, four cancer/diabetes research-pathway capability cards, data readiness and evidence boundaries. |
 | **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV. |
 | **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation. |
 | **Evidence & Methods**     | Source-linked biomarker catalogue with evidence grades, multi-marker rationale, PRoBE and TRIPOD+AI references, supported vs prohibited claims. |
@@ -32,6 +32,18 @@ statement about missing data, never a release schedule.
 No output is a diagnosis, a disease probability, a future-risk horizon or a
 cancer-type claim. The future-risk head stays fail-closed and clustering
 abstains, exactly as in the research pipeline.
+
+The Patient Probe gives pancreatic cancer and general cancers equal research
+emphasis. Its four pathway cards cover diabetes-related factors and cancer,
+anthropometry, weight-change and reported exposure measurements in cancer
+research, temporal direction between cancer and diabetes-related changes, and
+the same non-glycaemic measurements in diabetes research. Every card reports
+`Probability unavailable` because the current NHANES data are cross-sectional.
+Measurements listed beneath a card are supplied values with existing
+reconstruction diagnostics, grouped by relevance to that research question;
+they are not causal attribution, disease classification or evidence that one
+condition will develop from another. Reported diabetes and onset age remain
+display context and are not sent to the deployed model.
 
 ---
 
@@ -179,22 +191,22 @@ vendored modules. `/api/v1/model` reports which path is live via
 
 ### Vercel limitations to expect
 
-- **Cold starts.** Importing pandas/NumPy and reading the artifact takes roughly
+* **Cold starts.** Importing pandas/NumPy and reading the artifact takes roughly
   1-3 s on a cold invocation. Dataset analysis of a few thousand rows then runs
   in well under a second.
-- **60 s function ceiling** on Hobby. The 5,000-scored-row cap and the internal
+* **60 s function ceiling** on Hobby. The 5,000-scored-row cap and the internal
   compute budget keep requests far below it, but a 15 MB / 20,000-row upload is
   parsed twice (screen, then analyse) because nothing is persisted.
-- **4.5 MB request-body limit** on Vercel functions. This is stricter than the
+* **4.5 MB request-body limit** on Vercel functions. This is stricter than the
   app's own 15 MB rule, so in practice CSV uploads over ~4.5 MB will be rejected
   by the platform before FastAPI sees them.
-- **Rate limiting is per-instance.** Each serverless instance keeps its own
+* **Rate limiting is per-instance.** Each serverless instance keeps its own
   in-memory counter, so a distributed attacker gets more attempts than the
   5-per-5-minutes rule suggests. Sessions are unaffected (signed cookies, no
   server state).
-- **No writable persistence** (by design). Uploads are memory-only and no
+* **No writable persistence** (by design). Uploads are memory-only and no
   results are stored.
-- Hobby projects are for non-commercial use, and the deployment is still
+* Hobby projects are for non-commercial use, and the deployment is still
   prototype hosting: no identifiable or clinical patient data.
 
 ## Tests
@@ -235,16 +247,16 @@ tests/                      pytest suite
 
 ## Limitations
 
-- Cross-sectional training data: no time horizon, no incidence, no future risk.
-- Survey weights are not applied, so results describe the analytic sample only.
-- No external validation, calibration study or PRoBE-compliant specimen design.
-- Clustering is not run on uploaded data in this deployment; the validated
+* Cross-sectional training data: no time horizon, no incidence, no future risk.
+* Survey weights are not applied, so results describe the analytic sample only.
+* No external validation, calibration study or PRoBE-compliant specimen design.
+* Clustering is not run on uploaded data in this deployment; the validated
   pipeline's stability and negative-control runs exceed the hosting budget.
-- Uploaded datasets are capped at 15 MB, 20,000 rows and 5,000 scored rows.
-- The reference score distribution is stored as an 8,001-point quantile grid of
+* Uploaded datasets are capped at 15 MB, 20,000 rows and 5,000 scored rows.
+* The reference score distribution is stored as an 8,001-point quantile grid of
   the full 63,041-row training reference (percentile resolution 0.0125 pp).
   Weights, preprocessor and score definition are unchanged, and probe scores
   match the authoritative artifact to six decimal places.
-- Nothing is persisted: no database, no upload history, no server-side results.
+* Nothing is persisted: no database, no upload history, no server-side results.
 
 See `SECURITY_PRIVACY.md` for the access-control and data-handling details.

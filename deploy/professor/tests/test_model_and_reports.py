@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from conftest import TEST_ACCESS_KEY  # noqa: F401  (fixture dependency)
 
 from server import config, model, reports
@@ -23,6 +25,23 @@ SAMPLE_RECORD = {
     "smoking_status": 1,
     "homa_ir": 6.8,
 }
+
+
+@pytest.mark.parametrize(
+    ("percentile", "expected_band"),
+    [
+        (0, "within_reference_range"),
+        (89.999, "within_reference_range"),
+        (90, "mild_deviation"),
+        (94.999, "mild_deviation"),
+        (95, "elevated_deviation"),
+        (98.999, "elevated_deviation"),
+        (99, "high_deviation"),
+        (100, "high_deviation"),
+    ],
+)
+def test_deviation_band_thresholds(percentile, expected_band):
+    assert model._deviation_band_from_percentile(percentile)["key"] == expected_band
 
 
 def test_no_torch_import_in_deployment():
@@ -50,6 +69,60 @@ def test_score_single_record_outputs():
     assert "data_readiness" in assessment
     assert "research_association" in assessment
     assert assessment["safety_contract"]["future_risk"] == "disabled"
+    current_profile = assessment["current_profile_assessment"]
+    assert current_profile["note"] == model._deviation_band_from_percentile(
+        score["reference_percentile"]
+    )["interpretation"]
+
+    research = assessment["research_association"]
+    assert [item["id"] for item in research["cancer_scope"]] == [
+        "pancreatic_cancer",
+        "general_cancers",
+    ]
+    assert {item["status"] for item in research["cancer_scope"]} == {
+        "research_scope_only"
+    }
+    assert [pathway["id"] for pathway in research["pathways"]] == [
+        "diabetes_related_cancer",
+        "lifestyle_related_cancer",
+        "cancer_related_diabetes",
+        "lifestyle_related_diabetes",
+    ]
+    assert all(pathway["status"] == "not_estimable" for pathway in research["pathways"])
+    assert all(pathway["probability"] is None for pathway in research["pathways"])
+
+    observed_ranked_features = [
+        entry["feature"]
+        for entry in assessment["standout_factors"]["top_deviation_features"]
+    ]
+    assert set(observed_ranked_features) <= set(result["features_used"])
+    assert len(assessment["data_readiness"]["missing_fields"]) == len(
+        result["features_missing"]
+    )
+    pathway_features = {
+        definition["id"]: definition["features"]
+        for definition in model.RESEARCH_PATHWAY_DEFINITIONS
+    }
+    for pathway in research["pathways"]:
+        observed = [
+            entry["feature"] for entry in pathway["observed_standout_features"]
+        ]
+        assert len(observed) <= 3
+        assert set(observed) <= pathway_features[pathway["id"]]
+        assert observed == [
+            feature for feature in observed_ranked_features if feature in observed
+        ]
+
+
+def test_sparse_record_never_labels_imputed_features_as_observed():
+    result = model.score_single_record({"DEMO_RIDAGEYR": 61})
+    assessment = result["patient_assessment"]
+    observed = assessment["standout_factors"]["top_deviation_features"]
+    assert {entry["feature"] for entry in observed} <= {"DEMO_RIDAGEYR"}
+    assert all(
+        not pathway["observed_standout_features"]
+        for pathway in assessment["research_association"]["pathways"]
+    )
 
 
 def test_score_single_record_ignores_prohibited_fields():
@@ -93,6 +166,10 @@ def test_probe_output_uses_non_future_risk_wording(authed_client):
     assert "risk of developing" not in text
     assert "prediction of future cancer" not in text
     assert "probability of getting" not in text
+    assert "because of" not in text
+    assert "occult cancer" not in text
+    assert "later cancer" not in text
+    assert "later diabetes" not in text
     assert "non-diagnostic" in body["non_diagnostic_warning"].lower()
 
 

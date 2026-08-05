@@ -59,16 +59,111 @@ SECTION_TITLES = {
     "current_profile_assessment": "Current profile assessment",
     "standout_factors": "Standout factors in this profile",
     "data_readiness": "Data readiness and missing information",
-    "research_association": "Research-only cancer/diabetes association",
+    "research_association": "Cancer and diabetes research questions",
 }
-
-PROFILE_WARNING_STATEMENT = (
-    "This profile differs from the reference and may warrant clinician review."
-)
 
 FUTURE_RISK_DISABLED_STATEMENT = (
     "No validated future cancer or diabetes risk model is currently deployed."
 )
+
+RESEARCH_CANCER_SCOPE = [
+    {
+        "id": "pancreatic_cancer",
+        "label": "Pancreatic cancer",
+        "status": "research_scope_only",
+    },
+    {
+        "id": "general_cancers",
+        "label": "General cancers",
+        "status": "research_scope_only",
+    },
+]
+
+RESEARCH_PATHWAY_DEFINITIONS = [
+    {
+        "id": "diabetes_related_cancer",
+        "title": "Diabetes measurements and cancer",
+        "question": (
+            "Can this model determine temporal direction between diabetes-related "
+            "measurements and cancer?"
+        ),
+        "reason": (
+            "Cross-sectional records cannot establish that diabetes-related changes "
+            "occurred before cancer or estimate future cancer incidence."
+        ),
+        "features": {
+            "GHB_LBXGH",
+            "GLU_LBXGLU",
+            "INS_LBXIN",
+            "CPEP_LBXCPSI",
+            "homa_ir",
+        },
+    },
+    {
+        "id": "lifestyle_related_cancer",
+        "title": "Anthropometry, reported exposures and cancer",
+        "question": (
+            "Can this model separate anthropometry, weight change and reported exposure "
+            "measurements from diabetes-related pathways?"
+        ),
+        "reason": (
+            "Cross-sectional records cannot establish that lifestyle factors occurred "
+            "before cancer, separate them from diabetes pathways, or estimate future "
+            "cancer incidence."
+        ),
+        "features": {
+            "BMX_BMXBMI",
+            "BMX_BMXWAIST",
+            "weight_loss_1yr_lb",
+            "weight_loss_10yr_lb",
+            "smoking_status",
+            "alcohol_status",
+            "average_drinks_per_day",
+        },
+    },
+    {
+        "id": "cancer_related_diabetes",
+        "title": "Cancer and diabetes direction",
+        "question": (
+            "Can this model determine temporal direction between cancer and "
+            "diabetes-related changes?"
+        ),
+        "reason": (
+            "Cross-sectional records cannot determine whether cancer preceded diabetes "
+            "or estimate future diabetes onset."
+        ),
+        "features": {
+            "GHB_LBXGH",
+            "GLU_LBXGLU",
+            "INS_LBXIN",
+            "CPEP_LBXCPSI",
+            "homa_ir",
+            "weight_loss_1yr_lb",
+            "weight_loss_10yr_lb",
+        },
+    },
+    {
+        "id": "lifestyle_related_diabetes",
+        "title": "Anthropometry, reported exposures and diabetes",
+        "question": (
+            "Can this model determine temporal direction between these measurements "
+            "and diabetes?"
+        ),
+        "reason": (
+            "Cross-sectional records cannot establish that lifestyle factors preceded "
+            "diabetes or estimate future diabetes onset."
+        ),
+        "features": {
+            "BMX_BMXBMI",
+            "BMX_BMXWAIST",
+            "weight_loss_1yr_lb",
+            "weight_loss_10yr_lb",
+            "smoking_status",
+            "alcohol_status",
+            "average_drinks_per_day",
+        },
+    },
+]
 
 
 def _deviation_band_from_percentile(percentile: float) -> dict[str, str]:
@@ -95,6 +190,30 @@ def _deviation_band_from_percentile(percentile: float) -> dict[str, str]:
         "label": "High deviation",
         "interpretation": "Strongly unusual profile; still not diagnostic.",
     }
+
+
+def _research_pathways(
+    top_deviation_features: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    pathways = []
+    for definition in RESEARCH_PATHWAY_DEFINITIONS:
+        relevant_features = [
+            entry
+            for entry in top_deviation_features
+            if entry.get("feature") in definition["features"]
+        ][:3]
+        pathways.append(
+            {
+                "id": definition["id"],
+                "title": definition["title"],
+                "question": definition["question"],
+                "status": "not_estimable",
+                "probability": None,
+                "reason": definition["reason"],
+                "observed_standout_features": relevant_features,
+            }
+        )
+    return pathways
 
 EVIDENCE_BOUNDARIES = [
     "Trained self-supervised on cross-sectional NHANES adult records; no outcome label was used.",
@@ -182,6 +301,12 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
     features_missing = [
         feature for feature in PREVENTION_FEATURES if feature not in cleaned
     ]
+    top_deviation_features = result.get("top_deviation_features", [])
+    observed_top_deviation_features = [
+        entry
+        for entry in top_deviation_features
+        if entry.get("feature") in cleaned
+    ]
     metadata = artifact_metadata()
     return {
         "score": result,
@@ -197,12 +322,15 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
                 "deviation_band_label": deviation_band["label"],
                 "reference_percentile": result.get("reference_percentile"),
                 "warning_label": f"{deviation_band['label']} (not diagnostic)",
-                "note": PROFILE_WARNING_STATEMENT,
+                "note": deviation_band["interpretation"],
             },
             "standout_factors": {
                 "section_title": SECTION_TITLES["standout_factors"],
-                "top_deviation_features": result.get("top_deviation_features", []),
-                "note": "Model association only; not causality and not diagnosis.",
+                "top_deviation_features": observed_top_deviation_features,
+                "note": (
+                    "Supplied-measurement reconstruction diagnostics only; not causality, "
+                    "disease attribution or diagnosis."
+                ),
             },
             "data_readiness": {
                 "section_title": SECTION_TITLES["data_readiness"],
@@ -213,14 +341,25 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
                         "why_it_matters": "Additional features improve interpretation depth.",
                         "expected_impact_bucket": "moderate_confidence_gain",
                     }
-                    for field in features_missing[:8]
+                    for field in features_missing
                 ],
                 "dataset_capability_state": "Cross-sectional only",
             },
             "research_association": {
                 "section_title": SECTION_TITLES["research_association"],
-                "status": "disabled_on_this_route",
+                "status": "future_and_causal_probabilities_unavailable",
                 "note": FUTURE_RISK_DISABLED_STATEMENT,
+                "cancer_scope": RESEARCH_CANCER_SCOPE,
+                "scope_note": (
+                    "Pancreatic cancer and general cancers have equal research emphasis "
+                    "here. This model classifies neither scope."
+                ),
+                "factor_note": (
+                    "Supplied standout measurements are grouped by relevance to each "
+                    "research question. A measurement may appear in more than one group; "
+                    "grouping does not establish direction or causality."
+                ),
+                "pathways": _research_pathways(observed_top_deviation_features),
             },
             "safety_contract": {
                 "diagnostic_status": "non_diagnostic",
