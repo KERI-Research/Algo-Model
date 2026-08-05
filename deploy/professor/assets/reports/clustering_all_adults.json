@@ -1,0 +1,498 @@
+{
+ "report_type": "metaboguard_phenotype_clustering",
+ "code_version": "metaboguard-clustering-v1",
+ "generated_at": "2026-08-04T16:47:53.725309+00:00",
+ "output_type": "exploratory_unsupervised_phenotypes",
+ "explanation_class": "model_association",
+ "is_disease_classification": false,
+ "labels_used_in_fit_or_selection": false,
+ "dataset_fingerprint": {
+  "path": "nhanes_multicycle_v2.csv",
+  "name": "nhanes_multicycle_v2.csv",
+  "sha256": "af790f9fed1f13179726f02262de296ac9f7bcd85e3369fa2fdb4ea62d6b8b7c",
+  "bytes": 38188903,
+  "modified_at": "2026-07-28T16:29:50.577606+00:00"
+ },
+ "artifact": {
+  "dir": "ssl_artifact",
+  "model_name": "metaboguard_ssl_v1",
+  "run_label": "full",
+  "code_version": "metaboguard-ssl-v1.1",
+  "frozen": true
+ },
+ "space": "latent",
+ "space_dimension": 16,
+ "split_source": "persisted:splits.npz",
+ "split_sizes": {
+  "train": 44128,
+  "validation": 9456,
+  "holdout": 9457
+ },
+ "fit_rows": 4000,
+ "config": {
+  "space": "latent",
+  "k_values": [
+   2,
+   3,
+   4
+  ],
+  "methods": [
+   "kmeans"
+  ],
+  "random_seed": 42,
+  "stability_seeds": [
+   43,
+   44
+  ],
+  "bootstrap_rounds": 5,
+  "bootstrap_fraction": 0.8,
+  "max_fit_rows": 4000,
+  "silhouette_sample": 5000,
+  "min_silhouette": 0.15,
+  "min_cluster_fraction": 0.05,
+  "min_bootstrap_ari": 0.6,
+  "min_seed_ari": 0.6,
+  "max_negative_control_association": 0.3,
+  "dbscan_min_samples": 25,
+  "jaccard_dissolution_threshold": 0.5,
+  "jaccard_recovery_threshold": 0.75,
+  "permutation_rounds": 3,
+  "min_silhouette_gain_over_null": 0.05,
+  "outlier_sensitivity_fraction": 0.01,
+  "min_outlier_sensitivity_ari": 0.6,
+  "projection_sample": 2000,
+  "restrict_to_complete_cases": false
+ },
+ "candidates": [
+  {
+   "method": "kmeans",
+   "k": 2,
+   "status": "evaluated",
+   "size_profile": {
+    "sizes": {
+     "cluster_0": 3651,
+     "cluster_1": 349
+    },
+    "n_clusters": 2,
+    "smallest_cluster_fraction": 0.08725,
+    "noise_fraction": 0.0
+   },
+   "train_metrics": {
+    "silhouette": 0.4916,
+    "davies_bouldin": 0.948,
+    "calinski_harabasz": 980.19,
+    "silhouette_sample_size": 4000
+   },
+   "bootstrap_stability": {
+    "mean_ari": 0.2378,
+    "sd_ari": 0.386,
+    "min_ari": -0.007,
+    "rounds": 5,
+    "clusterwise_jaccard": {
+     "cluster_0": 0.8939,
+     "cluster_1": 0.3045
+    },
+    "min_clusterwise_jaccard": 0.3045,
+    "dissolved_clusters": [
+     "cluster_1"
+    ],
+    "well_recovered_clusters": [
+     "cluster_0"
+    ],
+    "thresholds": {
+     "dissolution_at_or_below": 0.5,
+     "good_recovery_above": 0.75
+    },
+    "note": "Cluster-wise Jaccard measures whether each individual cluster survives resampling; a good global ARI can still hide one dissolving cluster. Stability alone does not establish validity."
+   },
+   "seed_stability": {
+    "mean_ari": 0.9944,
+    "min_ari": 0.9925,
+    "seeds": [
+     43,
+     44
+    ]
+   },
+   "negative_controls": {
+    "threshold": 0.3,
+    "controls": {
+     "survey_cycle": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.4819
+     },
+     "missingness_burden": {
+      "statistic": "correlation_ratio",
+      "value": 0.2213
+     },
+     "assay_availability_burden": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.2447,
+      "definition": "Quartile bins of the number of observed model-input features."
+     },
+     "assay_availability_pattern_diagnostic": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.5402,
+      "gating": false,
+      "note": "High-cardinality diagnostic. Reported for transparency; the gating decision uses assay_availability_burden."
+     },
+     "age": {
+      "statistic": "correlation_ratio",
+      "value": 0.0187
+     },
+     "sex": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.0602
+     }
+    },
+    "dominated_by": [
+     "survey_cycle"
+    ],
+    "is_data_artefact": true,
+    "interpretation": "A high value means the clustering largely reproduces that nuisance variable. Age and sex associations are expected to be non-zero in metabolic data; only values above the threshold mark the solution as a data artefact."
+   },
+   "permutation_null": {
+    "rounds": 3,
+    "mean_null_silhouette": 0.1114,
+    "max_null_silhouette": 0.1146,
+    "definition": "Each column permuted independently; marginals kept, joint structure destroyed."
+   },
+   "outlier_sensitivity": {
+    "status": "evaluated",
+    "dropped_rows": 40,
+    "dropped_fraction": 0.01,
+    "ari_vs_full_fit": 0.9865,
+    "definition": "Top deviation-score rows removed, then refit; ARI against the full-data labels on the retained rows."
+   },
+   "holdout_metrics": {
+    "silhouette": 0.4942,
+    "davies_bouldin": 0.972,
+    "calinski_harabasz": 2176.22,
+    "silhouette_sample_size": 5000
+   },
+   "holdout_size_profile": {
+    "sizes": {
+     "cluster_0": 8655,
+     "cluster_1": 802
+    },
+    "n_clusters": 2,
+    "smallest_cluster_fraction": 0.084805,
+    "noise_fraction": 0.0
+   },
+   "out_of_sample_assignment": true,
+   "gate_failures": [
+    "bootstrap_stability_below_threshold",
+    "negative_control_dominated:survey_cycle",
+    "clusters_dissolve_under_resampling:cluster_1"
+   ],
+   "passes_gates": false,
+   "composite_score": null
+  },
+  {
+   "method": "kmeans",
+   "k": 3,
+   "status": "evaluated",
+   "size_profile": {
+    "sizes": {
+     "cluster_0": 818,
+     "cluster_1": 3169,
+     "cluster_2": 13
+    },
+    "n_clusters": 3,
+    "smallest_cluster_fraction": 0.00325,
+    "noise_fraction": 0.0
+   },
+   "train_metrics": {
+    "silhouette": 0.3892,
+    "davies_bouldin": 1.1339,
+    "calinski_harabasz": 1195.93,
+    "silhouette_sample_size": 4000
+   },
+   "bootstrap_stability": {
+    "mean_ari": 0.4496,
+    "sd_ari": 0.0099,
+    "min_ari": 0.4369,
+    "rounds": 5,
+    "clusterwise_jaccard": {
+     "cluster_0": 0.4139,
+     "cluster_1": 0.8665,
+     "cluster_2": 0.8828
+    },
+    "min_clusterwise_jaccard": 0.4139,
+    "dissolved_clusters": [
+     "cluster_0"
+    ],
+    "well_recovered_clusters": [
+     "cluster_1",
+     "cluster_2"
+    ],
+    "thresholds": {
+     "dissolution_at_or_below": 0.5,
+     "good_recovery_above": 0.75
+    },
+    "note": "Cluster-wise Jaccard measures whether each individual cluster survives resampling; a good global ARI can still hide one dissolving cluster. Stability alone does not establish validity."
+   },
+   "seed_stability": {
+    "mean_ari": 0.724,
+    "min_ari": 0.4514,
+    "seeds": [
+     43,
+     44
+    ]
+   },
+   "negative_controls": {
+    "threshold": 0.3,
+    "controls": {
+     "survey_cycle": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.2807
+     },
+     "missingness_burden": {
+      "statistic": "correlation_ratio",
+      "value": 0.411
+     },
+     "assay_availability_burden": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.2929,
+      "definition": "Quartile bins of the number of observed model-input features."
+     },
+     "assay_availability_pattern_diagnostic": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.561,
+      "gating": false,
+      "note": "High-cardinality diagnostic. Reported for transparency; the gating decision uses assay_availability_burden."
+     },
+     "age": {
+      "statistic": "correlation_ratio",
+      "value": 0.012
+     },
+     "sex": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.0478
+     }
+    },
+    "dominated_by": [
+     "missingness_burden"
+    ],
+    "is_data_artefact": true,
+    "interpretation": "A high value means the clustering largely reproduces that nuisance variable. Age and sex associations are expected to be non-zero in metabolic data; only values above the threshold mark the solution as a data artefact."
+   },
+   "permutation_null": {
+    "rounds": 3,
+    "mean_null_silhouette": 0.1071,
+    "max_null_silhouette": 0.1141,
+    "definition": "Each column permuted independently; marginals kept, joint structure destroyed."
+   },
+   "outlier_sensitivity": {
+    "status": "evaluated",
+    "dropped_rows": 40,
+    "dropped_fraction": 0.01,
+    "ari_vs_full_fit": 0.3959,
+    "definition": "Top deviation-score rows removed, then refit; ARI against the full-data labels on the retained rows."
+   },
+   "holdout_metrics": {
+    "silhouette": 0.3831,
+    "davies_bouldin": 1.1407,
+    "calinski_harabasz": 2211.57,
+    "silhouette_sample_size": 5000
+   },
+   "holdout_size_profile": {
+    "sizes": {
+     "cluster_0": 2050,
+     "cluster_1": 7375,
+     "cluster_2": 32
+    },
+    "n_clusters": 3,
+    "smallest_cluster_fraction": 0.003384,
+    "noise_fraction": 0.0
+   },
+   "out_of_sample_assignment": true,
+   "gate_failures": [
+    "cluster_too_small",
+    "bootstrap_stability_below_threshold",
+    "negative_control_dominated:missingness_burden",
+    "clusters_dissolve_under_resampling:cluster_0",
+    "solution_driven_by_top_outliers"
+   ],
+   "passes_gates": false,
+   "composite_score": null
+  },
+  {
+   "method": "kmeans",
+   "k": 4,
+   "status": "evaluated",
+   "size_profile": {
+    "sizes": {
+     "cluster_0": 2381,
+     "cluster_1": 13,
+     "cluster_2": 356,
+     "cluster_3": 1250
+    },
+    "n_clusters": 4,
+    "smallest_cluster_fraction": 0.00325,
+    "noise_fraction": 0.0
+   },
+   "train_metrics": {
+    "silhouette": 0.2531,
+    "davies_bouldin": 1.0535,
+    "calinski_harabasz": 1386.77,
+    "silhouette_sample_size": 4000
+   },
+   "bootstrap_stability": {
+    "mean_ari": 0.9649,
+    "sd_ari": 0.0295,
+    "min_ari": 0.9068,
+    "rounds": 5,
+    "clusterwise_jaccard": {
+     "cluster_0": 0.9836,
+     "cluster_1": 0.8674,
+     "cluster_2": 0.989,
+     "cluster_3": 0.9711
+    },
+    "min_clusterwise_jaccard": 0.8674,
+    "dissolved_clusters": [],
+    "well_recovered_clusters": [
+     "cluster_0",
+     "cluster_1",
+     "cluster_2",
+     "cluster_3"
+    ],
+    "thresholds": {
+     "dissolution_at_or_below": 0.5,
+     "good_recovery_above": 0.75
+    },
+    "note": "Cluster-wise Jaccard measures whether each individual cluster survives resampling; a good global ARI can still hide one dissolving cluster. Stability alone does not establish validity."
+   },
+   "seed_stability": {
+    "mean_ari": 0.9747,
+    "min_ari": 0.9564,
+    "seeds": [
+     43,
+     44
+    ]
+   },
+   "negative_controls": {
+    "threshold": 0.3,
+    "controls": {
+     "survey_cycle": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.4952
+     },
+     "missingness_burden": {
+      "statistic": "correlation_ratio",
+      "value": 0.5482
+     },
+     "assay_availability_burden": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.3562,
+      "definition": "Quartile bins of the number of observed model-input features."
+     },
+     "assay_availability_pattern_diagnostic": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.6223,
+      "gating": false,
+      "note": "High-cardinality diagnostic. Reported for transparency; the gating decision uses assay_availability_burden."
+     },
+     "age": {
+      "statistic": "correlation_ratio",
+      "value": 0.0172
+     },
+     "sex": {
+      "statistic": "cramers_v_bias_corrected",
+      "value": 0.0631
+     }
+    },
+    "dominated_by": [
+     "assay_availability_burden",
+     "missingness_burden",
+     "survey_cycle"
+    ],
+    "is_data_artefact": true,
+    "interpretation": "A high value means the clustering largely reproduces that nuisance variable. Age and sex associations are expected to be non-zero in metabolic data; only values above the threshold mark the solution as a data artefact."
+   },
+   "permutation_null": {
+    "rounds": 3,
+    "mean_null_silhouette": 0.1138,
+    "max_null_silhouette": 0.1173,
+    "definition": "Each column permuted independently; marginals kept, joint structure destroyed."
+   },
+   "outlier_sensitivity": {
+    "status": "evaluated",
+    "dropped_rows": 40,
+    "dropped_fraction": 0.01,
+    "ari_vs_full_fit": 0.2976,
+    "definition": "Top deviation-score rows removed, then refit; ARI against the full-data labels on the retained rows."
+   },
+   "holdout_metrics": {
+    "silhouette": 0.2489,
+    "davies_bouldin": 1.051,
+    "calinski_harabasz": 2570.97,
+    "silhouette_sample_size": 5000
+   },
+   "holdout_size_profile": {
+    "sizes": {
+     "cluster_0": 5528,
+     "cluster_1": 29,
+     "cluster_2": 807,
+     "cluster_3": 3093
+    },
+    "n_clusters": 4,
+    "smallest_cluster_fraction": 0.003067,
+    "noise_fraction": 0.0
+   },
+   "out_of_sample_assignment": true,
+   "gate_failures": [
+    "cluster_too_small",
+    "negative_control_dominated:assay_availability_burden,missingness_burden,survey_cycle",
+    "solution_driven_by_top_outliers"
+   ],
+   "passes_gates": false,
+   "composite_score": null
+  }
+ ],
+ "method_availability": {
+  "kmeans": true,
+  "gaussian_mixture": true,
+  "hdbscan": true,
+  "dbscan": true,
+  "density_arm": "hdbscan",
+  "note": "HDBSCAN is used from scikit-learn's own tree when available; otherwise the density arm degrades to DBSCAN. No extra dependency is installed either way."
+ },
+ "method_references": {
+  "silhouette": "https://wis.kuleuven.be/stat/robust/papers/publications-1987/rousseeuw-silhouettes-jcam-sciencedirectopenarchiv.pdf",
+  "hdbscan": "https://link.springer.com/chapter/10.1007/978-3-642-37456-2_14",
+  "consensus_clustering": "https://link.springer.com/article/10.1023/A:1023949509487",
+  "bootstrap_clusterwise_jaccard": "https://www.homepages.ucl.ac.uk/~ucakche/papers/clusta.pdf",
+  "scikit_learn": "https://github.com/scikit-learn/scikit-learn"
+ },
+ "validity_caveats": [
+  "A high silhouette can be produced by outliers rather than by real separation, which is why the top-1% outlier-sensitivity refit is a gate.",
+  "Stability does not establish validity: a stable clustering can still be a stable artefact, which is why negative controls and a permuted null are also gates."
+ ],
+ "warnings": [
+  "Clusters are patient/metabolic phenotypes, not cancer diagnoses, subtypes or sites.",
+  "Cross-sectional data: no future-risk interpretation is available.",
+  "Survey weights are not applied, so clusters describe the analytic sample only."
+ ],
+ "status": "no_stable_clusters",
+ "selected": null,
+ "abstain_reason": "No candidate passed the quality, stability and negative-control gates. Reporting an unstable clustering as a phenotype finding would be misleading.",
+ "gate_failure_summary": {
+  "kmeans_k2": [
+   "bootstrap_stability_below_threshold",
+   "negative_control_dominated:survey_cycle",
+   "clusters_dissolve_under_resampling:cluster_1"
+  ],
+  "kmeans_k3": [
+   "cluster_too_small",
+   "bootstrap_stability_below_threshold",
+   "negative_control_dominated:missingness_burden",
+   "clusters_dissolve_under_resampling:cluster_0",
+   "solution_driven_by_top_outliers"
+  ],
+  "kmeans_k4": [
+   "cluster_too_small",
+   "negative_control_dominated:assay_availability_burden,missingness_burden,survey_cycle",
+   "solution_driven_by_top_outliers"
+  ]
+ }
+}

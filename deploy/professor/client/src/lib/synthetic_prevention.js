@@ -17,8 +17,20 @@
 
 import {
 	generateSyntheticPatient,
+	REQUIRED_PROBE_FIELDS,
+	SYNTHETIC_FIELD_SCHEMA,
 	SYNTHETIC_SAFETY_NOTE,
 } from "./synthetic_patient.js";
+
+/**
+ * Re-exported from the vendored module so consumers have one import path for
+ * the whole synthetic-patient surface. Both modules are tracked source files:
+ * `synthetic_patient.js` is a byte-for-byte copy of
+ * `frontend/src/interface/synthetic_patient.js`, refreshed by
+ * `prepare_assets.py`, and this module extends it with the remaining
+ * prevention-allowlist fields.
+ */
+export { REQUIRED_PROBE_FIELDS, SYNTHETIC_FIELD_SCHEMA, generateSyntheticPatient };
 
 /** Extra prevention-allowlist fields, with the units the API expects. */
 export const PREVENTION_FIELD_SCHEMA = {

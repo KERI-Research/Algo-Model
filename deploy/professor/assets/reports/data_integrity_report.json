@@ -1,0 +1,216 @@
+{
+ "dataset": "nhanes_multicycle_v2.csv",
+ "generated_at": "2026-08-04T16:47:44.666128+00:00",
+ "status": "ok",
+ "fingerprint": {
+  "path": "nhanes_multicycle_v2.csv",
+  "name": "nhanes_multicycle_v2.csv",
+  "sha256": "af790f9fed1f13179726f02262de296ac9f7bcd85e3369fa2fdb4ea62d6b8b7c",
+  "bytes": 38188903,
+  "modified_at": "2026-07-28T16:29:50.577606+00:00"
+ },
+ "row_counts": {
+  "rows": 107622,
+  "columns": 93,
+  "adult_rows_age_ge_18": 63041,
+  "fully_duplicated_rows": 0
+ },
+ "identifiers": {
+  "identifier_column": "global_participant_id",
+  "unique_identifiers": 107622,
+  "duplicate_identifier_rows": 0,
+  "repeated_measurements": false,
+  "note": "NHANES is a repeated cross-section: each participant appears once, so participant-level and row-level splits coincide here. The split helper still groups by identifier so it stays correct if longitudinal data arrive."
+ },
+ "cancer_coding": {
+  "status": "checked",
+  "site_code_meanings": {
+   "29": "Pancreas",
+   "39": "Other"
+  },
+  "columns_checked": [
+   "MCQ_MCQ230A",
+   "MCQ_MCQ230B",
+   "MCQ_MCQ230C",
+   "MCQ_MCQ230D"
+  ],
+  "rows_with_code_29_pancreas": 19,
+  "rows_with_code_39_other": 318,
+  "stored_positives": 19,
+  "recomputed_positives_code_29": 19,
+  "matches_code_29": true
+ },
+ "label_definitions": {
+  "Cancer": "MCQ220 == 1 (self-reported ever told had cancer). PREVALENT, cross-sectional.",
+  "PancreaticCancer": "Any of MCQ230A-D == 29 (Pancreas). PREVALENT, cross-sectional. Code 39 is 'Other' and must never be counted here.",
+  "Diabetes": "DIQ010 == 1 (self-reported diagnosed diabetes). PREVALENT.",
+  "diabetes_subtype": "1 = research-only Type 1 proxy (young onset + insulin), 2 = Type 2 proxy, 0 = no diabetes. Not a validated subtype: no autoantibodies, no approved genetics, no C-peptide-based confirmation in the current files."
+ },
+ "labels": {
+  "Cancer": {
+   "positives": 5584,
+   "negatives": 53098,
+   "missing": 48940
+  },
+  "PancreaticCancer": {
+   "positives": 19,
+   "negatives": 58663,
+   "missing": 48940
+  },
+  "Diabetes": {
+   "positives": 7359,
+   "negatives": 94173,
+   "missing": 6090
+  },
+  "diabetes_subtype": {
+   "positives": 221,
+   "negatives": 94173,
+   "missing": 6090
+  },
+  "type1_proxy_research_only": {
+   "positives": 221,
+   "validated": false,
+   "reason": "No autoantibodies, no approved genetics, no confirmatory C-peptide criteria."
+  }
+ },
+ "features": {
+  "allowlist_size": 25,
+  "allowlist_available": [
+   "DEMO_RIDAGEYR",
+   "DEMO_RIAGENDR",
+   "DEMO_RIDRETH3",
+   "BMX_BMXBMI",
+   "BMX_BMXWAIST",
+   "GHB_LBXGH",
+   "GLU_LBXGLU",
+   "INS_LBXIN",
+   "CPEP_LBXCPSI",
+   "TRIGLY_LBXTR",
+   "TRIGLY_LBDLDL",
+   "HDL_LBDHDD",
+   "TCHOL_LBXTC",
+   "HSCRP_LBXHSCRP",
+   "CBC_LBXHGB",
+   "CBC_LBXPLTSI",
+   "BIOPRO_LBXSATSI",
+   "BIOPRO_LBXSAPSI",
+   "BIOPRO_LBXSCR",
+   "smoking_status",
+   "alcohol_status",
+   "average_drinks_per_day",
+   "weight_loss_1yr_lb",
+   "weight_loss_10yr_lb",
+   "homa_ir"
+  ],
+  "allowlist_missing": [],
+  "denylisted_columns_present_in_file": [
+   "Cancer",
+   "DIQ_DIQ010",
+   "Diabetes",
+   "MCQ_MCQ220",
+   "MCQ_MCQ230A",
+   "MCQ_MCQ230B",
+   "MCQ_MCQ230C",
+   "MCQ_MCQ230D",
+   "MCQ_MCQ240T",
+   "NODM_PancreaticCancer",
+   "PancreaticCancer",
+   "diabetes_subtype",
+   "new_onset_diabetes",
+   "pancreatic_cancer_diagnosis_age",
+   "pancreatic_cancer_minus_diabetes_years",
+   "same_year_diabetes_pancreatic_cancer"
+  ],
+  "denylisted_columns_used_as_inputs": [],
+  "post_diagnosis_prefixes": [
+   "tcga_"
+  ]
+ },
+ "missingness": {
+  "DEMO_RIDAGEYR": 0.0,
+  "DEMO_RIAGENDR": 0.0,
+  "DEMO_RIDRETH3": 0.577577,
+  "BMX_BMXBMI": 0.136506,
+  "BMX_BMXWAIST": 0.166787,
+  "GHB_LBXGH": 0.362175,
+  "GLU_LBXGLU": 0.691606,
+  "INS_LBXIN": 0.697934,
+  "CPEP_LBXCPSI": 0.911719,
+  "TRIGLY_LBXTR": 0.785787,
+  "TRIGLY_LBDLDL": 0.788779,
+  "HDL_LBDHDD": 0.486257,
+  "TCHOL_LBXTC": 0.268003,
+  "HSCRP_LBXHSCRP": 0.818987,
+  "CBC_LBXHGB": 0.186467,
+  "CBC_LBXPLTSI": 0.186486,
+  "BIOPRO_LBXSATSI": 0.373344,
+  "BIOPRO_LBXSAPSI": 0.37247,
+  "BIOPRO_LBXSCR": 0.372415,
+  "smoking_status": 0.444863,
+  "alcohol_status": 0.52178,
+  "average_drinks_per_day": 0.681459,
+  "weight_loss_1yr_lb": 0.389976,
+  "weight_loss_10yr_lb": 0.432449,
+  "homa_ir": 0.698324
+ },
+ "capabilities": {
+  "rows": 107622,
+  "participant_id_column": "global_participant_id",
+  "repeated_patient_id": null,
+  "has_repeated_patient_measurements": false,
+  "time_columns": [],
+  "supports_future_development_prediction": false,
+  "supported_output": "cross_sectional_representation_and_deviation_only",
+  "longitudinal_heads_enabled": false,
+  "output_vocabulary": {
+   "metabolic_deviation_score": "How unusual a metabolic profile is versus the training reference.",
+   "reference_percentile": "Rank of that deviation score within the training reference distribution.",
+   "latent_representation": "16-dimensional learned encoding of the input features.",
+   "cross_sectional_association": "Association with an already-present condition. Not future risk."
+  },
+  "warning": "No patient-level longitudinal outcomes: do not describe scores as future disease risk."
+ },
+ "horizon_gates": {
+  "minimum_events": 50,
+  "minimum_non_events": 50,
+  "time_column": null,
+  "event_column": null,
+  "per_horizon": {
+   "365d": {
+    "eligible": false,
+    "events": 0,
+    "non_events": 0,
+    "reason": "No patient-level event time / event indicator columns exist."
+   },
+   "1095d": {
+    "eligible": false,
+    "events": 0,
+    "non_events": 0,
+    "reason": "No patient-level event time / event indicator columns exist."
+   },
+   "1825d": {
+    "eligible": false,
+    "events": 0,
+    "non_events": 0,
+    "reason": "No patient-level event time / event indicator columns exist."
+   }
+  },
+  "any_horizon_eligible": false
+ },
+ "splits": {
+  "policy": "participant-grouped, seeded (seed=42), 70/15/15 train/validation/holdout",
+  "sizes": {
+   "train": 75335,
+   "validation": 16143,
+   "holdout": 16144
+  },
+  "preprocessing_fit_partition": "train only"
+ },
+ "findings": [
+  {
+   "code": "no_future_risk_capability",
+   "level": "info",
+   "message": "No horizon passes the 50-event/50-non-event gate. Future-risk heads stay disabled; outputs are deviation/representation research only."
+  }
+ ]
+}

@@ -1,0 +1,151 @@
+{
+ "schema_version": 1,
+ "note": "Exported verbatim from api/self_supervised.py and api/data_reliability.py so the serverless runtime does not need scikit-learn.",
+ "code_version": "metaboguard-ssl-v1.1",
+ "prevention_features": [
+  "DEMO_RIDAGEYR",
+  "DEMO_RIAGENDR",
+  "DEMO_RIDRETH3",
+  "BMX_BMXBMI",
+  "BMX_BMXWAIST",
+  "GHB_LBXGH",
+  "GLU_LBXGLU",
+  "INS_LBXIN",
+  "CPEP_LBXCPSI",
+  "TRIGLY_LBXTR",
+  "TRIGLY_LBDLDL",
+  "HDL_LBDHDD",
+  "TCHOL_LBXTC",
+  "HSCRP_LBXHSCRP",
+  "CBC_LBXHGB",
+  "CBC_LBXPLTSI",
+  "BIOPRO_LBXSATSI",
+  "BIOPRO_LBXSAPSI",
+  "BIOPRO_LBXSCR",
+  "smoking_status",
+  "alcohol_status",
+  "average_drinks_per_day",
+  "weight_loss_1yr_lb",
+  "weight_loss_10yr_lb",
+  "homa_ir"
+ ],
+ "categorical_features": [
+  "DEMO_RIAGENDR",
+  "DEMO_RIDRETH3",
+  "smoking_status",
+  "alcohol_status"
+ ],
+ "forbidden_early_warning_features": [
+  "Cancer",
+  "Diabetes",
+  "NODM_PancreaticCancer",
+  "PancreaticCancer",
+  "diabetes_subtype",
+  "new_onset_diabetes",
+  "pancreatic_cancer_diagnosis_age",
+  "pancreatic_cancer_minus_diabetes_years",
+  "same_year_diabetes_pancreatic_cancer",
+  "tcga_event",
+  "tcga_followup_days",
+  "tcga_grade_ordinal",
+  "tcga_pfi_days",
+  "tcga_pfi_event",
+  "tcga_stage_ordinal",
+  "tcga_treatment_response",
+  "tcga_tumor_status"
+ ],
+ "plausible_ranges": {
+  "DEMO_RIDAGEYR": [
+   0.0,
+   120.0
+  ],
+  "BMX_BMXBMI": [
+   8.0,
+   100.0
+  ],
+  "BMX_BMXWAIST": [
+   30.0,
+   220.0
+  ],
+  "GHB_LBXGH": [
+   2.5,
+   20.0
+  ],
+  "GLU_LBXGLU": [
+   20.0,
+   800.0
+  ],
+  "INS_LBXIN": [
+   0.0,
+   400.0
+  ],
+  "CPEP_LBXCPSI": [
+   0.0,
+   20.0
+  ],
+  "TRIGLY_LBXTR": [
+   10.0,
+   3000.0
+  ],
+  "TRIGLY_LBDLDL": [
+   10.0,
+   500.0
+  ],
+  "HDL_LBDHDD": [
+   5.0,
+   200.0
+  ],
+  "TCHOL_LBXTC": [
+   50.0,
+   600.0
+  ],
+  "HSCRP_LBXHSCRP": [
+   0.0,
+   200.0
+  ],
+  "CBC_LBXHGB": [
+   3.0,
+   25.0
+  ],
+  "CBC_LBXPLTSI": [
+   10.0,
+   1500.0
+  ],
+  "BIOPRO_LBXSATSI": [
+   1.0,
+   1000.0
+  ],
+  "BIOPRO_LBXSAPSI": [
+   5.0,
+   1000.0
+  ],
+  "BIOPRO_LBXSCR": [
+   0.1,
+   20.0
+  ],
+  "homa_ir": [
+   0.0,
+   100.0
+  ],
+  "average_drinks_per_day": [
+   0.0,
+   40.0
+  ],
+  "weight_loss_1yr_lb": [
+   -200.0,
+   300.0
+  ],
+  "weight_loss_10yr_lb": [
+   -300.0,
+   400.0
+  ]
+ },
+ "min_coverage_usable": 0.5,
+ "min_coverage_qualified": 0.05,
+ "max_implausible_fraction": 0.01,
+ "reference_links": {
+  "nhanes_weighting_tutorial": "https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx",
+  "nhanes_quality_guidelines": "https://wwwn.cdc.gov/nchs/nhanes/QualityAnalysesGuidelines.aspx",
+  "sklearn_leakage_pitfalls": "https://scikit-learn.org/stable/common_pitfalls.html"
+ }
+}

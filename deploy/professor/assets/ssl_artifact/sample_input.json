@@ -1,0 +1,21 @@
+{
+  "DEMO_RIDAGEYR": 52,
+  "DEMO_RIAGENDR": 1,
+  "DEMO_RIDRETH3": 3,
+  "BMX_BMXBMI": 29.4,
+  "BMX_BMXWAIST": 101.0,
+  "GHB_LBXGH": 6.3,
+  "GLU_LBXGLU": 118.0,
+  "INS_LBXIN": 12.5,
+  "TRIGLY_LBXTR": 155.0,
+  "HDL_LBDHDD": 44.0,
+  "TCHOL_LBXTC": 198.0,
+  "CBC_LBXHGB": 14.1,
+  "CBC_LBXPLTSI": 265.0,
+  "BIOPRO_LBXSATSI": 24.0,
+  "BIOPRO_LBXSAPSI": 73.0,
+  "BIOPRO_LBXSCR": 0.9,
+  "smoking_status": 1,
+  "alcohol_status": 1,
+  "weight_loss_1yr_lb": 4.0
+}

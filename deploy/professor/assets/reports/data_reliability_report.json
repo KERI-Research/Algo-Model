@@ -1,0 +1,1980 @@
+{
+ "report_type": "metaboguard_data_reliability",
+ "report_schema_version": 1,
+ "dataset": "nhanes_multicycle_v2.csv",
+ "generated_at": "2026-08-04T16:47:45.887194+00:00",
+ "status": "ok",
+ "tier_definitions": {
+  "usable_now": "Present, plausible, coverage >= 50% of adults, no blocking drift or availability gap.",
+  "qualified_use": "Usable only with a stated caveat: low coverage, cycle availability gap, assay/cycle drift, implausible-value burden, or a declared evidence gap.",
+  "unavailable": "Absent from this file, or effectively unmeasured.",
+  "prohibited": "Denylisted as a model input (outcome label, label-derived, or post-diagnosis TCGA context)."
+ },
+ "tiers": {
+  "usable_now": [
+   "BIOPRO_LBXSAPSI",
+   "BIOPRO_LBXSATSI",
+   "BIOPRO_LBXSCR",
+   "BMX_BMXBMI",
+   "BMX_BMXWAIST",
+   "CBC_LBXHGB",
+   "CBC_LBXPLTSI",
+   "DEMO_RIAGENDR",
+   "DEMO_RIDAGEYR",
+   "GHB_LBXGH",
+   "HDL_LBDHDD",
+   "TCHOL_LBXTC",
+   "alcohol_status",
+   "average_drinks_per_day",
+   "smoking_status",
+   "weight_loss_10yr_lb",
+   "weight_loss_1yr_lb"
+  ],
+  "qualified_use": [
+   "CPEP_LBXCPSI",
+   "DEMO_RIDRETH3",
+   "GLU_LBXGLU",
+   "HSCRP_LBXHSCRP",
+   "INS_LBXIN",
+   "TRIGLY_LBDLDL",
+   "TRIGLY_LBXTR",
+   "homa_ir"
+  ],
+  "unavailable": [],
+  "prohibited": [
+   "Cancer",
+   "DIQ_DIQ010",
+   "Diabetes",
+   "MCQ_MCQ220",
+   "MCQ_MCQ230A",
+   "MCQ_MCQ230B",
+   "MCQ_MCQ230C",
+   "MCQ_MCQ230D",
+   "MCQ_MCQ240T",
+   "NODM_PancreaticCancer",
+   "PancreaticCancer",
+   "diabetes_subtype",
+   "new_onset_diabetes",
+   "pancreatic_cancer_diagnosis_age",
+   "pancreatic_cancer_minus_diabetes_years",
+   "same_year_diabetes_pancreatic_cancer"
+  ]
+ },
+ "feature_eligibility": {
+  "DEMO_RIDAGEYR": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 1.0
+  },
+  "DEMO_RIAGENDR": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 1.0
+  },
+  "DEMO_RIDRETH3": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 43.9% is below the 50% threshold (NHANES subsample design)."
+   ],
+   "coverage": 0.438794
+  },
+  "BMX_BMXBMI": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.928951
+  },
+  "BMX_BMXWAIST": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.8951
+  },
+  "GHB_LBXGH": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.898035
+  },
+  "GLU_LBXGLU": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 43.7% is below the 50% threshold (NHANES subsample design)."
+   ],
+   "coverage": 0.436621
+  },
+  "INS_LBXIN": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 42.8% is below the 50% threshold (NHANES subsample design)."
+   ],
+   "coverage": 0.42796
+  },
+  "CPEP_LBXCPSI": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 11.5% is below the 50% threshold (NHANES subsample design).",
+    "Measured in only 3 of 10 cycles."
+   ],
+   "coverage": 0.114687
+  },
+  "TRIGLY_LBXTR": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 31.4% is below the 50% threshold (NHANES subsample design).",
+    "Declared evidence gap in the biomarker evidence catalogue."
+   ],
+   "coverage": 0.313796
+  },
+  "TRIGLY_LBDLDL": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 30.9% is below the 50% threshold (NHANES subsample design)."
+   ],
+   "coverage": 0.308751
+  },
+  "HDL_LBDHDD": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.651544
+  },
+  "TCHOL_LBXTC": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.88655
+  },
+  "HSCRP_LBXHSCRP": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 21.6% is below the 50% threshold (NHANES subsample design).",
+    "Measured in only 2 of 10 cycles.",
+    "Catalogued evidence indicates no consistent association: treat as a known-weak feature."
+   ],
+   "coverage": 0.215844
+  },
+  "CBC_LBXHGB": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.899224
+  },
+  "CBC_LBXPLTSI": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.899208
+  },
+  "BIOPRO_LBXSATSI": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.882616
+  },
+  "BIOPRO_LBXSAPSI": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.883964
+  },
+  "BIOPRO_LBXSCR": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.88406
+  },
+  "smoking_status": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.947717
+  },
+  "alcohol_status": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.816405
+  },
+  "average_drinks_per_day": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.543805
+  },
+  "weight_loss_1yr_lb": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.972462
+  },
+  "weight_loss_10yr_lb": {
+   "tier": "usable_now",
+   "reasons": [
+    "Present, plausible and adequately covered."
+   ],
+   "coverage": 0.968909
+  },
+  "homa_ir": {
+   "tier": "qualified_use",
+   "reasons": [
+    "Coverage 42.7% is below the 50% threshold (NHANES subsample design)."
+   ],
+   "coverage": 0.427452
+  },
+  "Cancer": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "DIQ_DIQ010": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "Diabetes": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ220": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ230A": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ230B": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ230C": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ230D": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "MCQ_MCQ240T": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "NODM_PancreaticCancer": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "PancreaticCancer": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "diabetes_subtype": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "new_onset_diabetes": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "pancreatic_cancer_diagnosis_age": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "pancreatic_cancer_minus_diabetes_years": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  },
+  "same_year_diabetes_pancreatic_cancer": {
+   "tier": "prohibited",
+   "reasons": [
+    "Outcome label, label-derived, or post-diagnosis TCGA context: never a model input for prevention or clustering."
+   ]
+  }
+ },
+ "sections": {
+  "provenance": {
+   "fingerprint": {
+    "path": "nhanes_multicycle_v2.csv",
+    "name": "nhanes_multicycle_v2.csv",
+    "sha256": "af790f9fed1f13179726f02262de296ac9f7bcd85e3369fa2fdb4ea62d6b8b7c",
+    "bytes": 38188903,
+    "modified_at": "2026-07-28T16:29:50.577606+00:00"
+   },
+   "registry_status": "allowed",
+   "invalidated_reason": null,
+   "survey_cycles_present": [
+    "1999-2000",
+    "2001-2002",
+    "2003-2004",
+    "2005-2006",
+    "2007-2008",
+    "2009-2010",
+    "2011-2012",
+    "2013-2014",
+    "2015-2016",
+    "2017-March2020"
+   ],
+   "survey_cycle_count": 10,
+   "source_description": "NHANES public-release cycle files, pooled and harmonised by this repository's build scripts. TCGA-CDR is stored separately and is post-diagnosis context only.",
+   "external_upload_policy": "No row-level data leaves this machine."
+  },
+  "schema": {
+   "columns": 93,
+   "rows": 107622,
+   "dtype_counts": {
+    "float64": 88,
+    "int64": 2,
+    "str": 3
+   },
+   "allowlist_present": [
+    "DEMO_RIDAGEYR",
+    "DEMO_RIAGENDR",
+    "DEMO_RIDRETH3",
+    "BMX_BMXBMI",
+    "BMX_BMXWAIST",
+    "GHB_LBXGH",
+    "GLU_LBXGLU",
+    "INS_LBXIN",
+    "CPEP_LBXCPSI",
+    "TRIGLY_LBXTR",
+    "TRIGLY_LBDLDL",
+    "HDL_LBDHDD",
+    "TCHOL_LBXTC",
+    "HSCRP_LBXHSCRP",
+    "CBC_LBXHGB",
+    "CBC_LBXPLTSI",
+    "BIOPRO_LBXSATSI",
+    "BIOPRO_LBXSAPSI",
+    "BIOPRO_LBXSCR",
+    "smoking_status",
+    "alcohol_status",
+    "average_drinks_per_day",
+    "weight_loss_1yr_lb",
+    "weight_loss_10yr_lb",
+    "homa_ir"
+   ],
+   "allowlist_missing": [],
+   "non_numeric_allowlist_columns": [],
+   "identifier_column": "global_participant_id"
+  },
+  "unit_range_plausibility": {
+   "DEMO_RIDAGEYR": {
+    "bounds": [
+     0,
+     120
+    ],
+    "observed": 63041,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 18.0,
+    "max": 85.0,
+    "flag": false
+   },
+   "BMX_BMXBMI": {
+    "bounds": [
+     8,
+     100
+    ],
+    "observed": 58562,
+    "out_of_range": 1,
+    "out_of_range_fraction": 1.7e-05,
+    "min": 12.04,
+    "max": 130.21,
+    "flag": false
+   },
+   "BMX_BMXWAIST": {
+    "bounds": [
+     30,
+     220
+    ],
+    "observed": 56428,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 55.5,
+    "max": 187.5,
+    "flag": false
+   },
+   "GHB_LBXGH": {
+    "bounds": [
+     2.5,
+     20
+    ],
+    "observed": 56613,
+    "out_of_range": 1,
+    "out_of_range_fraction": 1.8e-05,
+    "min": 2.0,
+    "max": 18.8,
+    "flag": false
+   },
+   "GLU_LBXGLU": {
+    "bounds": [
+     20,
+     800
+    ],
+    "observed": 27525,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 21.0,
+    "max": 686.2,
+    "flag": false
+   },
+   "INS_LBXIN": {
+    "bounds": [
+     0,
+     400
+    ],
+    "observed": 26979,
+    "out_of_range": 5,
+    "out_of_range_fraction": 0.000185,
+    "min": 0.14,
+    "max": 682.48,
+    "flag": false
+   },
+   "CPEP_LBXCPSI": {
+    "bounds": [
+     0,
+     20
+    ],
+    "observed": 7230,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 0.021,
+    "max": 7.396,
+    "flag": false
+   },
+   "TRIGLY_LBXTR": {
+    "bounds": [
+     10,
+     3000
+    ],
+    "observed": 19782,
+    "out_of_range": 1,
+    "out_of_range_fraction": 5.1e-05,
+    "min": 10.0,
+    "max": 4233.0,
+    "flag": false
+   },
+   "TRIGLY_LBDLDL": {
+    "bounds": [
+     10,
+     500
+    ],
+    "observed": 19464,
+    "out_of_range": 2,
+    "out_of_range_fraction": 0.000103,
+    "min": 7.0,
+    "max": 375.0,
+    "flag": false
+   },
+   "HDL_LBDHDD": {
+    "bounds": [
+     5,
+     200
+    ],
+    "observed": 41074,
+    "out_of_range": 1,
+    "out_of_range_fraction": 2.4e-05,
+    "min": 5.0,
+    "max": 226.0,
+    "flag": false
+   },
+   "TCHOL_LBXTC": {
+    "bounds": [
+     50,
+     600
+    ],
+    "observed": 55889,
+    "out_of_range": 8,
+    "out_of_range_fraction": 0.000143,
+    "min": 59.0,
+    "max": 813.0,
+    "flag": false
+   },
+   "HSCRP_LBXHSCRP": {
+    "bounds": [
+     0,
+     200
+    ],
+    "observed": 13607,
+    "out_of_range": 2,
+    "out_of_range_fraction": 0.000147,
+    "min": 0.08,
+    "max": 246.86,
+    "flag": false
+   },
+   "CBC_LBXHGB": {
+    "bounds": [
+     3,
+     25
+    ],
+    "observed": 56688,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 5.4,
+    "max": 19.9,
+    "flag": false
+   },
+   "CBC_LBXPLTSI": {
+    "bounds": [
+     10,
+     1500
+    ],
+    "observed": 56687,
+    "out_of_range": 2,
+    "out_of_range_fraction": 3.5e-05,
+    "min": 4.0,
+    "max": 1000.0,
+    "flag": false
+   },
+   "BIOPRO_LBXSATSI": {
+    "bounds": [
+     1,
+     1000
+    ],
+    "observed": 55641,
+    "out_of_range": 4,
+    "out_of_range_fraction": 7.2e-05,
+    "min": 2.0,
+    "max": 1997.0,
+    "flag": false
+   },
+   "BIOPRO_LBXSAPSI": {
+    "bounds": [
+     5,
+     1000
+    ],
+    "observed": 55726,
+    "out_of_range": 1,
+    "out_of_range_fraction": 1.8e-05,
+    "min": 7.0,
+    "max": 1378.0,
+    "flag": false
+   },
+   "BIOPRO_LBXSCR": {
+    "bounds": [
+     0.1,
+     20
+    ],
+    "observed": 55732,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 0.1,
+    "max": 17.8,
+    "flag": false
+   },
+   "homa_ir": {
+    "bounds": [
+     0,
+     100
+    ],
+    "observed": 26947,
+    "out_of_range": 25,
+    "out_of_range_fraction": 0.000928,
+    "min": 0.0256,
+    "max": 269.6217,
+    "flag": false
+   },
+   "average_drinks_per_day": {
+    "bounds": [
+     0,
+     40
+    ],
+    "observed": 34282,
+    "out_of_range": 19,
+    "out_of_range_fraction": 0.000554,
+    "min": 1.0,
+    "max": 99.0,
+    "flag": false
+   },
+   "weight_loss_1yr_lb": {
+    "bounds": [
+     -200,
+     300
+    ],
+    "observed": 61305,
+    "out_of_range": 2,
+    "out_of_range_fraction": 3.3e-05,
+    "min": -204.0,
+    "max": 356.0,
+    "flag": false
+   },
+   "weight_loss_10yr_lb": {
+    "bounds": [
+     -300,
+     400
+    ],
+    "observed": 61081,
+    "out_of_range": 0,
+    "out_of_range_fraction": 0.0,
+    "min": 0.0,
+    "max": 370.0,
+    "flag": false
+   },
+   "_note": "Bounds are project-set review thresholds for catching encoding and sentinel errors. They are not clinical reference intervals."
+  },
+  "duplicate_participants": {
+   "fully_duplicated_rows": 0,
+   "SEQN": {
+    "unique": 107622,
+    "duplicated_rows": 0
+   },
+   "global_participant_id": {
+    "unique": 107622,
+    "duplicated_rows": 0
+   }
+  },
+  "coverage_and_missingness": {
+   "features_evaluated": [
+    "DEMO_RIDAGEYR",
+    "DEMO_RIAGENDR",
+    "DEMO_RIDRETH3",
+    "BMX_BMXBMI",
+    "BMX_BMXWAIST",
+    "GHB_LBXGH",
+    "GLU_LBXGLU",
+    "INS_LBXIN",
+    "CPEP_LBXCPSI",
+    "TRIGLY_LBXTR",
+    "TRIGLY_LBDLDL",
+    "HDL_LBDHDD",
+    "TCHOL_LBXTC",
+    "HSCRP_LBXHSCRP",
+    "CBC_LBXHGB",
+    "CBC_LBXPLTSI",
+    "BIOPRO_LBXSATSI",
+    "BIOPRO_LBXSAPSI",
+    "BIOPRO_LBXSCR",
+    "smoking_status",
+    "alcohol_status",
+    "average_drinks_per_day",
+    "weight_loss_1yr_lb",
+    "weight_loss_10yr_lb",
+    "homa_ir"
+   ],
+   "coverage_overall": {
+    "DEMO_RIDAGEYR": 1.0,
+    "DEMO_RIAGENDR": 1.0,
+    "DEMO_RIDRETH3": 0.438794,
+    "BMX_BMXBMI": 0.928951,
+    "BMX_BMXWAIST": 0.8951,
+    "GHB_LBXGH": 0.898035,
+    "GLU_LBXGLU": 0.436621,
+    "INS_LBXIN": 0.42796,
+    "CPEP_LBXCPSI": 0.114687,
+    "TRIGLY_LBXTR": 0.313796,
+    "TRIGLY_LBDLDL": 0.308751,
+    "HDL_LBDHDD": 0.651544,
+    "TCHOL_LBXTC": 0.88655,
+    "HSCRP_LBXHSCRP": 0.215844,
+    "CBC_LBXHGB": 0.899224,
+    "CBC_LBXPLTSI": 0.899208,
+    "BIOPRO_LBXSATSI": 0.882616,
+    "BIOPRO_LBXSAPSI": 0.883964,
+    "BIOPRO_LBXSCR": 0.88406,
+    "smoking_status": 0.947717,
+    "alcohol_status": 0.816405,
+    "average_drinks_per_day": 0.543805,
+    "weight_loss_1yr_lb": 0.972462,
+    "weight_loss_10yr_lb": 0.968909,
+    "homa_ir": 0.427452
+   },
+   "coverage_by_split": {
+    "train": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.440174,
+     "BMX_BMXBMI": 0.929455,
+     "BMX_BMXWAIST": 0.895055,
+     "GHB_LBXGH": 0.89952,
+     "GLU_LBXGLU": 0.434033,
+     "INS_LBXIN": 0.424855,
+     "CPEP_LBXCPSI": 0.112332,
+     "TRIGLY_LBXTR": 0.313338,
+     "TRIGLY_LBDLDL": 0.308398,
+     "HDL_LBDHDD": 0.65412,
+     "TCHOL_LBXTC": 0.887554,
+     "HSCRP_LBXHSCRP": 0.217708,
+     "CBC_LBXHGB": 0.900721,
+     "CBC_LBXPLTSI": 0.900698,
+     "BIOPRO_LBXSATSI": 0.883929,
+     "BIOPRO_LBXSAPSI": 0.885152,
+     "BIOPRO_LBXSCR": 0.885266,
+     "smoking_status": 0.947879,
+     "alcohol_status": 0.819208,
+     "average_drinks_per_day": 0.543215,
+     "weight_loss_1yr_lb": 0.972013,
+     "weight_loss_10yr_lb": 0.968206,
+     "homa_ir": 0.424538
+    },
+    "validation": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.433058,
+     "BMX_BMXBMI": 0.926502,
+     "BMX_BMXWAIST": 0.894036,
+     "GHB_LBXGH": 0.896256,
+     "GLU_LBXGLU": 0.442259,
+     "INS_LBXIN": 0.435491,
+     "CPEP_LBXCPSI": 0.121616,
+     "TRIGLY_LBXTR": 0.313135,
+     "TRIGLY_LBDLDL": 0.307953,
+     "HDL_LBDHDD": 0.645833,
+     "TCHOL_LBXTC": 0.886844,
+     "HSCRP_LBXHSCRP": 0.214679,
+     "CBC_LBXHGB": 0.897631,
+     "CBC_LBXPLTSI": 0.897631,
+     "BIOPRO_LBXSATSI": 0.881874,
+     "BIOPRO_LBXSAPSI": 0.883672,
+     "BIOPRO_LBXSCR": 0.883672,
+     "smoking_status": 0.946066,
+     "alcohol_status": 0.807635,
+     "average_drinks_per_day": 0.542618,
+     "weight_loss_1yr_lb": 0.972081,
+     "weight_loss_10yr_lb": 0.969226,
+     "homa_ir": 0.434645
+    },
+    "holdout": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.438088,
+     "BMX_BMXBMI": 0.929047,
+     "BMX_BMXWAIST": 0.896373,
+     "GHB_LBXGH": 0.892884,
+     "GLU_LBXGLU": 0.443058,
+     "INS_LBXIN": 0.434916,
+     "CPEP_LBXCPSI": 0.118748,
+     "TRIGLY_LBXTR": 0.316591,
+     "TRIGLY_LBDLDL": 0.311198,
+     "HDL_LBDHDD": 0.645236,
+     "TCHOL_LBXTC": 0.881569,
+     "HSCRP_LBXHSCRP": 0.208311,
+     "CBC_LBXHGB": 0.893835,
+     "CBC_LBXPLTSI": 0.893835,
+     "BIOPRO_LBXSATSI": 0.877234,
+     "BIOPRO_LBXSAPSI": 0.878714,
+     "BIOPRO_LBXSCR": 0.87882,
+     "smoking_status": 0.948609,
+     "alcohol_status": 0.812097,
+     "average_drinks_per_day": 0.547742,
+     "weight_loss_1yr_lb": 0.974939,
+     "weight_loss_10yr_lb": 0.971873,
+     "homa_ir": 0.433859
+    }
+   },
+   "coverage_by_cycle": {
+    "1999-2000": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.899963,
+     "BMX_BMXWAIST": 0.881424,
+     "GHB_LBXGH": 0.864721,
+     "GLU_LBXGLU": 0.418502,
+     "INS_LBXIN": 0.41116,
+     "CPEP_LBXCPSI": 0.410793,
+     "TRIGLY_LBXTR": 0.0,
+     "TRIGLY_LBDLDL": 0.0,
+     "HDL_LBDHDD": 0.0,
+     "TCHOL_LBXTC": 0.847834,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.865639,
+     "CBC_LBXPLTSI": 0.865639,
+     "BIOPRO_LBXSATSI": 0.848385,
+     "BIOPRO_LBXSAPSI": 0.848385,
+     "BIOPRO_LBXSCR": 0.848385,
+     "smoking_status": 0.892988,
+     "alcohol_status": 0.763767,
+     "average_drinks_per_day": 0.487518,
+     "weight_loss_1yr_lb": 0.964391,
+     "weight_loss_10yr_lb": 0.951175,
+     "homa_ir": 0.410426
+    },
+    "2001-2002": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.872518,
+     "BMX_BMXWAIST": 0.880194,
+     "GHB_LBXGH": 0.883865,
+     "GLU_LBXGLU": 0.441015,
+     "INS_LBXIN": 0.431837,
+     "CPEP_LBXCPSI": 0.431837,
+     "TRIGLY_LBXTR": 0.0,
+     "TRIGLY_LBDLDL": 0.0,
+     "HDL_LBDHDD": 0.0,
+     "TCHOL_LBXTC": 0.868513,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.884699,
+     "CBC_LBXPLTSI": 0.884699,
+     "BIOPRO_LBXSATSI": 0.870015,
+     "BIOPRO_LBXSAPSI": 0.870015,
+     "BIOPRO_LBXSCR": 0.870015,
+     "smoking_status": 0.900384,
+     "alcohol_status": 0.689137,
+     "average_drinks_per_day": 0.497414,
+     "weight_loss_1yr_lb": 0.976806,
+     "weight_loss_10yr_lb": 0.972468,
+     "homa_ir": 0.43167
+    },
+    "2003-2004": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.925089,
+     "BMX_BMXWAIST": 0.889858,
+     "GHB_LBXGH": 0.898221,
+     "GLU_LBXGLU": 0.430961,
+     "INS_LBXIN": 0.42758,
+     "CPEP_LBXCPSI": 0.427758,
+     "TRIGLY_LBXTR": 0.0,
+     "TRIGLY_LBDLDL": 0.0,
+     "HDL_LBDHDD": 0.0,
+     "TCHOL_LBXTC": 0.888078,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.9,
+     "CBC_LBXPLTSI": 0.9,
+     "BIOPRO_LBXSATSI": 0.88363,
+     "BIOPRO_LBXSAPSI": 0.884164,
+     "BIOPRO_LBXSCR": 0.884164,
+     "smoking_status": 0.89573,
+     "alcohol_status": 0.767082,
+     "average_drinks_per_day": 0.480249,
+     "weight_loss_1yr_lb": 0.982028,
+     "weight_loss_10yr_lb": 0.967794,
+     "homa_ir": 0.426868
+    },
+    "2005-2006": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.941399,
+     "BMX_BMXWAIST": 0.907784,
+     "GHB_LBXGH": 0.90275,
+     "GLU_LBXGLU": 0.435916,
+     "INS_LBXIN": 0.429804,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.431242,
+     "TRIGLY_LBDLDL": 0.420097,
+     "HDL_LBDHDD": 0.898077,
+     "TCHOL_LBXTC": 0.898077,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.903649,
+     "CBC_LBXPLTSI": 0.903649,
+     "BIOPRO_LBXSATSI": 0.88082,
+     "BIOPRO_LBXSAPSI": 0.894481,
+     "BIOPRO_LBXSCR": 0.894481,
+     "smoking_status": 0.893942,
+     "alcohol_status": 0.782132,
+     "average_drinks_per_day": 0.506921,
+     "weight_loss_1yr_lb": 0.970699,
+     "weight_loss_10yr_lb": 0.956319,
+     "homa_ir": 0.429265
+    },
+    "2007-2008": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.944766,
+     "BMX_BMXWAIST": 0.90639,
+     "GHB_LBXGH": 0.900771,
+     "GLU_LBXGLU": 0.441875,
+     "INS_LBXIN": 0.436898,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.44043,
+     "TRIGLY_LBDLDL": 0.430154,
+     "HDL_LBDHDD": 0.897078,
+     "TCHOL_LBXTC": 0.897078,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.901252,
+     "CBC_LBXPLTSI": 0.901252,
+     "BIOPRO_LBXSATSI": 0.893545,
+     "BIOPRO_LBXSAPSI": 0.894027,
+     "BIOPRO_LBXSCR": 0.894188,
+     "smoking_status": 0.95183,
+     "alcohol_status": 0.838793,
+     "average_drinks_per_day": 0.531792,
+     "weight_loss_1yr_lb": 0.969653,
+     "weight_loss_10yr_lb": 0.968048,
+     "homa_ir": 0.435934
+    },
+    "2009-2010": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 0.0,
+     "BMX_BMXBMI": 0.963076,
+     "BMX_BMXWAIST": 0.917726,
+     "GHB_LBXGH": 0.923702,
+     "GLU_LBXGLU": 0.449517,
+     "INS_LBXIN": 0.442776,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.445534,
+     "TRIGLY_LBDLDL": 0.438027,
+     "HDL_LBDHDD": 0.914969,
+     "TCHOL_LBXTC": 0.914969,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.923702,
+     "CBC_LBXPLTSI": 0.923702,
+     "BIOPRO_LBXSATSI": 0.912824,
+     "BIOPRO_LBXSAPSI": 0.912977,
+     "BIOPRO_LBXSCR": 0.912977,
+     "smoking_status": 0.952658,
+     "alcohol_status": 0.816455,
+     "average_drinks_per_day": 0.561361,
+     "weight_loss_1yr_lb": 0.96706,
+     "weight_loss_10yr_lb": 0.969511,
+     "homa_ir": 0.442163
+    },
+    "2011-2012": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 1.0,
+     "BMX_BMXBMI": 0.94219,
+     "BMX_BMXWAIST": 0.897169,
+     "GHB_LBXGH": 0.90399,
+     "GLU_LBXGLU": 0.443042,
+     "INS_LBXIN": 0.421555,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.437415,
+     "TRIGLY_LBDLDL": 0.4294,
+     "HDL_LBDHDD": 0.88455,
+     "TCHOL_LBXTC": 0.88455,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.906889,
+     "CBC_LBXPLTSI": 0.906719,
+     "BIOPRO_LBXSATSI": 0.878752,
+     "BIOPRO_LBXSAPSI": 0.879093,
+     "BIOPRO_LBXSCR": 0.879434,
+     "smoking_status": 0.946623,
+     "alcohol_status": 0.847715,
+     "average_drinks_per_day": 0.567701,
+     "weight_loss_1yr_lb": 0.971351,
+     "weight_loss_10yr_lb": 0.971692,
+     "homa_ir": 0.420873
+    },
+    "2013-2014": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 1.0,
+     "BMX_BMXBMI": 0.956486,
+     "BMX_BMXWAIST": 0.913954,
+     "GHB_LBXGH": 0.930803,
+     "GLU_LBXGLU": 0.445771,
+     "INS_LBXIN": 0.435302,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.442336,
+     "TRIGLY_LBDLDL": 0.435793,
+     "HDL_LBDHDD": 0.922624,
+     "TCHOL_LBXTC": 0.922624,
+     "HSCRP_LBXHSCRP": 0.0,
+     "CBC_LBXHGB": 0.93113,
+     "CBC_LBXPLTSI": 0.93113,
+     "BIOPRO_LBXSATSI": 0.919679,
+     "BIOPRO_LBXSAPSI": 0.919843,
+     "BIOPRO_LBXSCR": 0.920007,
+     "smoking_status": 0.999673,
+     "alcohol_status": 0.886144,
+     "average_drinks_per_day": 0.587764,
+     "weight_loss_1yr_lb": 0.976771,
+     "weight_loss_10yr_lb": 0.979388,
+     "homa_ir": 0.434647
+    },
+    "2015-2016": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 1.0,
+     "BMX_BMXBMI": 0.944927,
+     "BMX_BMXWAIST": 0.895861,
+     "GHB_LBXGH": 0.908044,
+     "GLU_LBXGLU": 0.429406,
+     "INS_LBXIN": 0.422897,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.394359,
+     "TRIGLY_LBDLDL": 0.390354,
+     "HDL_LBDHDD": 0.9002,
+     "TCHOL_LBXTC": 0.9002,
+     "HSCRP_LBXHSCRP": 0.896195,
+     "CBC_LBXHGB": 0.90504,
+     "CBC_LBXPLTSI": 0.90504,
+     "BIOPRO_LBXSATSI": 0.898865,
+     "BIOPRO_LBXSAPSI": 0.898698,
+     "BIOPRO_LBXSCR": 0.898698,
+     "smoking_status": 0.998164,
+     "alcohol_status": 0.868324,
+     "average_drinks_per_day": 0.563251,
+     "weight_loss_1yr_lb": 0.97213,
+     "weight_loss_10yr_lb": 0.972964,
+     "homa_ir": 0.422563
+    },
+    "2017-March2020": {
+     "DEMO_RIDAGEYR": 1.0,
+     "DEMO_RIAGENDR": 1.0,
+     "DEMO_RIDRETH3": 1.0,
+     "BMX_BMXBMI": 0.90684,
+     "BMX_BMXWAIST": 0.87166,
+     "GHB_LBXGH": 0.873207,
+     "GLU_LBXGLU": 0.430517,
+     "INS_LBXIN": 0.420819,
+     "CPEP_LBXCPSI": 0.0,
+     "TRIGLY_LBXTR": 0.422986,
+     "TRIGLY_LBDLDL": 0.419684,
+     "HDL_LBDHDD": 0.856082,
+     "TCHOL_LBXTC": 0.856082,
+     "HSCRP_LBXHSCRP": 0.849789,
+     "CBC_LBXHGB": 0.877953,
+     "CBC_LBXPLTSI": 0.877953,
+     "BIOPRO_LBXSATSI": 0.851646,
+     "BIOPRO_LBXSAPSI": 0.851646,
+     "BIOPRO_LBXSCR": 0.851852,
+     "smoking_status": 0.999484,
+     "alcohol_status": 0.86351,
+     "average_drinks_per_day": 0.603838,
+     "weight_loss_1yr_lb": 0.973383,
+     "weight_loss_10yr_lb": 0.973899,
+     "homa_ir": 0.420819
+    }
+   },
+   "coverage_by_subgroup": {
+    "sex_male": {
+     "rows": 30427,
+     "mean_feature_coverage": 0.710302
+    },
+    "sex_female": {
+     "rows": 32614,
+     "mean_feature_coverage": 0.701403
+    },
+    "age_18_39": {
+     "rows": 24238,
+     "mean_feature_coverage": 0.696863
+    },
+    "age_40_59": {
+     "rows": 18444,
+     "mean_feature_coverage": 0.727218
+    },
+    "age_60_plus": {
+     "rows": 20359,
+     "mean_feature_coverage": 0.696722
+    }
+   },
+   "row_missingness_burden": {
+    "mean": 0.294302,
+    "p50": 0.28,
+    "p90": 0.6,
+    "rows_with_no_labs": 21
+   }
+  },
+  "assay_cycle_drift": {
+   "cycles": [
+    "1999-2000",
+    "2001-2002",
+    "2003-2004",
+    "2005-2006",
+    "2007-2008",
+    "2009-2010",
+    "2011-2012",
+    "2013-2014",
+    "2015-2016",
+    "2017-March2020"
+   ],
+   "features": {
+    "DEMO_RIDAGEYR": {
+     "pooled_median": 47.0,
+     "pooled_iqr": 33.0,
+     "median_by_cycle": {
+      "1999-2000": 45.0,
+      "2001-2002": 45.0,
+      "2003-2004": 46.0,
+      "2005-2006": 42.0,
+      "2007-2008": 49.0,
+      "2009-2010": 47.0,
+      "2011-2012": 47.0,
+      "2013-2014": 47.0,
+      "2015-2016": 48.0,
+      "2017-March2020": 50.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 1.0,
+      "2001-2002": 1.0,
+      "2003-2004": 1.0,
+      "2005-2006": 1.0,
+      "2007-2008": 1.0,
+      "2009-2010": 1.0,
+      "2011-2012": 1.0,
+      "2013-2014": 1.0,
+      "2015-2016": 1.0,
+      "2017-March2020": 1.0
+     },
+     "max_median_shift_in_iqr_units": 0.1515,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "BMX_BMXBMI": {
+     "pooled_median": 27.7,
+     "pooled_iqr": 8.21,
+     "median_by_cycle": {
+      "1999-2000": 27.0,
+      "2001-2002": 26.92,
+      "2003-2004": 27.09,
+      "2005-2006": 27.39,
+      "2007-2008": 27.815,
+      "2009-2010": 28.0,
+      "2011-2012": 27.4,
+      "2013-2014": 27.7,
+      "2015-2016": 28.3,
+      "2017-March2020": 28.6
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.899963,
+      "2001-2002": 0.872518,
+      "2003-2004": 0.925089,
+      "2005-2006": 0.941399,
+      "2007-2008": 0.944766,
+      "2009-2010": 0.963076,
+      "2011-2012": 0.94219,
+      "2013-2014": 0.956486,
+      "2015-2016": 0.944927,
+      "2017-March2020": 0.90684
+     },
+     "max_median_shift_in_iqr_units": 0.1096,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "BMX_BMXWAIST": {
+     "pooled_median": 96.8,
+     "pooled_iqr": 21.7,
+     "median_by_cycle": {
+      "1999-2000": 94.9,
+      "2001-2002": 95.1,
+      "2003-2004": 96.0,
+      "2005-2006": 96.05,
+      "2007-2008": 97.3,
+      "2009-2010": 97.3,
+      "2011-2012": 96.3,
+      "2013-2014": 97.0,
+      "2015-2016": 98.3,
+      "2017-March2020": 99.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.881424,
+      "2001-2002": 0.880194,
+      "2003-2004": 0.889858,
+      "2005-2006": 0.907784,
+      "2007-2008": 0.90639,
+      "2009-2010": 0.917726,
+      "2011-2012": 0.897169,
+      "2013-2014": 0.913954,
+      "2015-2016": 0.895861,
+      "2017-March2020": 0.87166
+     },
+     "max_median_shift_in_iqr_units": 0.1014,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "GHB_LBXGH": {
+     "pooled_median": 5.4,
+     "pooled_iqr": 0.6,
+     "median_by_cycle": {
+      "1999-2000": 5.3,
+      "2001-2002": 5.3,
+      "2003-2004": 5.4,
+      "2005-2006": 5.3,
+      "2007-2008": 5.5,
+      "2009-2010": 5.5,
+      "2011-2012": 5.5,
+      "2013-2014": 5.5,
+      "2015-2016": 5.5,
+      "2017-March2020": 5.6
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.864721,
+      "2001-2002": 0.883865,
+      "2003-2004": 0.898221,
+      "2005-2006": 0.90275,
+      "2007-2008": 0.900771,
+      "2009-2010": 0.923702,
+      "2011-2012": 0.90399,
+      "2013-2014": 0.930803,
+      "2015-2016": 0.908044,
+      "2017-March2020": 0.873207
+     },
+     "max_median_shift_in_iqr_units": 0.3333,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "GLU_LBXGLU": {
+     "pooled_median": 99.0,
+     "pooled_iqr": 17.0,
+     "median_by_cycle": {
+      "1999-2000": 94.8,
+      "2001-2002": 96.4,
+      "2003-2004": 95.4,
+      "2005-2006": 97.0,
+      "2007-2008": 101.0,
+      "2009-2010": 99.0,
+      "2011-2012": 99.0,
+      "2013-2014": 99.0,
+      "2015-2016": 102.0,
+      "2017-March2020": 103.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.418502,
+      "2001-2002": 0.441015,
+      "2003-2004": 0.430961,
+      "2005-2006": 0.435916,
+      "2007-2008": 0.441875,
+      "2009-2010": 0.449517,
+      "2011-2012": 0.443042,
+      "2013-2014": 0.445771,
+      "2015-2016": 0.429406,
+      "2017-March2020": 0.430517
+     },
+     "max_median_shift_in_iqr_units": 0.2471,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "INS_LBXIN": {
+     "pooled_median": 9.79,
+     "pooled_iqr": 9.73,
+     "median_by_cycle": {
+      "1999-2000": 10.66,
+      "2001-2002": 10.14,
+      "2003-2004": 8.01,
+      "2005-2006": 8.83,
+      "2007-2008": 9.76,
+      "2009-2010": 11.245,
+      "2011-2012": 10.35,
+      "2013-2014": 9.12,
+      "2015-2016": 9.67,
+      "2017-March2020": 10.01
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.41116,
+      "2001-2002": 0.431837,
+      "2003-2004": 0.42758,
+      "2005-2006": 0.429804,
+      "2007-2008": 0.436898,
+      "2009-2010": 0.442776,
+      "2011-2012": 0.421555,
+      "2013-2014": 0.435302,
+      "2015-2016": 0.422897,
+      "2017-March2020": 0.420819
+     },
+     "max_median_shift_in_iqr_units": 0.1829,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "CPEP_LBXCPSI": {
+     "pooled_median": 0.74,
+     "pooled_iqr": 0.50375,
+     "median_by_cycle": {
+      "1999-2000": 0.747,
+      "2001-2002": 0.715,
+      "2003-2004": 0.762,
+      "2005-2006": null,
+      "2007-2008": null,
+      "2009-2010": null,
+      "2011-2012": null,
+      "2013-2014": null,
+      "2015-2016": null,
+      "2017-March2020": null
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.410793,
+      "2001-2002": 0.431837,
+      "2003-2004": 0.427758,
+      "2005-2006": 0.0,
+      "2007-2008": 0.0,
+      "2009-2010": 0.0,
+      "2011-2012": 0.0,
+      "2013-2014": 0.0,
+      "2015-2016": 0.0,
+      "2017-March2020": 0.0
+     },
+     "max_median_shift_in_iqr_units": 0.0496,
+     "level_drift_flag": false,
+     "cycles_measured": 3,
+     "cycle_availability_fraction": 0.3,
+     "availability_gap_flag": true
+    },
+    "TRIGLY_LBXTR": {
+     "pooled_median": 100.0,
+     "pooled_iqr": 80.0,
+     "median_by_cycle": {
+      "1999-2000": null,
+      "2001-2002": null,
+      "2003-2004": null,
+      "2005-2006": 112.0,
+      "2007-2008": 112.0,
+      "2009-2010": 106.0,
+      "2011-2012": 102.0,
+      "2013-2014": 93.0,
+      "2015-2016": 91.0,
+      "2017-March2020": 88.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.0,
+      "2001-2002": 0.0,
+      "2003-2004": 0.0,
+      "2005-2006": 0.431242,
+      "2007-2008": 0.44043,
+      "2009-2010": 0.445534,
+      "2011-2012": 0.437415,
+      "2013-2014": 0.442336,
+      "2015-2016": 0.394359,
+      "2017-March2020": 0.422986
+     },
+     "max_median_shift_in_iqr_units": 0.15,
+     "level_drift_flag": false,
+     "cycles_measured": 7,
+     "cycle_availability_fraction": 0.7,
+     "availability_gap_flag": false
+    },
+    "TRIGLY_LBDLDL": {
+     "pooled_median": 109.0,
+     "pooled_iqr": 47.0,
+     "median_by_cycle": {
+      "1999-2000": null,
+      "2001-2002": null,
+      "2003-2004": null,
+      "2005-2006": 110.0,
+      "2007-2008": 111.0,
+      "2009-2010": 112.0,
+      "2011-2012": 111.0,
+      "2013-2014": 107.0,
+      "2015-2016": 109.0,
+      "2017-March2020": 104.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.0,
+      "2001-2002": 0.0,
+      "2003-2004": 0.0,
+      "2005-2006": 0.420097,
+      "2007-2008": 0.430154,
+      "2009-2010": 0.438027,
+      "2011-2012": 0.4294,
+      "2013-2014": 0.435793,
+      "2015-2016": 0.390354,
+      "2017-March2020": 0.419684
+     },
+     "max_median_shift_in_iqr_units": 0.1064,
+     "level_drift_flag": false,
+     "cycles_measured": 7,
+     "cycle_availability_fraction": 0.7,
+     "availability_gap_flag": false
+    },
+    "HDL_LBDHDD": {
+     "pooled_median": 51.0,
+     "pooled_iqr": 20.0,
+     "median_by_cycle": {
+      "1999-2000": null,
+      "2001-2002": null,
+      "2003-2004": null,
+      "2005-2006": 52.0,
+      "2007-2008": 50.0,
+      "2009-2010": 50.0,
+      "2011-2012": 50.0,
+      "2013-2014": 50.0,
+      "2015-2016": 51.0,
+      "2017-March2020": 51.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.0,
+      "2001-2002": 0.0,
+      "2003-2004": 0.0,
+      "2005-2006": 0.898077,
+      "2007-2008": 0.897078,
+      "2009-2010": 0.914969,
+      "2011-2012": 0.88455,
+      "2013-2014": 0.922624,
+      "2015-2016": 0.9002,
+      "2017-March2020": 0.856082
+     },
+     "max_median_shift_in_iqr_units": 0.05,
+     "level_drift_flag": false,
+     "cycles_measured": 7,
+     "cycle_availability_fraction": 0.7,
+     "availability_gap_flag": false
+    },
+    "TCHOL_LBXTC": {
+     "pooled_median": 190.0,
+     "pooled_iqr": 56.0,
+     "median_by_cycle": {
+      "1999-2000": 198.0,
+      "2001-2002": 197.0,
+      "2003-2004": 195.0,
+      "2005-2006": 191.0,
+      "2007-2008": 192.0,
+      "2009-2010": 191.0,
+      "2011-2012": 189.0,
+      "2013-2014": 184.0,
+      "2015-2016": 186.0,
+      "2017-March2020": 181.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.847834,
+      "2001-2002": 0.868513,
+      "2003-2004": 0.888078,
+      "2005-2006": 0.898077,
+      "2007-2008": 0.897078,
+      "2009-2010": 0.914969,
+      "2011-2012": 0.88455,
+      "2013-2014": 0.922624,
+      "2015-2016": 0.9002,
+      "2017-March2020": 0.856082
+     },
+     "max_median_shift_in_iqr_units": 0.1607,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "HSCRP_LBXHSCRP": {
+     "pooled_median": 1.91,
+     "pooled_iqr": 3.7,
+     "median_by_cycle": {
+      "1999-2000": null,
+      "2001-2002": null,
+      "2003-2004": null,
+      "2005-2006": null,
+      "2007-2008": null,
+      "2009-2010": null,
+      "2011-2012": null,
+      "2013-2014": null,
+      "2015-2016": 1.9,
+      "2017-March2020": 1.94
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.0,
+      "2001-2002": 0.0,
+      "2003-2004": 0.0,
+      "2005-2006": 0.0,
+      "2007-2008": 0.0,
+      "2009-2010": 0.0,
+      "2011-2012": 0.0,
+      "2013-2014": 0.0,
+      "2015-2016": 0.896195,
+      "2017-March2020": 0.849789
+     },
+     "max_median_shift_in_iqr_units": 0.0081,
+     "level_drift_flag": false,
+     "cycles_measured": 2,
+     "cycle_availability_fraction": 0.2,
+     "availability_gap_flag": true
+    },
+    "CBC_LBXHGB": {
+     "pooled_median": 14.1,
+     "pooled_iqr": 2.1,
+     "median_by_cycle": {
+      "1999-2000": 14.3,
+      "2001-2002": 14.3,
+      "2003-2004": 14.4,
+      "2005-2006": 14.3,
+      "2007-2008": 14.2,
+      "2009-2010": 14.1,
+      "2011-2012": 13.9,
+      "2013-2014": 14.0,
+      "2015-2016": 14.0,
+      "2017-March2020": 14.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.865639,
+      "2001-2002": 0.884699,
+      "2003-2004": 0.9,
+      "2005-2006": 0.903649,
+      "2007-2008": 0.901252,
+      "2009-2010": 0.923702,
+      "2011-2012": 0.906889,
+      "2013-2014": 0.93113,
+      "2015-2016": 0.90504,
+      "2017-March2020": 0.877953
+     },
+     "max_median_shift_in_iqr_units": 0.1429,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "CBC_LBXPLTSI": {
+     "pooled_median": 246.0,
+     "pooled_iqr": 82.0,
+     "median_by_cycle": {
+      "1999-2000": 255.0,
+      "2001-2002": 264.0,
+      "2003-2004": 255.0,
+      "2005-2006": 269.0,
+      "2007-2008": 260.0,
+      "2009-2010": 233.0,
+      "2011-2012": 230.0,
+      "2013-2014": 230.0,
+      "2015-2016": 234.0,
+      "2017-March2020": 239.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.865639,
+      "2001-2002": 0.884699,
+      "2003-2004": 0.9,
+      "2005-2006": 0.903649,
+      "2007-2008": 0.901252,
+      "2009-2010": 0.923702,
+      "2011-2012": 0.906719,
+      "2013-2014": 0.93113,
+      "2015-2016": 0.90504,
+      "2017-March2020": 0.877953
+     },
+     "max_median_shift_in_iqr_units": 0.2805,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "BIOPRO_LBXSATSI": {
+     "pooled_median": 20.0,
+     "pooled_iqr": 13.0,
+     "median_by_cycle": {
+      "1999-2000": 20.0,
+      "2001-2002": 20.0,
+      "2003-2004": 20.0,
+      "2005-2006": 20.0,
+      "2007-2008": 21.0,
+      "2009-2010": 21.0,
+      "2011-2012": 20.0,
+      "2013-2014": 20.0,
+      "2015-2016": 21.0,
+      "2017-March2020": 17.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.848385,
+      "2001-2002": 0.870015,
+      "2003-2004": 0.88363,
+      "2005-2006": 0.88082,
+      "2007-2008": 0.893545,
+      "2009-2010": 0.912824,
+      "2011-2012": 0.878752,
+      "2013-2014": 0.919679,
+      "2015-2016": 0.898865,
+      "2017-March2020": 0.851646
+     },
+     "max_median_shift_in_iqr_units": 0.2308,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "BIOPRO_LBXSAPSI": {
+     "pooled_median": 69.0,
+     "pooled_iqr": 28.0,
+     "median_by_cycle": {
+      "1999-2000": 80.0,
+      "2001-2002": 68.0,
+      "2003-2004": 68.0,
+      "2005-2006": 68.0,
+      "2007-2008": 67.0,
+      "2009-2010": 67.0,
+      "2011-2012": 64.0,
+      "2013-2014": 63.0,
+      "2015-2016": 66.0,
+      "2017-March2020": 74.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.848385,
+      "2001-2002": 0.870015,
+      "2003-2004": 0.884164,
+      "2005-2006": 0.894481,
+      "2007-2008": 0.894027,
+      "2009-2010": 0.912977,
+      "2011-2012": 0.879093,
+      "2013-2014": 0.919843,
+      "2015-2016": 0.898698,
+      "2017-March2020": 0.851646
+     },
+     "max_median_shift_in_iqr_units": 0.3929,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "BIOPRO_LBXSCR": {
+     "pooled_median": 0.83,
+     "pooled_iqr": 0.3,
+     "median_by_cycle": {
+      "1999-2000": 0.7,
+      "2001-2002": 0.9,
+      "2003-2004": 0.9,
+      "2005-2006": 0.9,
+      "2007-2008": 0.82,
+      "2009-2010": 0.85,
+      "2011-2012": 0.85,
+      "2013-2014": 0.85,
+      "2015-2016": 0.83,
+      "2017-March2020": 0.84
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.848385,
+      "2001-2002": 0.870015,
+      "2003-2004": 0.884164,
+      "2005-2006": 0.894481,
+      "2007-2008": 0.894188,
+      "2009-2010": 0.912977,
+      "2011-2012": 0.879434,
+      "2013-2014": 0.920007,
+      "2015-2016": 0.898698,
+      "2017-March2020": 0.851852
+     },
+     "max_median_shift_in_iqr_units": 0.4333,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "average_drinks_per_day": {
+     "pooled_median": 2.0,
+     "pooled_iqr": 2.0,
+     "median_by_cycle": {
+      "1999-2000": 2.0,
+      "2001-2002": 2.0,
+      "2003-2004": 2.0,
+      "2005-2006": 2.0,
+      "2007-2008": 2.0,
+      "2009-2010": 2.0,
+      "2011-2012": 2.0,
+      "2013-2014": 2.0,
+      "2015-2016": 2.0,
+      "2017-March2020": 2.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.487518,
+      "2001-2002": 0.497414,
+      "2003-2004": 0.480249,
+      "2005-2006": 0.506921,
+      "2007-2008": 0.531792,
+      "2009-2010": 0.561361,
+      "2011-2012": 0.567701,
+      "2013-2014": 0.587764,
+      "2015-2016": 0.563251,
+      "2017-March2020": 0.603838
+     },
+     "max_median_shift_in_iqr_units": 0.0,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "weight_loss_1yr_lb": {
+     "pooled_median": 0.0,
+     "pooled_iqr": 10.0,
+     "median_by_cycle": {
+      "1999-2000": 0.0,
+      "2001-2002": 0.0,
+      "2003-2004": 0.0,
+      "2005-2006": 0.0,
+      "2007-2008": 0.0,
+      "2009-2010": 0.0,
+      "2011-2012": 0.0,
+      "2013-2014": 0.0,
+      "2015-2016": 0.0,
+      "2017-March2020": 0.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.964391,
+      "2001-2002": 0.976806,
+      "2003-2004": 0.982028,
+      "2005-2006": 0.970699,
+      "2007-2008": 0.969653,
+      "2009-2010": 0.96706,
+      "2011-2012": 0.971351,
+      "2013-2014": 0.976771,
+      "2015-2016": 0.97213,
+      "2017-March2020": 0.973383
+     },
+     "max_median_shift_in_iqr_units": 0.0,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "weight_loss_10yr_lb": {
+     "pooled_median": 10.0,
+     "pooled_iqr": 20.0,
+     "median_by_cycle": {
+      "1999-2000": 7.0,
+      "2001-2002": 8.0,
+      "2003-2004": 10.0,
+      "2005-2006": 10.0,
+      "2007-2008": 10.0,
+      "2009-2010": 10.0,
+      "2011-2012": 10.0,
+      "2013-2014": 10.0,
+      "2015-2016": 10.0,
+      "2017-March2020": 11.0
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.951175,
+      "2001-2002": 0.972468,
+      "2003-2004": 0.967794,
+      "2005-2006": 0.956319,
+      "2007-2008": 0.968048,
+      "2009-2010": 0.969511,
+      "2011-2012": 0.971692,
+      "2013-2014": 0.979388,
+      "2015-2016": 0.972964,
+      "2017-March2020": 0.973899
+     },
+     "max_median_shift_in_iqr_units": 0.15,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    },
+    "homa_ir": {
+     "pooled_median": 2.458469,
+     "pooled_iqr": 2.808659,
+     "median_by_cycle": {
+      "1999-2000": 2.514325,
+      "2001-2002": 2.441783,
+      "2003-2004": 1.911467,
+      "2005-2006": 2.17,
+      "2007-2008": 2.538667,
+      "2009-2010": 2.818741,
+      "2011-2012": 2.587407,
+      "2013-2014": 2.314025,
+      "2015-2016": 2.520593,
+      "2017-March2020": 2.62237
+     },
+     "coverage_by_cycle": {
+      "1999-2000": 0.410426,
+      "2001-2002": 0.43167,
+      "2003-2004": 0.426868,
+      "2005-2006": 0.429265,
+      "2007-2008": 0.435934,
+      "2009-2010": 0.442163,
+      "2011-2012": 0.420873,
+      "2013-2014": 0.434647,
+      "2015-2016": 0.422563,
+      "2017-March2020": 0.420819
+     },
+     "max_median_shift_in_iqr_units": 0.1948,
+     "level_drift_flag": false,
+     "cycles_measured": 10,
+     "cycle_availability_fraction": 1.0,
+     "availability_gap_flag": false
+    }
+   },
+   "level_drift_features": [],
+   "availability_gap_features": [
+    "CPEP_LBXCPSI",
+    "HSCRP_LBXHSCRP"
+   ],
+   "note": "Cycle-to-cycle shifts mix real population change, assay changes and subsample design. A flag means 'do not interpret this feature's absolute level across cycles without adjustment', not 'the data are wrong'."
+  },
+  "label_confidence": {
+   "source": "self-reported questionnaire items (MCQ220, MCQ230A-D, DIQ010)",
+   "confidence": "low_to_moderate",
+   "definitions": {
+    "Cancer": "MCQ220 == 1 (self-reported ever told had cancer). PREVALENT, cross-sectional.",
+    "PancreaticCancer": "Any of MCQ230A-D == 29 (Pancreas). PREVALENT, cross-sectional. Code 39 is 'Other' and must never be counted here.",
+    "Diabetes": "DIQ010 == 1 (self-reported diagnosed diabetes). PREVALENT.",
+    "diabetes_subtype": "1 = research-only Type 1 proxy (young onset + insulin), 2 = Type 2 proxy, 0 = no diabetes. Not a validated subtype: no autoantibodies, no approved genetics, no C-peptide-based confirmation in the current files."
+   },
+   "counts": {
+    "Cancer": {
+     "positives": 5584,
+     "negatives": 53098,
+     "missing": 48940
+    },
+    "PancreaticCancer": {
+     "positives": 19,
+     "negatives": 58663,
+     "missing": 48940
+    },
+    "Diabetes": {
+     "positives": 7359,
+     "negatives": 94173,
+     "missing": 6090
+    }
+   },
+   "site_assignment_supported": false,
+   "site_assignment_reason": "Cancer site comes from a self-reported multi-select item with small per-site counts; the pancreatic label holds 19 prevalent cases. Site-specific outputs stay disabled.",
+   "type1_proxy": {
+    "research_only": true,
+    "reason": "No autoantibodies, no approved genetics, no confirmatory C-peptide criteria."
+   },
+   "prevalent_not_incident": true,
+   "caveats": [
+    "Recall and survivorship bias: fatal cancers are under-represented in a household survey.",
+    "No diagnosis dates usable as event times, so no incidence can be derived.",
+    "Labels may only characterise clusters post hoc; they never enter fitting or selection."
+   ]
+  },
+  "leakage_controls": {
+   "denylisted_columns_present": [
+    "Cancer",
+    "DIQ_DIQ010",
+    "Diabetes",
+    "MCQ_MCQ220",
+    "MCQ_MCQ230A",
+    "MCQ_MCQ230B",
+    "MCQ_MCQ230C",
+    "MCQ_MCQ230D",
+    "MCQ_MCQ240T",
+    "NODM_PancreaticCancer",
+    "PancreaticCancer",
+    "diabetes_subtype",
+    "new_onset_diabetes",
+    "pancreatic_cancer_diagnosis_age",
+    "pancreatic_cancer_minus_diabetes_years",
+    "same_year_diabetes_pancreatic_cancer"
+   ],
+   "denylisted_columns_in_allowlist": [],
+   "tcga_post_diagnosis_columns_present": [],
+   "tcga_columns_in_allowlist": [],
+   "split_policy": "participant-grouped, seeded; preprocessing fit on train only",
+   "reference": "https://scikit-learn.org/stable/common_pitfalls.html"
+  },
+  "survey_weights": {
+   "design_columns_present": [
+    "DEMO_WTMEC2YR",
+    "DEMO_WTMEC4YR",
+    "DEMO_WTMECPRP",
+    "DEMO_WTINT2YR",
+    "DEMO_SDMVPSU",
+    "DEMO_SDMVSTRA",
+    "combined_mec_weight_1999_2020"
+   ],
+   "weights_applied_in_modelling": false,
+   "applicable_to": [
+    "population prevalence estimates",
+    "descriptive subgroup statistics intended to represent the US population"
+   ],
+   "not_applicable_to": [
+    "unsupervised representation learning",
+    "deviation percentiles (defined against the training reference sample)",
+    "cluster discovery and cluster stability"
+   ],
+   "consequence": "All model outputs describe the pooled analytic sample, not the US population. Any population-level claim requires MEC weights with PSU/strata variance estimation.",
+   "reference": "https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx"
+  },
+  "capability_state": {
+   "capabilities": {
+    "rows": 107622,
+    "participant_id_column": "global_participant_id",
+    "repeated_patient_id": null,
+    "has_repeated_patient_measurements": false,
+    "time_columns": [],
+    "supports_future_development_prediction": false,
+    "supported_output": "cross_sectional_representation_and_deviation_only",
+    "longitudinal_heads_enabled": false,
+    "output_vocabulary": {
+     "metabolic_deviation_score": "How unusual a metabolic profile is versus the training reference.",
+     "reference_percentile": "Rank of that deviation score within the training reference distribution.",
+     "latent_representation": "16-dimensional learned encoding of the input features.",
+     "cross_sectional_association": "Association with an already-present condition. Not future risk."
+    },
+    "warning": "No patient-level longitudinal outcomes: do not describe scores as future disease risk."
+   },
+   "horizon_gates": {
+    "minimum_events": 50,
+    "minimum_non_events": 50,
+    "time_column": null,
+    "event_column": null,
+    "per_horizon": {
+     "365d": {
+      "eligible": false,
+      "events": 0,
+      "non_events": 0,
+      "reason": "No patient-level event time / event indicator columns exist."
+     },
+     "1095d": {
+      "eligible": false,
+      "events": 0,
+      "non_events": 0,
+      "reason": "No patient-level event time / event indicator columns exist."
+     },
+     "1825d": {
+      "eligible": false,
+      "events": 0,
+      "non_events": 0,
+      "reason": "No patient-level event time / event indicator columns exist."
+     }
+    },
+    "any_horizon_eligible": false
+   },
+   "future_risk_enabled": false,
+   "cancer_site_assignment_enabled": false,
+   "clustering_enabled": true,
+   "clustering_scope": "Label-free discovery of patient/metabolic phenotypes. Clusters are never cancer diagnoses, subtypes or sites."
+  },
+  "row_counts": {
+   "rows": 107622,
+   "adult_rows": 63041,
+   "split_sizes": {
+    "train": 44128,
+    "validation": 9456,
+    "holdout": 9457
+   }
+  }
+ },
+ "violations": [],
+ "reference_links": {
+  "nhanes_weighting_tutorial": "https://wwwn.cdc.gov/nchs/nhanes/tutorials/weighting.aspx",
+  "nhanes_quality_guidelines": "https://wwwn.cdc.gov/nchs/nhanes/QualityAnalysesGuidelines.aspx",
+  "sklearn_leakage_pitfalls": "https://scikit-learn.org/stable/common_pitfalls.html"
+ },
+ "interpretation_note": "This report is a data observation, not a model result and not a clinical statement. It describes the measurement quality of the input file only."
+}
