@@ -5,26 +5,26 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
 
 ## Where things live
 
-| Path                                              | Purpose                                                                    |
-| ------------------------------------------------- | -------------------------------------------------------------------------- |
-| `/Volumes/Personal-Projects/KERI/deploy/professor` | Authoritative source, inside the KERI repository. Uncommitted.              |
-| `/home/user/workspace/metaboguard-professor-dashboard` | Deployable sandbox copy (identical source plus generated assets and build). |
-| `server/app.py`                                   | All routes. Public: health, status, session, login, logout. Everything else needs a session. |
-| `server/auth.py`                                  | SHA-256 key check, signed `__Host-` cookie, bearer fallback, rate limiter.  |
-| `server/dataset.py`                               | CSV intake: identifier screening, denylist, tiers, ephemeral parsing, row rule. |
-| `server/model.py`                                 | NumPy inference wrapper, aggregates, results CSV, field meanings, boundaries. |
-| `server/reports.py`                               | Reliability, clustering abstention, evidence payloads, path sanitisation.    |
-| `server/core/`                                    | Byte-for-byte copies of `api/{self_supervised,data_integrity,data_reliability,evidence_catalogue}.py`. Never edit here; edit `api/` and re-run `prepare_assets.py`. |
-| `client/src/components/`                          | One file per dashboard section, plus `common.jsx` primitives and `Login.jsx`. |
-| `client/src/components/HowItWorks.jsx`            | "How the AI works" explainer. Content lives in the exported `PIPELINE_STEPS`, `READING_OUTPUTS`, `COMPARISON_ROWS` and `CAPABILITIES` arrays, so edits are data edits and the tests read the same arrays. |
-| `client/src/lib/synthetic_patient.js`             | Vendored unchanged from `frontend/src/interface/`. Do not edit.              |
-| `client/src/lib/synthetic_prevention.js`          | New extension that fills the remaining prevention-allowlist inputs.         |
-| `prepare_assets.py`                               | Regenerates `assets/`, `server/core/`, the vendored client modules, `preprocessor_params.json` and `research_constants.json`. |
-| `api/index.py`, `vercel.json`, `.vercelignore`, `requirements.txt` | Vercel Hobby deployment: static build plus one Python function. |
-| `server/inference.py`                             | NumPy-only preprocessor replay and scoring; falls back to the scikit-learn path when the exported constants are absent. |
-| `server/research_constants.py`                    | Exported research constants and a verbatim `dataset_capabilities` copy for the trimmed runtime. |
-| `scripts/vercel_local_check.py`                   | Serverless-equivalent local check of the Vercel routing and auth paths. |
-| `fixtures/`                                       | `safe_deidentified_cohort.csv` (240 rows), `identifier_cohort_REJECT.csv`, `leakage_columns_cohort.csv`. |
+| Path                                                               | Purpose                                                                                                                                                                                                   |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/Volumes/Personal-Projects/KERI/deploy/professor`                 | Authoritative source, inside the KERI repository. Uncommitted.                                                                                                                                            |
+| `/home/user/workspace/metaboguard-professor-dashboard`             | Deployable sandbox copy (identical source plus generated assets and build).                                                                                                                               |
+| `server/app.py`                                                    | All routes. Public: health, status, session, login, logout. Everything else needs a session.                                                                                                              |
+| `server/auth.py`                                                   | SHA-256 key check, signed `__Host-` cookie, bearer fallback, rate limiter.                                                                                                                                |
+| `server/dataset.py`                                                | CSV intake: identifier screening, denylist, tiers, ephemeral parsing, row rule.                                                                                                                           |
+| `server/model.py`                                                  | NumPy inference wrapper, aggregates, results CSV, field meanings, boundaries.                                                                                                                             |
+| `server/reports.py`                                                | Reliability, clustering abstention, evidence payloads, path sanitisation.                                                                                                                                 |
+| `server/core/`                                                     | Byte-for-byte copies of `api/{self_supervised,data_integrity,data_reliability,evidence_catalogue}.py`. Never edit here; edit `api/` and re-run `prepare_assets.py`.                                       |
+| `client/src/components/`                                           | One file per dashboard section, plus `common.jsx` primitives and `Login.jsx`.                                                                                                                             |
+| `client/src/components/HowItWorks.jsx`                             | "How the AI works" explainer. Content lives in the exported `PIPELINE_STEPS`, `READING_OUTPUTS`, `COMPARISON_ROWS` and `CAPABILITIES` arrays, so edits are data edits and the tests read the same arrays. |
+| `client/src/lib/synthetic_patient.js`                              | Vendored unchanged from `frontend/src/interface/`. Do not edit.                                                                                                                                           |
+| `client/src/lib/synthetic_prevention.js`                           | New extension that fills the remaining prevention-allowlist inputs.                                                                                                                                       |
+| `prepare_assets.py`                                                | Regenerates `assets/`, `server/core/`, the vendored client modules, `preprocessor_params.json` and `research_constants.json`.                                                                             |
+| `api/index.py`, `vercel.json`, `.vercelignore`, `requirements.txt` | Vercel Hobby deployment: static build plus one Python function.                                                                                                                                           |
+| `server/inference.py`                                              | NumPy-only preprocessor replay and scoring; falls back to the scikit-learn path when the exported constants are absent.                                                                                   |
+| `server/research_constants.py`                                     | Exported research constants and a verbatim `dataset_capabilities` copy for the trimmed runtime.                                                                                                           |
+| `scripts/vercel_local_check.py`                                    | Serverless-equivalent local check of the Vercel routing and auth paths.                                                                                                                                   |
+| `fixtures/`                                                        | `safe_deidentified_cohort.csv` (240 rows), `identifier_cohort_REJECT.csv`, `leakage_columns_cohort.csv`.                                                                                                  |
 
 ## Design and content decisions
 

@@ -13,13 +13,13 @@ identifiable or clinical patient data.**
 
 ## What it does
 
-| Section                    | Contents                                                                                                                       |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **Overview**               | Non-diagnostic discovery posture, model/version/capability, architecture, status cards, current data limitations.               |
-| **Patient Probe**          | The existing probe form plus `Generate synthetic patient`. Explicit scoring only; deviation score, percentile, feature contributions, evidence boundaries. |
-| **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV. |
-| **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation. |
-| **Evidence & Methods**     | Source-linked biomarker catalogue with evidence grades, multi-marker rationale, PRoBE and TRIPOD+AI references, supported vs prohibited claims. |
+| Section                    | Contents                                                                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overview**               | Non-diagnostic discovery posture, model/version/capability, architecture, status cards, current data limitations.                                                                                                                                                                     |
+| **Patient Probe**          | The existing probe form plus `Generate synthetic patient`. Explicit scoring only; deviation score, percentile, feature contributions, evidence boundaries.                                                                                                                            |
+| **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV.                                              |
+| **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation.                                                                                                                                              |
+| **Evidence & Methods**     | Source-linked biomarker catalogue with evidence grades, multi-marker rationale, PRoBE and TRIPOD+AI references, supported vs prohibited claims.                                                                                                                                       |
 | **How the AI works**       | Explainer reached from Overview and Evidence & Methods (and a quiet sidebar link, not a numbered section): eight-step CSS flow diagram, plain-language reading of the outputs, current vs future longitudinal model comparison, the role of TCGA, and a three-state capability table. |
 
 The **How the AI works** page states the governing limitation verbatim: "The
@@ -56,11 +56,11 @@ cd client && npm ci && npm run build && cd ..
 
 Required environment variables (no defaults, no fallbacks):
 
-| Variable                         | Meaning                                                                 |
-| -------------------------------- | ----------------------------------------------------------------------- |
-| `METABOGUARD_ACCESS_KEY_SHA256`  | SHA-256 hex digest of the plaintext access key given to the professor.   |
-| `METABOGUARD_SESSION_SECRET`     | Random secret (>= 32 bytes of entropy) used to sign session cookies.     |
-| `PORT`                           | Optional. Defaults to `5000`, the port the published sandbox proxies.    |
+| Variable                        | Meaning                                                                |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `METABOGUARD_ACCESS_KEY_SHA256` | SHA-256 hex digest of the plaintext access key given to the professor. |
+| `METABOGUARD_SESSION_SECRET`    | Random secret (>= 32 bytes of entropy) used to sign session cookies.   |
+| `PORT`                          | Optional. Defaults to `5000`, the port the published sandbox proxies.  |
 
 Generate them without ever storing the key:
 
@@ -100,16 +100,16 @@ in-memory scoring, no persistence.
 
 **Project settings (Vercel CLI or dashboard)**
 
-| Setting                | Value                                              |
-| ---------------------- | -------------------------------------------------- |
+| Setting                | Value                                                                                                     |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
 | CLI project root       | the directory containing `vercel.json` (`deploy/professor` in the KERI repo, or the sandbox project root) |
-| Framework preset       | Other (`"framework": null`)                        |
-| Install command        | `npm --prefix client ci`                           |
-| Build command          | `npm --prefix client ci && npm --prefix client run build:vercel` |
-| Output directory       | `client/dist`                                      |
-| Serverless entrypoint  | `api/index.py` (exports the FastAPI `app`)         |
-| Python requirements    | root `requirements.txt` (trimmed: FastAPI, pandas, NumPy, python-multipart) |
-| Node / Python versions | Node 20+, Python 3.12 (Vercel default)             |
+| Framework preset       | Other (`"framework": null`)                                                                               |
+| Install command        | `npm --prefix client ci`                                                                                  |
+| Build command          | `npm --prefix client ci && npm --prefix client run build:vercel`                                          |
+| Output directory       | `client/dist`                                                                                             |
+| Serverless entrypoint  | `api/index.py` (exports the FastAPI `app`)                                                                |
+| Python requirements    | root `requirements.txt` (trimmed: FastAPI, pandas, NumPy, python-multipart)                               |
+| Node / Python versions | Node 20+, Python 3.12 (Vercel default)                                                                    |
 
 `vercel.json` supplies all of the above, so `vercel` / `vercel --prod` needs no
 extra flags. Routing:
@@ -167,10 +167,10 @@ scikit-learn and SciPy are deliberately absent; see "Runtime profiles" below.
 
 ### Runtime profiles
 
-| Profile  | Where                          | Installed                                        | Preprocessor                                     |
-| -------- | ------------------------------ | ------------------------------------------------ | ------------------------------------------------ |
-| Full     | development, CI, pplx sandbox  | `requirements-deploy.txt` (adds scikit-learn, joblib, uvicorn) | fitted `preprocessor.joblib` via the vendored module |
-| Trimmed  | Vercel function                | `requirements.txt`                               | `preprocessor_params.json` replayed with NumPy    |
+| Profile | Where                         | Installed                                                      | Preprocessor                                         |
+| ------- | ----------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
+| Full    | development, CI, pplx sandbox | `requirements-deploy.txt` (adds scikit-learn, joblib, uvicorn) | fitted `preprocessor.joblib` via the vendored module |
+| Trimmed | Vercel function               | `requirements.txt`                                             | `preprocessor_params.json` replayed with NumPy       |
 
 Both profiles produce byte-identical scores. `tests/test_inference_parity.py`
 compares them row by row (890 rows including all-missing, unseen categorical
@@ -181,22 +181,22 @@ vendored modules. `/api/v1/model` reports which path is live via
 
 ### Vercel limitations to expect
 
-- **Cold starts.** Importing pandas/NumPy and reading the artifact takes roughly
+* **Cold starts.** Importing pandas/NumPy and reading the artifact takes roughly
   1-3 s on a cold invocation. Dataset analysis of a few thousand rows then runs
   in well under a second.
-- **60 s function ceiling** on Hobby. The 5,000-scored-row cap and the internal
+* **60 s function ceiling** on Hobby. The 5,000-scored-row cap and the internal
   compute budget keep requests far below it, but a 15 MB / 20,000-row upload is
   parsed twice (screen, then analyse) because nothing is persisted.
-- **4.5 MB request-body limit** on Vercel functions. This is stricter than the
+* **4.5 MB request-body limit** on Vercel functions. This is stricter than the
   app's own 15 MB rule, so in practice CSV uploads over ~4.5 MB will be rejected
   by the platform before FastAPI sees them.
-- **Rate limiting is per-instance.** Each serverless instance keeps its own
+* **Rate limiting is per-instance.** Each serverless instance keeps its own
   in-memory counter, so a distributed attacker gets more attempts than the
   5-per-5-minutes rule suggests. Sessions are unaffected (signed cookies, no
   server state).
-- **No writable persistence** (by design). Uploads are memory-only and no
+* **No writable persistence** (by design). Uploads are memory-only and no
   results are stored.
-- Hobby projects are for non-commercial use, and the deployment is still
+* Hobby projects are for non-commercial use, and the deployment is still
   prototype hosting: no identifiable or clinical patient data.
 
 ## Tests
@@ -237,16 +237,16 @@ tests/                      pytest suite
 
 ## Limitations
 
-- Cross-sectional training data: no time horizon, no incidence, no future risk.
-- Survey weights are not applied, so results describe the analytic sample only.
-- No external validation, calibration study or PRoBE-compliant specimen design.
-- Clustering is not run on uploaded data in this deployment; the validated
+* Cross-sectional training data: no time horizon, no incidence, no future risk.
+* Survey weights are not applied, so results describe the analytic sample only.
+* No external validation, calibration study or PRoBE-compliant specimen design.
+* Clustering is not run on uploaded data in this deployment; the validated
   pipeline's stability and negative-control runs exceed the hosting budget.
-- Uploaded datasets are capped at 15 MB, 20,000 rows and 5,000 scored rows.
-- The reference score distribution is stored as an 8,001-point quantile grid of
+* Uploaded datasets are capped at 15 MB, 20,000 rows and 5,000 scored rows.
+* The reference score distribution is stored as an 8,001-point quantile grid of
   the full 63,041-row training reference (percentile resolution 0.0125 pp).
   Weights, preprocessor and score definition are unchanged, and probe scores
   match the authoritative artifact to six decimal places.
-- Nothing is persisted: no database, no upload history, no server-side results.
+* Nothing is persisted: no database, no upload history, no server-side results.
 
 See `SECURITY_PRIVACY.md` for the access-control and data-handling details.
