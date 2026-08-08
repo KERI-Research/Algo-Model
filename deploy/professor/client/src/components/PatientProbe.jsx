@@ -11,12 +11,17 @@ import {
 	generateFullSyntheticProfile,
 	REQUIRED_PROBE_FIELDS,
 	SYNTHETIC_NOTE,
+	SYNTHETIC_PROFILE_OPTIONS,
 } from "../lib/synthetic_prevention.js";
+import { createRandomSource } from "../lib/synthetic_patient.js";
 import { Empty, Notice } from "./common.jsx";
 import ProbeResults from "./ProbeResults.jsx";
 export default function PatientProbe({ onUnauthorised, onNavigate }) {
 	const [form, setForm] = useState(emptyProbeForm);
 	const [generated, setGenerated] = useState(null);
+	const [syntheticProfile, setSyntheticProfile] =
+		useState("population_mix");
+	const [syntheticSeed, setSyntheticSeed] = useState(1);
 	const [pending, setPending] = useState(false);
 	const [result, setResult] = useState(null);
 	const [submittedForm, setSubmittedForm] = useState(null);
@@ -37,9 +42,20 @@ export default function PatientProbe({ onUnauthorised, onNavigate }) {
 	};
 
 	const generate = () => {
-		const profile = generateFullSyntheticProfile({});
+		const seed = Math.min(
+			999999,
+			Math.max(1, Math.trunc(Number(syntheticSeed) || 1)),
+		);
+		const profile = generateFullSyntheticProfile({
+			random: createRandomSource(seed),
+			archetype:
+				syntheticProfile === "population_mix"
+					? undefined
+					: syntheticProfile,
+		});
 		setForm({ ...emptyProbeForm(), ...profile.values });
-		setGenerated(profile);
+		setSyntheticSeed(seed);
+		setGenerated({ ...profile, seed });
 		setResult(null);
 		setSubmittedForm(null);
 		setError(null);
@@ -107,13 +123,66 @@ export default function PatientProbe({ onUnauthorised, onNavigate }) {
 				<h2 id="probe-form-heading">
 					Record under test
 				</h2>
-				<div
-					className="actions"
-					style={{
-						marginTop: 0,
-						marginBottom: "var(--space-4)",
-					}}
-				>
+				<div className="probe-generator-controls">
+					<div>
+						<label htmlFor="synthetic-profile-kind">
+							Synthetic profile
+						</label>
+						<select
+							id="synthetic-profile-kind"
+							value={syntheticProfile}
+							onChange={(event) =>
+								setSyntheticProfile(
+									event
+										.target
+										.value,
+								)
+							}
+							data-testid="select-synthetic-profile"
+						>
+							<option value="population_mix">
+								Population-weighted
+								mix
+							</option>
+							{SYNTHETIC_PROFILE_OPTIONS.map(
+								(profile) => (
+									<option
+										key={
+											profile.id
+										}
+										value={
+											profile.id
+										}
+									>
+										{
+											profile.label
+										}
+									</option>
+								),
+							)}
+						</select>
+					</div>
+					<div>
+						<label htmlFor="synthetic-profile-seed">
+							Seed
+						</label>
+						<input
+							id="synthetic-profile-seed"
+							type="number"
+							min="1"
+							max="999999"
+							step="1"
+							value={syntheticSeed}
+							onChange={(event) =>
+								setSyntheticSeed(
+									event
+										.target
+										.value,
+								)
+							}
+							data-testid="input-synthetic-seed"
+						/>
+					</div>
 					<button
 						type="button"
 						className="btn btn-secondary"
@@ -141,6 +210,12 @@ export default function PatientProbe({ onUnauthorised, onNavigate }) {
 							generated.archetype
 								.description
 						}{" "}
+						Seed {generated.seed}. Fitted
+						from{" "}
+						{generated.generation.trainingRows.toLocaleString(
+							"en-GB",
+						)}{" "}
+						aggregate training records.{" "}
 						{SYNTHETIC_NOTE}
 					</Notice>
 				) : null}

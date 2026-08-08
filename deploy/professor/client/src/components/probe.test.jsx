@@ -328,6 +328,44 @@ describe("PatientProbe", () => {
 		expect(global.fetch).not.toHaveBeenCalled();
 	});
 
+	it("reproduces an aggregate profile from its type and seed", async () => {
+		render(<PatientProbe onUnauthorised={() => {}} />);
+		const user = userEvent.setup();
+		await user.selectOptions(
+			screen.getByTestId("select-synthetic-profile"),
+			"reported_diabetes_metabolic",
+		);
+		await user.clear(screen.getByTestId("input-synthetic-seed"));
+		await user.type(
+			screen.getByTestId("input-synthetic-seed"),
+			"42",
+		);
+		await user.click(
+			screen.getByTestId("button-generate-synthetic"),
+		);
+		const first = {
+			age: screen.getByTestId("input-DEMO_RIDAGEYR").value,
+			bmi: screen.getByTestId("input-BMX_BMXBMI").value,
+			a1c: screen.getByTestId("input-GHB_LBXGH").value,
+		};
+		expect(screen.getByText(/Seed 42/)).toHaveTextContent(
+			/aggregate training records/,
+		);
+		expect(screen.getByTestId("input-Diabetes")).toHaveValue("1");
+		await user.click(
+			screen.getByTestId("button-generate-synthetic"),
+		);
+		expect(screen.getByTestId("input-DEMO_RIDAGEYR")).toHaveValue(
+			Number(first.age),
+		);
+		expect(screen.getByTestId("input-BMX_BMXBMI")).toHaveValue(
+			Number(first.bmi),
+		);
+		expect(screen.getByTestId("input-GHB_LBXGH")).toHaveValue(
+			Number(first.a1c),
+		);
+	});
+
 	it("scores explicitly and shows deviation, percentile and contributions", async () => {
 		render(
 			<PatientProbe

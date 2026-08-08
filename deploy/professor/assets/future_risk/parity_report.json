@@ -1,40 +1,40 @@
 {
- "generated_at": "2026-08-06T02:02:53.862887+00:00",
- "histories_compared": 40,
- "tolerance": 1e-06,
- "max_abs_difference": 1.726801146517687e-08,
- "per_output": {
-  "pan_cancer:5y:calibrated": {
-   "max_abs_difference": 0.0,
-   "compared": 40,
-   "within_tolerance": true
-  },
-  "pan_cancer:5y:raw": {
-   "max_abs_difference": 1.7268e-08,
-   "compared": 40,
-   "within_tolerance": true
-  },
-  "type2_diabetes:3y:calibrated": {
-   "max_abs_difference": 0.0,
-   "compared": 40,
-   "within_tolerance": true
-  },
-  "type2_diabetes:3y:raw": {
-   "max_abs_difference": 0.0,
-   "compared": 40,
-   "within_tolerance": true
-  },
-  "type2_diabetes:5y:calibrated": {
-   "max_abs_difference": 0.0,
-   "compared": 40,
-   "within_tolerance": true
-  },
-  "type2_diabetes:5y:raw": {
-   "max_abs_difference": 0.0,
-   "compared": 40,
-   "within_tolerance": true
-  }
- },
- "verdict": "parity",
- "method": "Deterministic synthetic histories (varying visit counts, gaps, severity and missingness) scored with the authoritative joblib pipelines and PyTorch model, then with the portable NumPy path. Raw and calibrated values compared."
+	"generated_at": "2026-08-06T02:02:53.862887+00:00",
+	"histories_compared": 40,
+	"tolerance": 1e-6,
+	"max_abs_difference": 1.726801146517687e-8,
+	"per_output": {
+		"pan_cancer:5y:calibrated": {
+			"max_abs_difference": 0.0,
+			"compared": 40,
+			"within_tolerance": true
+		},
+		"pan_cancer:5y:raw": {
+			"max_abs_difference": 1.7268e-8,
+			"compared": 40,
+			"within_tolerance": true
+		},
+		"type2_diabetes:3y:calibrated": {
+			"max_abs_difference": 0.0,
+			"compared": 40,
+			"within_tolerance": true
+		},
+		"type2_diabetes:3y:raw": {
+			"max_abs_difference": 0.0,
+			"compared": 40,
+			"within_tolerance": true
+		},
+		"type2_diabetes:5y:calibrated": {
+			"max_abs_difference": 0.0,
+			"compared": 40,
+			"within_tolerance": true
+		},
+		"type2_diabetes:5y:raw": {
+			"max_abs_difference": 0.0,
+			"compared": 40,
+			"within_tolerance": true
+		}
+	},
+	"verdict": "parity",
+	"method": "Deterministic synthetic histories (varying visit counts, gaps, severity and missingness) scored with the authoritative joblib pipelines and PyTorch model, then with the portable NumPy path. Raw and calibrated values compared."
 }

@@ -188,6 +188,7 @@ async def overview_route(_: dict = Depends(auth.require_session)) -> dict[str, A
     reliability = reports.reliability_report()
     clustering = reports.clustering_report("complete_cases")
     integrity = reports.integrity_report()
+    model_summary = model.model_summary()
     tiers = reliability.get("tiers") or {}
     return {
         "posture": {
@@ -199,14 +200,17 @@ async def overview_route(_: dict = Depends(auth.require_session)) -> dict[str, A
             ),
             "intended_reader": "Research supervisor and clinical collaborators.",
         },
-        "model": model.model_summary(),
+        "model": model_summary,
         "status_cards": [
             {
                 "id": "inference",
                 "label": "Inference path",
-                "value": "NumPy artifact",
+                "value": "PyTorch to NumPy",
                 "state": "ok",
-                "detail": "Exported weights and fitted preprocessor. No training in deployment.",
+                "detail": (
+                    f"Selected offline with {model_summary['training_backend']}; exported "
+                    "weights replayed by NumPy. No training in deployment."
+                ),
             },
             {
                 "id": "reliability",

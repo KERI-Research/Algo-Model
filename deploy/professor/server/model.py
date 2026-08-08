@@ -330,11 +330,19 @@ def artifact_metadata() -> dict[str, Any]:
     return json.loads((config.SSL_ARTIFACT_DIR / "metadata.json").read_text())
 
 
+@lru_cache(maxsize=1)
+def promotion_metadata() -> dict[str, Any]:
+    path = config.SSL_ARTIFACT_DIR / "promotion_report.json"
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
 def model_summary() -> dict[str, Any]:
     metadata = artifact_metadata()
+    promotion = promotion_metadata()
     distribution = metadata.get("score_distribution", {})
     capabilities = metadata.get("capabilities", {})
     training_config = metadata.get("config", {})
+    hidden_dimension = int(training_config.get("hidden_dim", 96))
     return {
         "model_name": metadata.get("model_name"),
         "model_version": config.MODEL_VERSION,
@@ -342,16 +350,22 @@ def model_summary() -> dict[str, Any]:
         "deployment_version": config.DEPLOYMENT_VERSION,
         "created_at": metadata.get("created_at"),
         "inference_backend": "numpy",
+        "training_backend": metadata.get("backend", "unknown"),
+        "training_device": metadata.get("device"),
+        "run_label": metadata.get("run_label"),
         "preprocessor_path": (
             "exported_constants" if params_available() else "sklearn_artifact"
         ),
-        "training_backend_not_deployed": "PyTorch is not installed or used in this deployment.",
+        "training_backend_not_deployed": (
+            "PyTorch trained the selected weights offline. It is not installed or used "
+            "for deployment inference; the same weights are replayed with NumPy."
+        ),
         "architecture": {
             "type": "Denoising autoencoder (self-supervised)",
             "input_features": len(metadata.get("features", [])),
             "transformed_dimension": metadata.get("transformed_dimension"),
             "latent_dimension": training_config.get("latent_dim", 16),
-            "hidden_layers": training_config.get("hidden_dims"),
+            "hidden_layers": [hidden_dimension, hidden_dimension // 2],
             "activation": "GELU",
             "objective": "Masked + noised input reconstruction (MSE)",
             "score_definition": (
@@ -360,6 +374,20 @@ def model_summary() -> dict[str, Any]:
             "reference_rows": distribution.get("combined_sorted_note"),
         },
         "training_rows": metadata.get("training_rows"),
+        "validation_rows": metadata.get("validation_rows"),
+        "holdout_rows": metadata.get("holdout_rows"),
+        "holdout_reconstruction_mse": metadata.get("holdout_reconstruction_mse"),
+        "promotion": {
+            "verdict": promotion.get("verdict"),
+            "baseline": promotion.get("baseline"),
+            "holdout_mse_improvement_fraction": (promotion.get("metrics") or {}).get(
+                "holdout_mse_improvement_fraction"
+            ),
+            "deviation_spearman_holdout": (promotion.get("metrics") or {}).get(
+                "deviation_spearman_holdout"
+            ),
+            "selection_objective": promotion.get("selection_objective"),
+        },
         "reference_rows_scored": metadata.get("adult_rows_scored"),
         "features": metadata.get("features", PREVENTION_FEATURES),
         "intended_use": metadata.get("intended_use"),

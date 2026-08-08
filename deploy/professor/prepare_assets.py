@@ -46,7 +46,8 @@ DEPLOY_DIR = Path(__file__).resolve().parent
 #: outside the repository (for example a read-only checkout or a build sandbox).
 REPO_ROOT = Path(os.environ.get("KERI_REPO_ROOT", DEPLOY_DIR.parent.parent)).resolve()
 
-ARTIFACT_DIR = REPO_ROOT / "model_artifacts" / "metaboguard_ssl" / "nhanes_multicycle_v2"
+LEGACY_ARTIFACT_DIR = REPO_ROOT / "model_artifacts" / "metaboguard_ssl" / "nhanes_multicycle_v2"
+SSL_POINTER = REPO_ROOT / "model_artifacts" / "metaboguard_ssl" / "CURRENT.json"
 RESEARCH_RUN = REPO_ROOT / "model_artifacts" / "research_runs" / "research__20260804T164743Z"
 EVIDENCE_SRC = REPO_ROOT / "data" / "evidence" / "biomarker_evidence.json"
 FUTURE_RISK_ARTIFACT = (
@@ -74,12 +75,30 @@ CORE_MODULES = (
 CLIENT_MODULES = (
     "synthetic_patient.js",
     "synthetic_patient.test.js",
+    "synthetic_prevention.js",
+    "synthetic_profile_model.json",
     "synthetic_history.js",
 )
 
 REFERENCE_GRID_POINTS = 8001
 
 _ABSOLUTE_PATH = re.compile(r"(?:/Volumes|/Users|/home|/private|/var/folders|[A-Za-z]:\\\\)[^\s\"']*")
+
+
+def resolve_ssl_artifact() -> Path:
+    if not SSL_POINTER.exists():
+        return LEGACY_ARTIFACT_DIR
+    payload = json.loads(SSL_POINTER.read_text())
+    candidate = Path(payload["artifact_dir"])
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    candidate = candidate.resolve()
+    artifact_root = (REPO_ROOT / "model_artifacts" / "metaboguard_ssl").resolve()
+    if candidate != artifact_root and artifact_root not in candidate.parents:
+        raise ValueError("Promoted SSL artifact must stay inside model_artifacts/metaboguard_ssl.")
+    if not (candidate / "metadata.json").exists():
+        raise FileNotFoundError(f"Promoted SSL artifact is incomplete: {candidate}")
+    return candidate
 
 
 def sanitise(value: Any) -> Any:
@@ -102,7 +121,9 @@ def write_json(path: Path, payload: Any) -> None:
 def main() -> int:
     import numpy as np
 
-    for required in (ARTIFACT_DIR, RESEARCH_RUN, EVIDENCE_SRC, FUTURE_RISK_ARTIFACT):
+    artifact_dir = resolve_ssl_artifact()
+
+    for required in (artifact_dir, RESEARCH_RUN, EVIDENCE_SRC, FUTURE_RISK_ARTIFACT):
         if not required.exists():
             print(f"missing source: {required}", file=sys.stderr)
             return 1
@@ -129,11 +150,32 @@ def main() -> int:
         print(f"  copied frontend/src/interface/{name}")
 
     print("model artifact:")
-    for name in ("preprocessor.joblib", "autoencoder_weights.npz", "README.md", "sample_input.json"):
-        shutil.copy(ARTIFACT_DIR / name, artifact_out / name)
+    for name in ("preprocessor.joblib", "autoencoder_weights.npz"):
+        shutil.copy(artifact_dir / name, artifact_out / name)
         print(f"  copied {name}")
+    support_files = {
+        "MODEL_CARD.md": artifact_dir / "MODEL_CARD.md",
+        "README.md": (
+            artifact_dir / "README.md"
+            if (artifact_dir / "README.md").exists()
+            else artifact_dir / "MODEL_CARD.md"
+        ),
+        "sample_input.json": (
+            artifact_dir / "sample_input.json"
+            if (artifact_dir / "sample_input.json").exists()
+            else LEGACY_ARTIFACT_DIR / "sample_input.json"
+        ),
+        "promotion_report.json": artifact_dir / "promotion_report.json",
+    }
+    for name, source in support_files.items():
+        destination = artifact_out / name
+        if destination.exists():
+            destination.unlink()
+        if source.exists():
+            shutil.copy(source, destination)
+            print(f"  copied {name}")
 
-    metadata = json.loads((ARTIFACT_DIR / "metadata.json").read_text())
+    metadata = json.loads((artifact_dir / "metadata.json").read_text())
     distribution = metadata["score_distribution"]
     reference = np.asarray(distribution["combined_sorted"], dtype=np.float64)
     grid = np.quantile(reference, np.linspace(0.0, 1.0, REFERENCE_GRID_POINTS))

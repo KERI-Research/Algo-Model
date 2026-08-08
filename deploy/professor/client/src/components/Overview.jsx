@@ -115,6 +115,14 @@ export default function Overview({ onUnauthorised, onNavigate }) {
 							`${model.inference_backend} (exported weights)`,
 						],
 						[
+							"Offline training backend",
+							`${model.training_backend} (${model.training_device})`,
+						],
+						[
+							"Selected run",
+							model.run_label,
+						],
+						[
 							"Training rows",
 							(
 								model.training_rows ||
@@ -131,6 +139,27 @@ export default function Overview({ onUnauthorised, onNavigate }) {
 							).toLocaleString(
 								"en-GB",
 							),
+						],
+						[
+							"Holdout reconstruction MSE",
+							model.holdout_reconstruction_mse?.toFixed(
+								6,
+							),
+						],
+						[
+							"Improvement over baseline",
+							model.promotion
+								?.holdout_mse_improvement_fraction !=
+							null
+								? `${(
+										model
+											.promotion
+											.holdout_mse_improvement_fraction *
+										100
+									).toFixed(
+										1,
+									)}% lower holdout MSE`
+								: undefined,
 						],
 						[
 							"Intended use",

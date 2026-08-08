@@ -5,7 +5,7 @@ prevention.**
 
 Developed within the **KERI department**.
 
-## Quick start (validated 2026-08-04)
+## Quick start (validated 2026-08-08)
 
 ```bash
 cd api
@@ -19,12 +19,12 @@ cd ../frontend && npm run build                                       # producti
 See [`TODAY_MEETING_DEMO.md`](TODAY_MEETING_DEMO.md) for the demonstration runbook,
 verified numbers and the sentences that are safe to say about them.
 
-A complete verified full run (40 epochs, NumPy backend) is stored at
-[`model_artifacts/metaboguard_ssl/meeting_2026-08-04/`](model_artifacts/metaboguard_ssl/meeting_2026-08-04/)
-with weights, training-only preprocessor, split indices, run manifest, metrics, model card
-and benchmark report. It is deliberately **not promoted** for API serving and is not a
-clinical or future-risk model. PyTorch is not installed, so torch-backend parity is
-unverified.
+The promoted run is
+`model_artifacts/metaboguard_ssl/runs/nhanes_multicycle_v2__retrain_wide__20260808`.
+It was trained offline with PyTorch/CPU and exported to the same NumPy weight
+contract used by dependency-light serving. NumPy is the deployment format, not
+the learning method. The artifact remains a label-free deviation model, not a
+clinical or future-risk model.
 
 ## Intended use
 
@@ -56,10 +56,10 @@ MetaboGuard must not:
 
 ### Self-supervised representation
 
-`metaboguard_ssl_v1` is a denoising tabular autoencoder trained without disease
-labels. It uses masked-feature reconstruction to learn a 16-dimensional latent
-representation from metabolic, demographic, behavioural, CBC and biochemistry
-variables.
+`metaboguard_ssl_v1` is a 128 -> 64 -> 16 denoising tabular autoencoder trained
+without disease labels. It uses masked-feature reconstruction to learn a
+16-dimensional latent representation from metabolic, demographic, behavioural,
+CBC and biochemistry variables.
 
 Outputs:
 
@@ -95,21 +95,23 @@ are 1, 3 and 5 years, but a horizon is enabled only when it contains at least
 | Property | Value |
 | --- | ---: |
 | Dataset | `nhanes_multicycle_v2.csv` |
-| Adult rows available | 89,472 |
-| Unlabelled training rows | 50,000 |
+| Adult rows available | 63,041 |
+| Participant-grouped train / validation / holdout | 44,128 / 9,456 / 9,457 |
 | Raw input features | 25 |
 | Transformed dimensions | 55 |
 | Latent dimensions | 16 |
-| Training epochs | 25 |
-| Validation reconstruction loss | 0.0565 |
+| Training epochs | 50 |
+| Minimum validation reconstruction loss | 0.029603 |
+| Holdout reconstruction MSE | 0.034867 |
+| Improvement over frozen full-run baseline | 13.96% lower holdout MSE |
 
 Cross-sectional association checks:
 
 | Check | Positives | AUROC | AUPRC | Warning |
 | --- | ---: | ---: | ---: | --- |
-| Any-cancer prevalence | 5,584 | 0.699 | 0.169 | Not future cancer development |
-| Type 2 diabetes proxy | 7,067 | 0.923 | 0.675 | Not future diabetes development |
-| Type 1 proxy | 177 | 0.909 | 0.135 | Unvalidated, research-only proxy |
+| Any-cancer prevalence | 837 | 0.726 | 0.198 | Holdout association; not future cancer development |
+| Type 2 diabetes proxy | 1,075 | 0.922 | 0.675 | Holdout association; not future diabetes development |
+| Type 1 proxy | 34 | not evaluated | not evaluated | Below the 50-case holdout gate |
 
 Diagnosis age and insulin-use variables that define the Type 1 proxy were
 excluded from the encoder to prevent direct label leakage.

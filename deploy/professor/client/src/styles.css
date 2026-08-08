@@ -842,6 +842,14 @@ tbody tr:last-child td {
 	margin-bottom: var(--space-4);
 }
 
+.probe-generator-controls {
+	display: grid;
+	grid-template-columns: minmax(220px, 1fr) minmax(110px, 0.35fr) auto auto;
+	gap: var(--space-3);
+	align-items: end;
+	margin-bottom: var(--space-4);
+}
+
 .probe-deviation-meaning {
 	border-left: 3px solid var(--accent);
 }
@@ -1363,7 +1371,8 @@ tbody tr:last-child td {
 	.probe-factor-row,
 	.probe-pathway-grid,
 	.probe-meaning-grid,
-	.probe-cancer-selector {
+	.probe-cancer-selector,
+	.probe-generator-controls {
 		grid-template-columns: 1fr;
 	}
 

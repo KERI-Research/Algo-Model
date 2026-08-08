@@ -166,14 +166,16 @@ const SPARSE_PROFILE = {
 };
 
 export const SYNTHETIC_PROFILE_OPTIONS = [
-	...Object.entries(SYNTHETIC_PROFILE_MODEL.profiles).map(([id, profile]) => ({
-		id,
-		label: profile.label,
-		description: profile.description,
-		reportedDiabetes: profile.reported_diabetes,
-		omitOptional: false,
-		trainingRows: profile.training_rows,
-	})),
+	...Object.entries(SYNTHETIC_PROFILE_MODEL.profiles).map(
+		([id, profile]) => ({
+			id,
+			label: profile.label,
+			description: profile.description,
+			reportedDiabetes: profile.reported_diabetes,
+			omitOptional: false,
+			trainingRows: profile.training_rows,
+		}),
+	),
 	SPARSE_PROFILE,
 ];
 
@@ -194,11 +196,11 @@ const normalCdf = (value) => {
 	const magnitude = Math.abs(value) / Math.sqrt(2);
 	const t = 1 / (1 + 0.3275911 * magnitude);
 	const polynomial =
-		(((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t -
+		((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t -
 			0.284496736) *
 			t +
 			0.254829592) *
-			t);
+		t;
 	const erf = sign * (1 - polynomial * Math.exp(-(magnitude ** 2)));
 	return Math.min(1 - 1e-9, Math.max(1e-9, 0.5 * (1 + erf)));
 };
@@ -206,7 +208,9 @@ const normalCdf = (value) => {
 const standardNormals = (count, random) => {
 	const values = [];
 	while (values.length < count) {
-		const radius = Math.sqrt(-2 * Math.log(Math.max(random(), 1e-12)));
+		const radius = Math.sqrt(
+			-2 * Math.log(Math.max(random(), 1e-12)),
+		);
 		const angle = 2 * Math.PI * random();
 		values.push(radius * Math.cos(angle));
 		if (values.length < count) {
@@ -233,13 +237,17 @@ export const interpolateQuantile = (quantiles, probability) => {
 	}
 	const grid = SYNTHETIC_PROFILE_MODEL.quantile_probabilities;
 	if (probability <= grid[0]) return quantiles[0];
-	if (probability >= grid[grid.length - 1]) return quantiles[quantiles.length - 1];
+	if (probability >= grid[grid.length - 1])
+		return quantiles[quantiles.length - 1];
 	const scaled =
 		((probability - grid[0]) / (grid[grid.length - 1] - grid[0])) *
 		(quantiles.length - 1);
 	const lower = Math.floor(scaled);
 	const fraction = scaled - lower;
-	return quantiles[lower] + fraction * (quantiles[lower + 1] - quantiles[lower]);
+	return (
+		quantiles[lower] +
+		fraction * (quantiles[lower + 1] - quantiles[lower])
+	);
 };
 
 const sampleCategory = (distribution, random) => {
@@ -255,12 +263,17 @@ const chooseProfileId = (random, requested) => {
 	if (requested === SPARSE_PROFILE.id) return requested;
 	if (requested) {
 		if (!SYNTHETIC_PROFILE_MODEL.profiles[requested]) {
-			throw new Error(`Unknown synthetic profile: ${requested}`);
+			throw new Error(
+				`Unknown synthetic profile: ${requested}`,
+			);
 		}
 		return requested;
 	}
 	const profiles = Object.entries(SYNTHETIC_PROFILE_MODEL.profiles);
-	const total = profiles.reduce((sum, [, profile]) => sum + profile.sampling_weight, 0);
+	const total = profiles.reduce(
+		(sum, [, profile]) => sum + profile.sampling_weight,
+		0,
+	);
 	let threshold = random() * total;
 	for (const [id, profile] of profiles) {
 		threshold -= profile.sampling_weight;
@@ -295,15 +308,24 @@ export const generateFullSyntheticProfile = ({
 	archetype,
 } = {}) => {
 	const requestedId = chooseProfileId(random, archetype);
-	const sampledId = requestedId === SPARSE_PROFILE.id ? "reference_range" : requestedId;
+	const sampledId =
+		requestedId === SPARSE_PROFILE.id
+			? "reference_range"
+			: requestedId;
 	const profile = SYNTHETIC_PROFILE_MODEL.profiles[sampledId];
-	const uniforms = correlatedUniforms(profile.correlation_cholesky, random);
+	const uniforms = correlatedUniforms(
+		profile.correlation_cholesky,
+		random,
+	);
 	const values = {};
 
 	SYNTHETIC_PROFILE_MODEL.continuous_fields.forEach((field, index) => {
 		values[field] = clampField(
 			field,
-			interpolateQuantile(profile.quantiles[field], uniforms[index]),
+			interpolateQuantile(
+				profile.quantiles[field],
+				uniforms[index],
+			),
 		);
 	});
 	Object.entries(profile.categories).forEach(([field, distribution]) => {
@@ -313,8 +335,12 @@ export const generateFullSyntheticProfile = ({
 	values.Diabetes = profile.reported_diabetes;
 	values.DIQ_DID040 = "";
 	if (values.Diabetes === "1") {
-		const durations = profile.context_quantiles.diabetes_duration_years;
-		const duration = Math.max(1, interpolateQuantile(durations, random()));
+		const durations =
+			profile.context_quantiles.diabetes_duration_years;
+		const duration = Math.max(
+			1,
+			interpolateQuantile(durations, random()),
+		);
 		const age = Number(values.DEMO_RIDAGEYR);
 		values.DIQ_DID040 = formatForField(
 			"DIQ_DID040",
@@ -332,11 +358,20 @@ export const generateFullSyntheticProfile = ({
 			Number(values.TRIGLY_LBXTR) / 5,
 	);
 	if (values.alcohol_status === "0") {
-		values.average_drinks_per_day = clampField("average_drinks_per_day", 0);
+		values.average_drinks_per_day = clampField(
+			"average_drinks_per_day",
+			0,
+		);
 	} else if (values.alcohol_status === "1") {
 		values.average_drinks_per_day = clampField(
 			"average_drinks_per_day",
-			Math.min(2, Math.max(0.1, Number(values.average_drinks_per_day))),
+			Math.min(
+				2,
+				Math.max(
+					0.1,
+					Number(values.average_drinks_per_day),
+				),
+			),
 		);
 	} else {
 		values.average_drinks_per_day = clampField(
@@ -346,8 +381,12 @@ export const generateFullSyntheticProfile = ({
 	}
 
 	if (requestedId === SPARSE_PROFILE.id) blankOptionalFields(values);
-	const populatedFields = Object.keys(values).filter((field) => values[field] !== "");
-	const omittedFields = Object.keys(values).filter((field) => values[field] === "");
+	const populatedFields = Object.keys(values).filter(
+		(field) => values[field] !== "",
+	);
+	const omittedFields = Object.keys(values).filter(
+		(field) => values[field] === "",
+	);
 	return {
 		archetype: profileMetadata(requestedId),
 		values,
@@ -358,9 +397,12 @@ export const generateFullSyntheticProfile = ({
 			method: "aggregate_gaussian_copula",
 			schemaVersion: SYNTHETIC_PROFILE_MODEL.schema_version,
 			sourceDataset: SYNTHETIC_PROFILE_MODEL.source.dataset,
-			sourcePartition: SYNTHETIC_PROFILE_MODEL.source.partition,
+			sourcePartition:
+				SYNTHETIC_PROFILE_MODEL.source.partition,
 			trainingRows: profile.training_rows,
-			containsSourceRows: SYNTHETIC_PROFILE_MODEL.privacy.contains_source_rows,
+			containsSourceRows:
+				SYNTHETIC_PROFILE_MODEL.privacy
+					.contains_source_rows,
 		},
 	};
 };

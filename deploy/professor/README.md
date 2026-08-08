@@ -52,6 +52,17 @@ health direction can be inferred (it cannot), and whether any supplied value
 falls outside broad project plausibility windows. An unusual but plausible
 combination is not automatically a bad outcome or an invalid record.
 
+Synthetic Patient Probe records use a seeded Gaussian copula fitted to aggregate
+quantiles and rank correlations from the participant-grouped NHANES training
+partition. The reviewer can select a profile type and seed, and the UI reports
+the aggregate training count. No source row or participant identifier is bundled.
+
+The selected deviation model was trained offline with PyTorch as a wider
+128 -> 64 -> 16 denoising autoencoder, then exported to NumPy for serverless
+inference. Its holdout reconstruction MSE is 0.034867, 13.96% lower than the
+frozen 96 -> 48 -> 16 baseline. This is improved reconstruction/deviation
+performance, not evidence of improved future-disease prediction.
+
 ---
 
 ## Install, build, run

@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-08-08T14:33:19.188358+00:00",
+  "selection_objective": "label-free reconstruction; disease labels excluded",
+  "candidate": "nhanes_multicycle_v2__retrain_wide__20260808",
+  "baseline": "nhanes_multicycle_v2__full__20260804T225555Z",
+  "dataset": "nhanes_multicycle_v2.csv",
+  "dataset_sha256": "af790f9fed1f13179726f02262de296ac9f7bcd85e3369fa2fdb4ea62d6b8b7c",
+  "metrics": {
+    "baseline_min_validation_loss": 0.03975595906376839,
+    "candidate_min_validation_loss": 0.029602842405438423,
+    "baseline_holdout_reconstruction_mse": 0.04052432058401263,
+    "candidate_holdout_reconstruction_mse": 0.03486661899305853,
+    "holdout_mse_improvement_fraction": 0.13961249712317536,
+    "deviation_spearman_holdout": 0.911167084540967,
+    "top5_flag_jaccard_holdout": 0.5160256410256411
+  },
+  "thresholds": {
+    "minimum_mse_improvement_fraction": 0.01,
+    "minimum_deviation_rank_correlation": 0.8
+  },
+  "gates": {
+    "validation_improved": true,
+    "holdout_mse_improved": true,
+    "deviation_rank_stable": true,
+    "same_dataset": true,
+    "same_public_contract": true
+  },
+  "verdict": "promotable",
+  "scope": "Metabolic deviation and representation only. This comparison does not measure diagnosis or future disease prediction."
+}

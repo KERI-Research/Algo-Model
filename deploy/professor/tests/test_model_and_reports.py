@@ -207,8 +207,15 @@ def test_probe_output_uses_non_future_risk_wording(authed_client):
 def test_model_summary_states_prohibited_outputs(authed_client):
     body = authed_client.get("/api/v1/model").json()
     assert body["inference_backend"] == "numpy"
+    assert body["training_backend"] == "torch"
+    assert body["run_label"] == "retrain-wide"
     assert body["model_version"] == config.MODEL_VERSION
     assert body["architecture"]["latent_dimension"] == 16
+    assert body["architecture"]["hidden_layers"] == [128, 64]
+    assert body["holdout_reconstruction_mse"] == pytest.approx(0.034866619)
+    assert body["promotion"]["verdict"] == "promotable"
+    assert body["promotion"]["holdout_mse_improvement_fraction"] > 0.13
+    assert body["promotion"]["deviation_spearman_holdout"] > 0.9
     assert any("cancer type" in item for item in body["prohibited_outputs"])
     assert "non_diagnostic_warning" in body
 

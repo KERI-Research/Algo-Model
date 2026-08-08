@@ -1,0 +1,19 @@
+{
+	"latent_dim": 16,
+	"hidden_dim": 128,
+	"epochs": 50,
+	"batch_size": 512,
+	"learning_rate": 0.001,
+	"weight_decay": 0.00001,
+	"mask_probability": 0.15,
+	"gaussian_noise": 0.03,
+	"patience": 8,
+	"max_train_rows": 50000,
+	"random_seed": 42,
+	"backend": "torch",
+	"device": "cpu",
+	"split_fractions": [0.7, 0.15, 0.15],
+	"checkpoint_every": 5,
+	"minimum_adult_rows": 500,
+	"run_label": "retrain-wide"
+}

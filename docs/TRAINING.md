@@ -49,6 +49,31 @@ Full run with the committed configuration:
 python train_self_supervised.py --config configs/ssl_full.json
 ```
 
+Selected wider candidate (same label-free objective and 16-dimensional public
+representation):
+
+```bash
+python train_self_supervised.py \
+   --config configs/ssl_retrain_wide.json \
+   --output-dir ../model_artifacts/metaboguard_ssl/runs/nhanes_multicycle_v2__retrain_wide__20260808
+
+python promote_ssl_candidate.py \
+   --candidate ../model_artifacts/metaboguard_ssl/runs/nhanes_multicycle_v2__retrain_wide__20260808 \
+   --baseline ../model_artifacts/metaboguard_ssl/runs/nhanes_multicycle_v2__full__20260804T225555Z \
+   --promote
+```
+
+The promotion utility requires improved validation loss, at least 1% lower
+holdout reconstruction MSE, identical features/output/latent dimension and
+holdout deviation-rank Spearman >= 0.80. It writes `promotion_report.json` and
+updates `CURRENT.json` only when every gate passes.
+
+The selected 2026-08-08 run uses hidden layers 128 -> 64 -> latent 16. Against
+the frozen 96 -> 48 -> latent 16 baseline, holdout reconstruction MSE improved
+from 0.040524 to 0.034867 (13.96%), with deviation-rank Spearman 0.911 and
+top-5% flag Jaccard 0.516. PCA holdout reconstruction MSE was 0.046048. These
+are label-free reconstruction/deviation metrics, not disease-prediction metrics.
+
 Config-driven: every hyperparameter lives in `configs/*.json` and maps 1:1 to
 `SSLConfig`. CLI flags override the file. Unknown keys raise, so a typo cannot
 silently train a different model.
@@ -93,6 +118,7 @@ model card, splits, checkpoint), `baselines/baseline_report.json`,
 | `splits.npz` | exact train/validation/holdout row positions |
 | `checkpoint_weights.npz`, `checkpoint_state.json` | resumable checkpoint |
 | `data_integrity_report.json` | the validation report for the exact input bytes |
+| `promotion_report.json` | candidate-vs-baseline gates, metrics and scope statement |
 
 `metadata.json.run_manifest` records the seed, backend, device, package versions
 (python, numpy, pandas, scikit-learn, torch), epochs completed, wall-clock training
@@ -158,6 +184,23 @@ python score_prevention_record.py \
 
 Output fields are `metabolic_deviation_score`, `reference_percentile`,
 `latent_representation`, `top_deviation_features` — never a disease probability.
+
+## 7b. Realistic synthetic Patient Probe records
+
+The Patient Probe generator is separate from model training. Refresh its
+aggregate profile model after the NHANES source or split policy changes:
+
+```bash
+python export_synthetic_profile_model.py
+python ../deploy/professor/prepare_assets.py
+```
+
+`synthetic_profile_model.json` contains 1st-99th empirical quantiles, category
+frequencies and regularized rank-correlation factors from the same
+participant-grouped training partition. The browser uses a seeded Gaussian
+copula to create novel coherent combinations, then recomputes HOMA-IR and total
+cholesterol exactly. No participant row, identifier or authoring path is bundled.
+Synthetic records are UI/research fixtures and are never added to SSL training.
 
 ## 8. What full training does *not* give you yet
 
