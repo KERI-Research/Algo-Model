@@ -17,6 +17,7 @@ identifiable or clinical patient data.**
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Overview**               | Non-diagnostic discovery posture, model/version/capability, architecture, status cards, current data limitations.               |
 | **Patient Probe**          | Explicit single-record scoring with a plain-language deviation band, NHANES reference percentile, submitted diabetes context, human-readable standout measurements, four cancer/diabetes research-pathway capability cards, data readiness and evidence boundaries. |
+| **Future Risk Simulation** | Deterministic synthetic longitudinal histories, selected simulation-only 1/3/5-year model outputs, explicit abstentions, portable-artifact parity, and evaluation caveats. |
 | **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV. |
 | **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation. |
 | **Evidence & Methods**     | Source-linked biomarker catalogue with evidence grades, multi-marker rationale, PRoBE and TRIPOD+AI references, supported vs prohibited claims. |
@@ -29,9 +30,12 @@ will develop, or provide a diagnosis." Capability states are `Available now`,
 `Research only` and `Unavailable until longitudinal validation`; the third is a
 statement about missing data, never a release schedule.
 
-No output is a diagnosis, a disease probability, a future-risk horizon or a
-cancer-type claim. The future-risk head stays fail-closed and clustering
-abstains, exactly as in the research pipeline.
+No real-patient output is a diagnosis, disease probability, future-risk horizon
+or cancer-type claim. The clinical future-risk route always returns `409`. A
+separate panel can replay selected models trained and evaluated on synthetic
+longitudinal data; every estimate is labelled simulation only, is not calibrated
+to a real population and must not inform care. Clustering still abstains exactly
+as in the research pipeline.
 
 The Patient Probe gives pancreatic cancer and general cancers equal research
 emphasis. Its four pathway cards cover diabetes-related factors and cancer,
@@ -51,8 +55,9 @@ display context and are not sent to the deployed model.
 
 ```bash
 # 0. In the KERI repository only: materialise generated files
-#    (server/core/, client/src/lib/synthetic_patient*.js and assets/)
-#    from the authoritative model artifact, research run and evidence catalogue.
+#    (server/core/, synthetic generators and assets/) from the authoritative
+#    model artifacts, research run and evidence catalogue. This step also exports
+#    the selected synthetic future-risk models and verifies NumPy parity.
 #    The sandbox deployment copy already contains them.
 .venv/bin/python deploy/professor/prepare_assets.py
 
@@ -145,8 +150,8 @@ the CLI route. No frontend variable is needed: `build:vercel` sets
 `VITE_DEPLOY_TARGET=vercel` itself, which makes the client call same-origin
 `/api/v1` and drops the pplx proxy sentinel from the bundle entirely.
 
-**Generated but tracked files.** `assets/`, `server/core/` and
-`client/src/lib/synthetic_patient*.js` are produced by `prepare_assets.py` from
+**Generated but tracked files.** `assets/`, `server/core/` and the synthetic
+generators under `client/src/lib/` are produced by `prepare_assets.py` from
 the authoritative repository, and they are **committed**. A Git-triggered Vercel
 build only sees committed files: without them Vite cannot resolve
 `../lib/synthetic_patient.js` and the Python function would start with no model
@@ -156,13 +161,15 @@ artifact. Both deploy modes therefore work:
 * **CLI** - `vercel --prod` from this directory; `.vercelignore` is used instead
   of `.gitignore` and excludes none of those paths.
 
-Re-run `prepare_assets.py` whenever the model artifact or the vendored modules
-change; any drift from the authoritative sources then appears as a normal diff
-(about 700 KB of tracked generated content in total).
+Re-run `prepare_assets.py` whenever either model artifact or the vendored modules
+change. The step refuses to complete unless 40 representative histories match
+the authoritative sklearn/PyTorch scorer within `1e-6`; only then are the
+portable NumPy/JSON files retained.
 
 **Local serverless-equivalent check** (blocks scikit-learn/SciPy/joblib to
 emulate the trimmed function runtime, then exercises routing, login, probe,
-upload, export and rate limiting):
+synthetic future-risk scoring, clinical-route refusal, upload, export and rate
+limiting):
 
 ```bash
 npm --prefix client run build:vercel
@@ -182,12 +189,14 @@ scikit-learn and SciPy are deliberately absent; see "Runtime profiles" below.
 | Full     | development, CI, pplx sandbox  | `requirements-deploy.txt` (adds scikit-learn, joblib, uvicorn) | fitted `preprocessor.joblib` via the vendored module |
 | Trimmed  | Vercel function                | `requirements.txt`                               | `preprocessor_params.json` replayed with NumPy    |
 
-Both profiles produce byte-identical scores. `tests/test_inference_parity.py`
+Both profiles produce equivalent scores. `tests/test_inference_parity.py`
 compares them row by row (890 rows including all-missing, unseen categorical
 levels and string-typed values), and `tests/test_research_constants.py` compares
 the exported constants and `dataset_capabilities` against the authoritative
 vendored modules. `/api/v1/model` reports which path is live via
-`preprocessor_path`.
+`preprocessor_path`. The future-risk exporter separately compares raw and
+calibrated values on 40 representative synthetic histories; its measured maximum
+difference is recorded in `assets/future_risk/parity_report.json`.
 
 ### Vercel limitations to expect
 
@@ -212,8 +221,8 @@ vendored modules. `/api/v1/model` reports which path is live via
 ## Tests
 
 ```bash
-pip install -r requirements-test.txt && python3 -m pytest -q      # 98 API/unit tests
-cd client && npm test                                              # 46 frontend tests
+pip install -r requirements-test.txt && python3 -m pytest -q
+cd client && npm test
 ```
 
 ## Repository layout
@@ -232,14 +241,18 @@ server/auth.py              SHA-256 key check, signed __Host- session cookie, ra
 server/dataset.py           CSV intake: identifier/leakage screening, tiers, ephemeral parsing
 server/model.py             NumPy inference wrapper, aggregates, in-memory results CSV
 server/inference.py         NumPy-only preprocessor + scoring (no scikit-learn needed)
+server/future_risk.py       simulation-only portable NumPy scoring and safety gates
+server/future_risk_export.py  offline sklearn/PyTorch-to-NumPy export and parity harness
 server/research_constants.py  exported constants + dataset_capabilities fallback
 server/reports.py           reliability, clustering abstention, evidence payloads
 server/core/                byte-for-byte copies of the authoritative KERI research modules
 prepare_assets.py           refreshes the tracked vendored modules and assets/ from the repo
 assets/ssl_artifact/        deployed NumPy artifact (weights, preprocessor, metadata)
+assets/future_risk/         selected synthetic models, summary and parity report (no joblib/Torch artifact)
 assets/reports/             reliability, integrity and clustering reports from the research run
 assets/evidence/            biomarker evidence catalogue
 client/                     Vite + React dashboard (built to client/dist)
+client/src/components/FutureRiskSimulation.jsx  interactive synthetic-only panel
 client/src/components/HowItWorks.jsx  the "How the AI works" explainer page
 fixtures/                   safe, identifier and leakage CSV fixtures for QA
 tests/                      pytest suite
@@ -247,7 +260,9 @@ tests/                      pytest suite
 
 ## Limitations
 
-* Cross-sectional training data: no time horizon, no incidence, no future risk.
+* The real-data model is cross-sectional: it supports no patient time horizon,
+  incidence estimate or future-risk probability. Synthetic simulation does not
+  remove that limitation.
 * Survey weights are not applied, so results describe the analytic sample only.
 * No external validation, calibration study or PRoBE-compliant specimen design.
 * Clustering is not run on uploaded data in this deployment; the validated

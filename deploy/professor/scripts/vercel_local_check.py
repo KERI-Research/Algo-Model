@@ -166,6 +166,34 @@ def main() -> int:
               model.json()["inference_backend"] == "numpy"
               and model.json()["preprocessor_path"] == "exported_constants")
 
+        print("future-risk simulation")
+        capability = client.get("/api/v1/simulation/capability")
+        check("portable simulation capability is available",
+              capability.status_code == 200
+              and capability.json()["portable_artifact_available"] is True
+              and capability.json()["parity"]["verdict"] == "parity")
+        simulated = client.post(
+            "/api/v1/simulation/score",
+            json={
+                "simulation_mode": True,
+                "seed": 17,
+                "archetype": "metabolic_deviation",
+                "visits": [
+                    {"days_before_index": 700, "DEMO_RIDAGEYR": 49,
+                     "BMX_BMXBMI": 29.2, "GHB_LBXGH": 5.8},
+                    {"days_before_index": 0, "DEMO_RIDAGEYR": 51,
+                     "BMX_BMXBMI": 30.1, "GHB_LBXGH": 6.1},
+                ],
+            },
+        )
+        check("synthetic history scores through NumPy only",
+              simulated.status_code == 200
+              and simulated.json()["inference_backend"] == "numpy_portable")
+        check("clinical future-risk endpoint refuses",
+              client.post("/api/v1/future-risk/score", json={}).status_code == 409)
+        check("heavy ML libraries remain unloaded after simulation",
+              not (BLOCKED & set(sys.modules)))
+
         print("model surfaces")
         probe = client.post(
             "/api/v1/probe/score",

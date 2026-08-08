@@ -6,7 +6,9 @@ import {
 	hasMemoryToken,
 	login,
 	logout,
+	scoreSimulationHistory,
 	setSessionToken,
+	simulationCapability,
 } from "./api.js";
 
 const jsonResponse = (body, status = 200) => ({
@@ -42,7 +44,10 @@ describe("api client", () => {
 
 	it("keeps the session token in memory only and sends it as a bearer header", async () => {
 		global.fetch.mockResolvedValue(
-			jsonResponse({ authenticated: true, session_token: "abc.def" }),
+			jsonResponse({
+				authenticated: true,
+				session_token: "abc.def",
+			}),
 		);
 		await login("a-key");
 		expect(hasMemoryToken()).toBe(true);
@@ -56,7 +61,9 @@ describe("api client", () => {
 	});
 
 	it("never places the access key in the request URL", async () => {
-		global.fetch.mockResolvedValue(jsonResponse({ authenticated: true }));
+		global.fetch.mockResolvedValue(
+			jsonResponse({ authenticated: true }),
+		);
 		await login("super-secret-key");
 		const [url, options] = global.fetch.mock.calls[0];
 		expect(url).not.toContain("super-secret-key");
@@ -65,14 +72,22 @@ describe("api client", () => {
 
 	it("clears the in-memory token on logout", async () => {
 		setSessionToken("abc.def");
-		global.fetch.mockResolvedValue(jsonResponse({ authenticated: false }));
+		global.fetch.mockResolvedValue(
+			jsonResponse({ authenticated: false }),
+		);
 		await logout();
 		expect(hasMemoryToken()).toBe(false);
 	});
 
 	it("raises ApiError with the status and server detail", async () => {
 		global.fetch.mockResolvedValue(
-			jsonResponse({ error: "Authentication required.", status_code: 401 }, 401),
+			jsonResponse(
+				{
+					error: "Authentication required.",
+					status_code: 401,
+				},
+				401,
+			),
 		);
 		await expect(apiGet("/api/v1/model")).rejects.toMatchObject({
 			name: "ApiError",
@@ -86,15 +101,41 @@ describe("api client", () => {
 		global.fetch.mockResolvedValue(
 			jsonResponse(
 				{
-					error: { message: "File rejected.", identifier_columns: [] },
+					error: {
+						message: "File rejected.",
+						identifier_columns: [],
+					},
 					status_code: 422,
 				},
 				422,
 			),
 		);
-		await expect(apiGet("/api/v1/dataset/inspect")).rejects.toMatchObject({
+		await expect(
+			apiGet("/api/v1/dataset/inspect"),
+		).rejects.toMatchObject({
 			status: 422,
 			message: "File rejected.",
+		});
+	});
+
+	it("uses protected simulation routes and cannot disable simulation mode", async () => {
+		global.fetch.mockResolvedValue(
+			jsonResponse({ simulation_only: true }),
+		);
+		await simulationCapability();
+		expect(global.fetch.mock.calls[0][0]).toBe(
+			"/api/v1/simulation/capability",
+		);
+
+		await scoreSimulationHistory(
+			[{ days_before_index: 400 }, { days_before_index: 0 }],
+			{ seed: 8, simulation_mode: false },
+		);
+		const [url, options] = global.fetch.mock.calls[1];
+		expect(url).toBe("/api/v1/simulation/score");
+		expect(JSON.parse(options.body)).toMatchObject({
+			seed: 8,
+			simulation_mode: true,
 		});
 	});
 });

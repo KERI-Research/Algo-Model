@@ -28,13 +28,26 @@ const MODEL = {
 };
 
 const OVERVIEW = {
-	posture: { headline: "Non-diagnostic discovery research", statement: "Discovery posture." },
+	posture: {
+		headline: "Non-diagnostic discovery research",
+		statement: "Discovery posture.",
+	},
 	model: MODEL,
 	status_cards: [
-		{ id: "inference", label: "Inference path", value: "NumPy artifact", state: "ok", detail: "d" },
+		{
+			id: "inference",
+			label: "Inference path",
+			value: "NumPy artifact",
+			state: "ok",
+			detail: "d",
+		},
 	],
 	data_limitations: [
-		{ id: "cross_sectional", title: "Cross-sectional data only", detail: "No horizons." },
+		{
+			id: "cross_sectional",
+			title: "Cross-sectional data only",
+			detail: "No horizons.",
+		},
 	],
 	integrity: { status: "ok" },
 	non_diagnostic_warning: "Clinician review is required.",
@@ -53,6 +66,28 @@ const route = (url) => {
 	if (url.endsWith("/api/v1/overview")) {
 		return json(OVERVIEW);
 	}
+	if (url.endsWith("/api/v1/simulation/capability")) {
+		return json({
+			simulation_only: true,
+			clinical_use: "prohibited",
+			portable_artifact_available: true,
+			parity: {
+				verdict: "parity",
+				histories_compared: 40,
+				max_abs_difference: 1e-8,
+			},
+			outcomes: [
+				{
+					id: "type2_diabetes",
+					label: "Type 2 diabetes",
+					enabled: true,
+				},
+			],
+			supported_horizons: {},
+			abstained_horizons: {},
+			evaluation_caveats: [],
+		});
+	}
 	if (url.endsWith("/api/v1/auth/logout")) {
 		return json({ authenticated: false });
 	}
@@ -62,101 +97,201 @@ const route = (url) => {
 describe("App shell", () => {
 	beforeEach(() => {
 		setSessionToken(null);
-		global.fetch = vi.fn((url) => Promise.resolve(route(String(url))));
+		global.fetch = vi.fn((url) =>
+			Promise.resolve(route(String(url))),
+		);
 	});
 
 	afterEach(() => vi.restoreAllMocks());
 
 	it("shows only the login screen until the server confirms a session", async () => {
 		render(<App />);
-		expect(await screen.findByTestId("input-access-key")).toBeInTheDocument();
-		expect(screen.queryByTestId("nav-dataset")).not.toBeInTheDocument();
-		expect(screen.queryByTestId("button-logout")).not.toBeInTheDocument();
+		expect(
+			await screen.findByTestId("input-access-key"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("nav-dataset"),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("button-logout"),
+		).not.toBeInTheDocument();
 	});
 
 	it("renders the dashboard after a successful login", async () => {
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
 		await user.click(screen.getByTestId("button-login"));
 		await waitFor(() =>
-			expect(screen.getByTestId("nav-overview")).toHaveAttribute("aria-current", "page"),
+			expect(
+				screen.getByTestId("nav-overview"),
+			).toHaveAttribute("aria-current", "page"),
 		);
-		expect(await screen.findByText("Cross-sectional data only")).toBeInTheDocument();
+		expect(
+			await screen.findByText("Cross-sectional data only"),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("nav-probe")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("nav-simulation"),
+		).toBeInTheDocument();
 		expect(screen.getByTestId("nav-evidence")).toBeInTheDocument();
 	});
 
 	it("shows a generic message when the key is rejected", async () => {
 		global.fetch = vi.fn((url) =>
 			String(url).endsWith("/api/v1/auth/login")
-				? Promise.resolve(json({ error: "Invalid access key." }, 401))
+				? Promise.resolve(
+						json(
+							{
+								error: "Invalid access key.",
+							},
+							401,
+						),
+					)
 				: Promise.resolve(route(String(url))),
 		);
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "wrong");
-		await user.click(screen.getByTestId("button-login"));
-		expect(await screen.findByTestId("text-login-error")).toHaveTextContent(
-			"Invalid access key.",
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"wrong",
 		);
+		await user.click(screen.getByTestId("button-login"));
+		expect(
+			await screen.findByTestId("text-login-error"),
+		).toHaveTextContent("Invalid access key.");
 		expect(screen.getByTestId("input-access-key")).toHaveValue("");
 	});
 
 	it("returns to the login screen when a protected call reports an expired session", async () => {
 		global.fetch = vi.fn((url) =>
 			String(url).endsWith("/api/v1/overview")
-				? Promise.resolve(json({ error: "Authentication required." }, 401))
+				? Promise.resolve(
+						json(
+							{
+								error: "Authentication required.",
+							},
+							401,
+						),
+					)
 				: Promise.resolve(route(String(url))),
 		);
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
 		await user.click(screen.getByTestId("button-login"));
-		expect(await screen.findByTestId("text-session-expired")).toBeInTheDocument();
-		expect(screen.getByTestId("input-access-key")).toBeInTheDocument();
+		expect(
+			await screen.findByTestId("text-session-expired"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByTestId("input-access-key"),
+		).toBeInTheDocument();
 	});
 
-	it("reaches How the AI works from Overview and keeps five numbered sections", async () => {
+	it("reaches How the AI works from Overview and keeps six numbered sections", async () => {
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
 		await user.click(screen.getByTestId("button-login"));
 		await screen.findByTestId("button-open-how-it-works");
-		// The sidebar still lists exactly the five working sections.
-		const numbered = ["overview", "probe", "dataset", "reliability", "evidence"];
-		numbered.forEach((id) => expect(screen.getByTestId(`nav-${id}`)).toBeInTheDocument());
-		await user.click(screen.getByTestId("button-open-how-it-works"));
-		expect(
-			await screen.findByRole("heading", { name: "How the AI works", level: 1 }),
-		).toBeInTheDocument();
-		expect(screen.getByTestId("text-longitudinal-limit")).toHaveTextContent(
-			"not trained on longitudinal data",
+		// The sidebar lists the six working sections.
+		const numbered = [
+			"overview",
+			"probe",
+			"simulation",
+			"dataset",
+			"reliability",
+			"evidence",
+		];
+		numbered.forEach((id) =>
+			expect(
+				screen.getByTestId(`nav-${id}`),
+			).toBeInTheDocument(),
 		);
+		expect(screen.getAllByTestId(/^nav-(?!how)/)).toHaveLength(6);
+		await user.click(
+			screen.getByTestId("button-open-how-it-works"),
+		);
+		expect(
+			await screen.findByRole("heading", {
+				name: "How the AI works",
+				level: 1,
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByTestId("text-longitudinal-limit"),
+		).toHaveTextContent("not trained on longitudinal data");
 		expect(screen.getByTestId("pipeline-flow")).toBeInTheDocument();
 		await user.click(screen.getByTestId("button-back-overview"));
-		expect(await screen.findByText("Cross-sectional data only")).toBeInTheDocument();
+		expect(
+			await screen.findByText("Cross-sectional data only"),
+		).toBeInTheDocument();
+	});
+
+	it("opens the future-risk simulation from the sidebar", async () => {
+		render(<App />);
+		const user = userEvent.setup();
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
+		await user.click(screen.getByTestId("button-login"));
+		await user.click(await screen.findByTestId("nav-simulation"));
+		expect(
+			await screen.findByRole("heading", {
+				name: "Future Risk Simulation",
+				level: 1,
+			}),
+		).toBeInTheDocument();
+		expect(
+			await screen.findByTestId("simulation-history"),
+		).toBeInTheDocument();
+		expect(screen.getByText("NumPy portable")).toBeInTheDocument();
 	});
 
 	it("reaches How the AI works from the sidebar helper link", async () => {
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
 		await user.click(screen.getByTestId("button-login"));
 		await user.click(await screen.findByTestId("nav-how"));
 		expect(
-			await screen.findByRole("heading", { name: "How the AI works", level: 1 }),
+			await screen.findByRole("heading", {
+				name: "How the AI works",
+				level: 1,
+			}),
 		).toBeInTheDocument();
-		expect(screen.getByTestId("capability-table")).toBeInTheDocument();
+		expect(
+			screen.getByTestId("capability-table"),
+		).toBeInTheDocument();
 	});
 
 	it("signs out and hides the dashboard", async () => {
 		render(<App />);
 		const user = userEvent.setup();
-		await user.type(await screen.findByTestId("input-access-key"), "a-key");
+		await user.type(
+			await screen.findByTestId("input-access-key"),
+			"a-key",
+		);
 		await user.click(screen.getByTestId("button-login"));
 		await user.click(await screen.findByTestId("button-logout"));
-		expect(await screen.findByTestId("input-access-key")).toBeInTheDocument();
-		expect(screen.queryByTestId("nav-dataset")).not.toBeInTheDocument();
+		expect(
+			await screen.findByTestId("input-access-key"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("nav-dataset"),
+		).not.toBeInTheDocument();
 	});
 });

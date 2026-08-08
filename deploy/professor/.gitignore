@@ -15,7 +15,8 @@ client/dist/
 !client/src/lib/
 !client/src/lib/**
 
-# NOTE: `assets/`, `server/core/` and `client/src/lib/synthetic_patient*.js` are
+# NOTE: `assets/`, `server/core/` and the synthetic generators under
+# `client/src/lib/` are
 # produced by prepare_assets.py from the authoritative repository, but they are
 # deliberately TRACKED. A Git-triggered Vercel build only sees committed files:
 # without them Vite cannot resolve `../lib/synthetic_patient.js` and the Python

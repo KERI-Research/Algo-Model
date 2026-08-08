@@ -1,0 +1,86 @@
+{
+ "banner": "SIMULATION ONLY. Trained and evaluated on synthetic longitudinal data. Not validated for patient risk, not calibrated to any real population, and not evidence of early detection or clinical utility.",
+ "capability_state": "simulation_only_longitudinal",
+ "data_source": "synthetic longitudinal cohort (Synthea-derived, pooled)",
+ "competing_outcomes": "Death from another cause competes with the outcome of interest. The discrete-time hazard model is cause-specific and subtracts the competing hazard at each interval, so a patient who dies first cannot be counted as a future case. Models that ignore competing risk overstate incidence.",
+ "underpowered_test_split": "Every reported horizon has fewer than 25 events in the held-out split. Metrics computed on so few events are unstable, and the ranking between models is not meaningfully resolved.",
+ "wide_confidence_intervals": "Bootstrap AUROC intervals span a wide range, so the point estimate should not be read as the model's discrimination. An interval that includes 0.5 is compatible with no discrimination at all.",
+ "temporal_admissibility": {
+  "type2_diabetes:1y": {
+   "forward_auroc": null,
+   "reversed_auroc": null,
+   "auroc_drop": null,
+   "required_drop": 0.02,
+   "temporal_model_admissible": false,
+   "decision": "temporal model REJECTED as experimental: reversing visit order does not degrade discrimination, so it is not demonstrably using time"
+  },
+  "type2_diabetes:3y": {
+   "forward_auroc": 0.8448,
+   "reversed_auroc": 0.8792,
+   "auroc_drop": -0.0344,
+   "required_drop": 0.02,
+   "temporal_model_admissible": false,
+   "decision": "temporal model REJECTED as experimental: reversing visit order does not degrade discrimination, so it is not demonstrably using time"
+  },
+  "type2_diabetes:5y": {
+   "forward_auroc": 0.8504,
+   "reversed_auroc": 0.8428,
+   "auroc_drop": 0.0076,
+   "required_drop": 0.02,
+   "temporal_model_admissible": false,
+   "decision": "temporal model REJECTED as experimental: reversing visit order does not degrade discrimination, so it is not demonstrably using time"
+  },
+  "pan_cancer:1y": {
+   "forward_auroc": null,
+   "reversed_auroc": null,
+   "auroc_drop": null,
+   "required_drop": 0.02,
+   "temporal_model_admissible": false,
+   "decision": "temporal model REJECTED as experimental: reversing visit order does not degrade discrimination, so it is not demonstrably using time"
+  },
+  "pan_cancer:3y": {
+   "forward_auroc": 0.5046,
+   "reversed_auroc": 0.4826,
+   "auroc_drop": 0.022,
+   "required_drop": 0.02,
+   "temporal_model_admissible": true,
+   "decision": "temporal model admissible: reversing visit order degrades discrimination"
+  },
+  "pan_cancer:5y": {
+   "forward_auroc": 0.6082,
+   "reversed_auroc": 0.5597,
+   "auroc_drop": 0.0485,
+   "required_drop": 0.02,
+   "temporal_model_admissible": true,
+   "decision": "temporal model admissible: reversing visit order degrades discrimination"
+  }
+ },
+ "caveats": [
+  "Synthetic data only: nothing here estimates real patient risk.",
+  "Not calibrated to any real population; calibration is in-simulation only.",
+  "Test splits are underpowered; treat all metrics as software verification.",
+  "AUROC values are simulation diagnostics, not clinical performance.",
+  "Competing death is modelled cause-specifically, but the simulated event rates are not epidemiologically valid.",
+  "No external validation, no prospective specimens, no clinical utility analysis."
+ ],
+ "results_summary_keys": [
+  "abstentions",
+  "banner",
+  "capability_state",
+  "code_version",
+  "cohort_class",
+  "config",
+  "dataset_gates",
+  "feature_columns",
+  "generated_at",
+  "package_versions",
+  "reload_parity",
+  "run_type",
+  "seconds",
+  "selection",
+  "simulation_only",
+  "split_manifest",
+  "temporal_admissibility",
+  "test_split_metrics"
+ ]
+}

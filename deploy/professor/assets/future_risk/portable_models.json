@@ -1,0 +1,362 @@
+{
+ "schema_version": "metaboguard-future-risk-portable-v1",
+ "generated_at": "2026-08-06T02:02:49.674025+00:00",
+ "banner": "SIMULATION ONLY. Trained and evaluated on synthetic longitudinal data. Not validated for patient risk, not calibrated to any real population, and not evidence of early detection or clinical utility.",
+ "simulation_only": true,
+ "clinical_use": "prohibited",
+ "feature_columns": [
+  "DEMO_RIDAGEYR_last",
+  "DEMO_RIDAGEYR_mean",
+  "DEMO_RIDAGEYR_slope_per_year",
+  "DEMO_RIDAGEYR_delta",
+  "DEMO_RIDAGEYR_observed_count",
+  "BMX_BMXBMI_last",
+  "BMX_BMXBMI_mean",
+  "BMX_BMXBMI_slope_per_year",
+  "BMX_BMXBMI_delta",
+  "BMX_BMXBMI_observed_count",
+  "BMX_BMXWT_last",
+  "BMX_BMXWT_mean",
+  "BMX_BMXWT_slope_per_year",
+  "BMX_BMXWT_delta",
+  "BMX_BMXWT_observed_count",
+  "GHB_LBXGH_last",
+  "GHB_LBXGH_mean",
+  "GHB_LBXGH_slope_per_year",
+  "GHB_LBXGH_delta",
+  "GHB_LBXGH_observed_count",
+  "GLU_LBXGLU_last",
+  "GLU_LBXGLU_mean",
+  "GLU_LBXGLU_slope_per_year",
+  "GLU_LBXGLU_delta",
+  "GLU_LBXGLU_observed_count",
+  "TCHOL_LBXTC_last",
+  "TCHOL_LBXTC_mean",
+  "TCHOL_LBXTC_slope_per_year",
+  "TCHOL_LBXTC_delta",
+  "TCHOL_LBXTC_observed_count",
+  "HDL_LBDHDD_last",
+  "HDL_LBDHDD_mean",
+  "HDL_LBDHDD_slope_per_year",
+  "HDL_LBDHDD_delta",
+  "HDL_LBDHDD_observed_count",
+  "TRIGLY_LBXTR_last",
+  "TRIGLY_LBXTR_mean",
+  "TRIGLY_LBXTR_slope_per_year",
+  "TRIGLY_LBXTR_delta",
+  "TRIGLY_LBXTR_observed_count",
+  "BPX_SYSTOLIC_last",
+  "BPX_SYSTOLIC_mean",
+  "BPX_SYSTOLIC_slope_per_year",
+  "BPX_SYSTOLIC_delta",
+  "BPX_SYSTOLIC_observed_count",
+  "visit_count",
+  "visit_density_per_year",
+  "median_visit_gap_days",
+  "missingness_burden"
+ ],
+ "portable_model_kinds": [
+  "discrete_time_hazard",
+  "gradient_boosted_trees",
+  "temporal_gru"
+ ],
+ "source_artifact": {
+  "artifact_version": "future-risk-simulation-v1",
+  "code_version": "metaboguard-future-risk-v1",
+  "created_at": "2026-08-05T16:37:49.457282+00:00",
+  "capability_state": "simulation_only_longitudinal",
+  "schema_version": "metaboguard-longitudinal-v1",
+  "package_versions": {
+   "python": "3.14.3",
+   "platform": "Linux-6.1.155+-x86_64-with-glibc2.43",
+   "numpy": "2.5.1",
+   "pandas": "3.0.5",
+   "scikit_learn": "1.9.0",
+   "torch": "2.13.0+cpu"
+  },
+  "results_fingerprint": "cf1b7013b6c2619b66b87b94044f232c38f0738f8b68b087c242c6537f34b1fe"
+ },
+ "supported": {
+  "type2_diabetes:3y": {
+   "selected_model": "discrete_time_hazard",
+   "selection_rule": "calibration-first: smallest |calibration slope - 1| among models passing the usability floor (slope >= 0.2, AUROC >= 0.6), ties by AUROC",
+   "metrics": {
+    "model": "discrete_time_hazard",
+    "auroc": 0.6622,
+    "brier": 0.009913,
+    "calibration_slope": 0.5722,
+    "slope_distance": 0.42779999999999996,
+    "test_split_events": 5,
+    "test_split_n": 500,
+    "underpowered_test_split": true,
+    "auroc_95ci": [
+     0.4029,
+     0.8706
+    ],
+    "auroc_ci_width": 0.4677,
+    "wide_confidence_interval": true
+   },
+   "calibrator": {
+    "method": "platt_logistic",
+    "coef": 0.8276084642641076,
+    "intercept": -4.607539378751843,
+    "n": 473
+   },
+   "calibration_method": "platt_logistic"
+  },
+  "type2_diabetes:5y": {
+   "selected_model": "gradient_boosted_trees",
+   "selection_rule": "calibration-first: smallest |calibration slope - 1| among models passing the usability floor (slope >= 0.2, AUROC >= 0.6), ties by AUROC",
+   "metrics": {
+    "model": "gradient_boosted_trees",
+    "auroc": 0.6288,
+    "brier": 0.017126,
+    "calibration_slope": 0.4325,
+    "slope_distance": 0.5675,
+    "test_split_events": 8,
+    "test_split_n": 470,
+    "underpowered_test_split": true,
+    "auroc_95ci": [
+     0.4417,
+     0.8389
+    ],
+    "auroc_ci_width": 0.3972,
+    "wide_confidence_interval": true
+   },
+   "calibrator": {
+    "method": "isotonic",
+    "array_prefix": "type2_diabetes/5y/gradient_boosted_trees/calibrator",
+    "n": 439,
+    "points": 10
+   },
+   "calibration_method": "isotonic"
+  },
+  "pan_cancer:5y": {
+   "selected_model": "temporal_gru",
+   "selection_rule": "calibration-first: smallest |calibration slope - 1| among models passing the usability floor (slope >= 0.2, AUROC >= 0.6), ties by AUROC",
+   "metrics": {
+    "model": "temporal_gru",
+    "auroc": 0.6477,
+    "brier": 0.02033,
+    "calibration_slope": 0.9994,
+    "slope_distance": 0.0006000000000000449,
+    "test_split_events": 10,
+    "test_split_n": 472,
+    "underpowered_test_split": true,
+    "auroc_95ci": [
+     0.4936,
+     0.8128
+    ],
+    "auroc_ci_width": 0.3192,
+    "wide_confidence_interval": true
+   },
+   "calibrator": {
+    "method": "isotonic",
+    "array_prefix": "pan_cancer/5y/temporal_gru/calibrator",
+    "n": 439,
+    "points": 8
+   },
+   "calibration_method": "isotonic"
+  }
+ },
+ "abstained": {
+  "type2_diabetes:1y": {
+   "reason": "No model passed the event gate and usability floor for this horizon, so the deployment abstains.",
+   "gate": {}
+  },
+  "pan_cancer:1y": {
+   "reason": "No model passed the event gate and usability floor for this horizon, so the deployment abstains.",
+   "gate": {}
+  },
+  "pan_cancer:3y": {
+   "reason": "No model passed the event gate and usability floor for this horizon, so the deployment abstains.",
+   "gate": {}
+  }
+ },
+ "models": {
+  "type2_diabetes:3y": {
+   "kind": "discrete_time_hazard",
+   "feature_columns": [
+    "DEMO_RIDAGEYR_last",
+    "DEMO_RIDAGEYR_mean",
+    "DEMO_RIDAGEYR_slope_per_year",
+    "DEMO_RIDAGEYR_delta",
+    "DEMO_RIDAGEYR_observed_count",
+    "BMX_BMXBMI_last",
+    "BMX_BMXBMI_mean",
+    "BMX_BMXBMI_slope_per_year",
+    "BMX_BMXBMI_delta",
+    "BMX_BMXBMI_observed_count",
+    "BMX_BMXWT_last",
+    "BMX_BMXWT_mean",
+    "BMX_BMXWT_slope_per_year",
+    "BMX_BMXWT_delta",
+    "BMX_BMXWT_observed_count",
+    "GHB_LBXGH_last",
+    "GHB_LBXGH_mean",
+    "GHB_LBXGH_slope_per_year",
+    "GHB_LBXGH_delta",
+    "GHB_LBXGH_observed_count",
+    "GLU_LBXGLU_last",
+    "GLU_LBXGLU_mean",
+    "GLU_LBXGLU_slope_per_year",
+    "GLU_LBXGLU_delta",
+    "GLU_LBXGLU_observed_count",
+    "TCHOL_LBXTC_last",
+    "TCHOL_LBXTC_mean",
+    "TCHOL_LBXTC_slope_per_year",
+    "TCHOL_LBXTC_delta",
+    "TCHOL_LBXTC_observed_count",
+    "HDL_LBDHDD_last",
+    "HDL_LBDHDD_mean",
+    "HDL_LBDHDD_slope_per_year",
+    "HDL_LBDHDD_delta",
+    "HDL_LBDHDD_observed_count",
+    "TRIGLY_LBXTR_last",
+    "TRIGLY_LBXTR_mean",
+    "TRIGLY_LBXTR_slope_per_year",
+    "TRIGLY_LBXTR_delta",
+    "TRIGLY_LBXTR_observed_count",
+    "BPX_SYSTOLIC_last",
+    "BPX_SYSTOLIC_mean",
+    "BPX_SYSTOLIC_slope_per_year",
+    "BPX_SYSTOLIC_delta",
+    "BPX_SYSTOLIC_observed_count",
+    "visit_count",
+    "visit_density_per_year",
+    "median_visit_gap_days",
+    "missingness_burden"
+   ],
+   "interval_days": 183,
+   "event": {
+    "kind": "logistic_pipeline",
+    "array_prefix": "type2_diabetes/3y/discrete_time_hazard/event",
+    "add_indicator": true,
+    "n_features_in": 50
+   },
+   "competing": {
+    "kind": "logistic_pipeline",
+    "array_prefix": "type2_diabetes/3y/discrete_time_hazard/competing",
+    "add_indicator": true,
+    "n_features_in": 50
+   },
+   "competing_handled": true,
+   "train_person_intervals": 23246,
+   "train_events": 39
+  },
+  "type2_diabetes:5y": {
+   "kind": "hist_gradient_boosting",
+   "array_prefix": "type2_diabetes/5y/gradient_boosted_trees",
+   "baseline_prediction": -3.928300068760287,
+   "trees": 200,
+   "nodes": 2318,
+   "feature_columns": [
+    "DEMO_RIDAGEYR_last",
+    "DEMO_RIDAGEYR_mean",
+    "DEMO_RIDAGEYR_slope_per_year",
+    "DEMO_RIDAGEYR_delta",
+    "DEMO_RIDAGEYR_observed_count",
+    "BMX_BMXBMI_last",
+    "BMX_BMXBMI_mean",
+    "BMX_BMXBMI_slope_per_year",
+    "BMX_BMXBMI_delta",
+    "BMX_BMXBMI_observed_count",
+    "BMX_BMXWT_last",
+    "BMX_BMXWT_mean",
+    "BMX_BMXWT_slope_per_year",
+    "BMX_BMXWT_delta",
+    "BMX_BMXWT_observed_count",
+    "GHB_LBXGH_last",
+    "GHB_LBXGH_mean",
+    "GHB_LBXGH_slope_per_year",
+    "GHB_LBXGH_delta",
+    "GHB_LBXGH_observed_count",
+    "GLU_LBXGLU_last",
+    "GLU_LBXGLU_mean",
+    "GLU_LBXGLU_slope_per_year",
+    "GLU_LBXGLU_delta",
+    "GLU_LBXGLU_observed_count",
+    "TCHOL_LBXTC_last",
+    "TCHOL_LBXTC_mean",
+    "TCHOL_LBXTC_slope_per_year",
+    "TCHOL_LBXTC_delta",
+    "TCHOL_LBXTC_observed_count",
+    "HDL_LBDHDD_last",
+    "HDL_LBDHDD_mean",
+    "HDL_LBDHDD_slope_per_year",
+    "HDL_LBDHDD_delta",
+    "HDL_LBDHDD_observed_count",
+    "TRIGLY_LBXTR_last",
+    "TRIGLY_LBXTR_mean",
+    "TRIGLY_LBXTR_slope_per_year",
+    "TRIGLY_LBXTR_delta",
+    "TRIGLY_LBXTR_observed_count",
+    "BPX_SYSTOLIC_last",
+    "BPX_SYSTOLIC_mean",
+    "BPX_SYSTOLIC_slope_per_year",
+    "BPX_SYSTOLIC_delta",
+    "BPX_SYSTOLIC_observed_count",
+    "visit_count",
+    "visit_density_per_year",
+    "median_visit_gap_days",
+    "missingness_burden"
+   ]
+  },
+  "pan_cancer:5y": {
+   "kind": "temporal_gru",
+   "array_prefix": "pan_cancer/5y/temporal_gru",
+   "normaliser": {
+    "feature_DEMO_RIDAGEYR": [
+     61.1215,
+     9.49554278499736
+    ],
+    "feature_BMX_BMXBMI": [
+     28.1,
+     1.8693907491876316
+    ],
+    "feature_BMX_BMXWAIST": [
+     0.0,
+     1.0
+    ],
+    "feature_BMX_BMXWT": [
+     83.6,
+     10.698226372598455
+    ],
+    "feature_GHB_LBXGH": [
+     3.9,
+     1.4435945870083338
+    ],
+    "feature_GLU_LBXGLU": [
+     81.8,
+     10.362937645567598
+    ],
+    "feature_INS_LBXIN": [
+     0.0,
+     1.0
+    ],
+    "feature_TCHOL_LBXTC": [
+     176.7,
+     40.63221881019386
+    ],
+    "feature_HDL_LBDHDD": [
+     53.8,
+     12.137023367813894
+    ],
+    "feature_TRIGLY_LBXTR": [
+     130.1,
+     29.732011364541314
+    ],
+    "feature_BPX_SYSTOLIC": [
+     117.0,
+     17.352513780111963
+    ]
+   },
+   "max_visits": 8,
+   "input_dim": 23,
+   "hidden_dim": 48,
+   "horizon_index": 2,
+   "architecture": "Linear(23->48) + tanh -> GRU(48) -> last valid hidden state -> MLP(48->24->3) with per-horizon sigmoid"
+  }
+ },
+ "note": "Only the selected model per horizon is exported. Unsupported horizons abstain; no model is ever substituted for another and no probability is fabricated."
+}

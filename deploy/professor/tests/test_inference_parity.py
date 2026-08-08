@@ -191,6 +191,19 @@ def test_full_runtime_works_with_sklearn_scipy_and_joblib_blocked(tmp_path):
             anonymous = client.get("/api/v1/model").status_code
             login = client.post("/api/v1/auth/login", json={"access_key": ACCESS_KEY})
             authorised = client.get("/api/v1/model").json()
+            capability = client.get("/api/v1/simulation/capability")
+            simulation = client.post(
+                "/api/v1/simulation/score",
+                json={
+                    "simulation_mode": True,
+                    "visits": [
+                        {"days_before_index": 700, "DEMO_RIDAGEYR": 49,
+                         "BMX_BMXBMI": 29.2, "GHB_LBXGH": 5.8},
+                        {"days_before_index": 0, "DEMO_RIDAGEYR": 51,
+                         "BMX_BMXBMI": 30.1, "GHB_LBXGH": 6.1},
+                    ],
+                },
+            )
 
         print(json.dumps({
             "probe_score": probe["score"]["metabolic_deviation_score"],
@@ -203,6 +216,9 @@ def test_full_runtime_works_with_sklearn_scipy_and_joblib_blocked(tmp_path):
             "anonymous_model": anonymous,
             "login": login.status_code,
             "preprocessor_path": authorised["preprocessor_path"],
+            "simulation_capability": capability.status_code,
+            "simulation_score": simulation.status_code,
+            "simulation_backend": simulation.json().get("inference_backend"),
             "heavy_modules": sorted(m for m in ("sklearn", "scipy", "joblib", "torch")
                                     if m in sys.modules),
         }))
@@ -227,6 +243,9 @@ def test_full_runtime_works_with_sklearn_scipy_and_joblib_blocked(tmp_path):
     assert payload["health"] == 200
     assert payload["anonymous_model"] == 401
     assert payload["login"] == 200
+    assert payload["simulation_capability"] == 200
+    assert payload["simulation_score"] == 200
+    assert payload["simulation_backend"] == "numpy_portable"
     assert payload["intake_accepted"] == 238
     assert payload["rows_scored"] == 238
     assert payload["csv_lines"] == 239

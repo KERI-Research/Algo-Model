@@ -2,6 +2,10 @@
 
 Route posture
 -------------
+Simulation-only future-risk routes live under ``/api/v1/simulation/*`` and are
+session-protected like everything else. The clinical future-risk route exists
+only to refuse: it always returns 409.
+
 Unauthenticated: ``/api/v1/health``, ``/api/v1/status``, ``/api/v1/session``
 (reports whether a session exists), ``/api/v1/auth/login``, ``/api/v1/auth/logout``.
 Everything else - model metadata, patient probe, dataset intake, dataset
@@ -16,7 +20,7 @@ server state. Request bodies are never logged.
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +28,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import auth, config, dataset, model, reports
+from . import auth, config, dataset, future_risk, model, reports
 
 app = FastAPI(
     title="MetaboGuard Professor Dashboard",
@@ -74,6 +78,20 @@ class LoginRequest(BaseModel):
 class ProbeRequest(BaseModel):
     patient_record: dict[str, Any]
     confirm_explicit_scoring: bool = False
+
+
+class SimulationScoreRequest(BaseModel):
+    """A synthetic longitudinal history. No identifiers are accepted."""
+
+    visits: list[dict[str, Any]] = Field(min_length=1, max_length=64)
+    simulation_mode: bool = False
+    seed: int | None = Field(default=None, ge=1, le=999_999)
+    archetype: Literal[
+        "reference_range",
+        "metabolic_deviation",
+        "reported_diabetes_metabolic",
+        "sparse_but_valid",
+    ] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -210,10 +228,13 @@ async def overview_route(_: dict = Depends(auth.require_session)) -> dict[str, A
             },
             {
                 "id": "horizon",
-                "label": "Future-risk horizons",
-                "value": "fail-closed",
-                "state": "blocked",
-                "detail": "No horizon passes the event-count gate on cross-sectional data.",
+                "label": "Future-risk surfaces",
+                "value": "simulation only",
+                "state": "warn",
+                "detail": (
+                    "Clinical scoring returns 409. Selected synthetic-data horizons are "
+                    "available only in the simulation panel."
+                ),
             },
         ],
         "data_limitations": [
@@ -426,6 +447,50 @@ async def dataset_export(
         headers={
             "Content-Disposition": 'attachment; filename="metaboguard_research_results.csv"',
             "Cache-Control": "no-store",
+        },
+    )
+
+
+@app.get("/api/v1/simulation/capability")
+async def simulation_capability(_: dict = Depends(auth.require_session)) -> dict[str, Any]:
+    """What the simulation-only future-risk models can and cannot report."""
+    return future_risk.capability()
+
+
+@app.post("/api/v1/simulation/score")
+async def simulation_score(
+    payload: SimulationScoreRequest, _: dict = Depends(auth.require_session)
+) -> dict[str, Any]:
+    """Score a synthetic longitudinal history. Simulation only, nothing retained."""
+    identifier_fields = future_risk.reject_identifier_fields(payload.visits)
+    if identifier_fields:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": (
+                    "Visit rows may only contain simulated measurements. Remove any "
+                    "identifier-like field before submitting."
+                ),
+                "rejected_fields": identifier_fields,
+            },
+        )
+    try:
+        return future_risk.score_history(payload.visits, payload.simulation_mode)
+    except future_risk.SimulationInputRejected as error:
+        raise HTTPException(
+            status_code=422, detail={"message": error.reason, **error.detail}
+        )
+
+
+@app.post("/api/v1/future-risk/score")
+async def clinical_future_risk(_: dict = Depends(auth.require_session)) -> dict[str, Any]:
+    """Clinical future-risk scoring is permanently refused in this deployment."""
+    raise HTTPException(
+        status_code=409,
+        detail={
+            "message": future_risk.CLINICAL_ENDPOINT_MESSAGE,
+            "capability_state": "simulation_only_longitudinal",
+            "use_instead": "/api/v1/simulation/score",
         },
     )
 

@@ -95,7 +95,10 @@ export const apiPostJson = async (path, payload) =>
 		await fetch(url(path), {
 			method: "POST",
 			credentials: "include",
-			headers: { "Content-Type": "application/json", ...authHeaders() },
+			headers: {
+				"Content-Type": "application/json",
+				...authHeaders(),
+			},
 			body: JSON.stringify(payload),
 		}),
 	);
@@ -114,7 +117,10 @@ export const apiPostForBlob = async (path, payload) => {
 	const response = await fetch(url(path), {
 		method: "POST",
 		credentials: "include",
-		headers: { "Content-Type": "application/json", ...authHeaders() },
+		headers: {
+			"Content-Type": "application/json",
+			...authHeaders(),
+		},
 		body: JSON.stringify(payload),
 	});
 	if (!response.ok) {
@@ -142,3 +148,11 @@ export const logout = async () => {
 
 export const sessionStatus = () => apiGet("/api/v1/session");
 export const deploymentStatus = () => apiGet("/api/v1/status");
+export const simulationCapability = () =>
+	apiGet("/api/v1/simulation/capability");
+export const scoreSimulationHistory = (visits, context = {}) =>
+	apiPostJson("/api/v1/simulation/score", {
+		visits,
+		...context,
+		simulation_mode: true,
+	});

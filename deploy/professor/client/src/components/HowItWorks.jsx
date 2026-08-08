@@ -4,7 +4,7 @@ import { Notice } from "./common.jsx";
  * "How the AI works" - a professor-facing explanation page.
  *
  * Reached from prominent entry points on Overview and Evidence & Methods rather
- * than from the sidebar, so the five working sections stay uncluttered.
+ * than from the numbered navigation, so the six working sections stay uncluttered.
  *
  * All content is static and deliberately plain-language. It must never describe
  * an output as a diagnosis, a disease probability or a cancer-type claim.
@@ -25,13 +25,13 @@ const PIPELINE_STEPS = [
 		id: "preprocessing",
 		label: "Preprocessing",
 		title: "Train-only preprocessing and missingness indicators",
-		body: "Medians, scaling centres and category levels were fitted on the training split alone, then frozen. A missing value is filled with the training median and, crucially, flagged with its own \"was missing\" indicator, so the model can see that a measurement was absent instead of being told a fabricated value is real.",
+		body: 'Medians, scaling centres and category levels were fitted on the training split alone, then frozen. A missing value is filled with the training median and, crucially, flagged with its own "was missing" indicator, so the model can see that a measurement was absent instead of being told a fabricated value is real.',
 	},
 	{
 		id: "training",
 		label: "Training",
 		title: "Self-supervised denoising encoder, trained without labels",
-		body: "The network was trained to rebuild its own inputs after they were noised and partly masked. No cancer or diabetes label took part in fitting, so the model never learned \"who has the disease\" - it learned what an ordinary adult metabolic profile looks like.",
+		body: 'The network was trained to rebuild its own inputs after they were noised and partly masked. No cancer or diabetes label took part in fitting, so the model never learned "who has the disease" - it learned what an ordinary adult metabolic profile looks like.',
 	},
 	{
 		id: "representation",
@@ -55,13 +55,13 @@ const PIPELINE_STEPS = [
 		id: "evidence",
 		label: "Evidence",
 		title: "Source-linked biomarker evidence for interpretation",
-		body: "Interpretation is anchored to a catalogue of published biomarker findings, each with a resolvable source and an evidence grade. The catalogue describes what others have shown; it never reports this project's own performance, and causal status stays \"not established\".",
+		body: 'Interpretation is anchored to a catalogue of published biomarker findings, each with a resolvable source and an evidence grade. The catalogue describes what others have shown; it never reports this project\'s own performance, and causal status stays "not established".',
 	},
 	{
 		id: "review",
 		label: "Review",
 		title: "Clinician review, and abstention when the data cannot support a claim",
-		body: "Every output is a research signal for a clinician to interpret. Where the data cannot support a statement - future risk horizons, cluster meaning, causal direction - the system returns an explicit abstention instead of a weaker answer.",
+		body: "Every output is a research signal for a clinician to interpret. Where the data cannot support a statement - patient future-risk horizons, cluster meaning, causal direction - the system returns an explicit abstention instead of a weaker answer.",
 	},
 ];
 
@@ -179,6 +179,12 @@ const CAPABILITIES = [
 		note: "Published findings from other groups, graded and source-linked.",
 	},
 	{
+		capability: "Synthetic future-risk simulation on generated histories",
+		tier: "qualified_use",
+		state: "Research only",
+		note: "Software verification with selected Synthea-trained models. Not patient scoring and not real-population calibration.",
+	},
+	{
 		capability: "Probability of developing cancer over time",
 		tier: "unavailable",
 		state: "Unavailable until longitudinal validation",
@@ -214,71 +220,123 @@ const READING_OUTPUTS = [
 	{
 		id: "deviation",
 		term: "A high deviation score",
-		plain:
-			"Says the profile is unusual compared with the reference cohort: the model rarely saw combinations like it. It does not mean a high chance of cancer. Unusualness can come from genuine metabolic strain, from an uncommon but healthy physiology, from a different population, or from a measurement or unit problem.",
+		plain: "Says the profile is unusual compared with the reference cohort: the model rarely saw combinations like it. It does not mean a high chance of cancer. Unusualness can come from genuine metabolic strain, from an uncommon but healthy physiology, from a different population, or from a measurement or unit problem.",
 	},
 	{
 		id: "percentile",
 		term: "The percentile",
-		plain:
-			"Places that score in a queue of 63,041 scored adult records. A percentile of 90 means the profile is more unusual than 90% of that reference sample. It is a position in a distribution, not a probability and not a risk category.",
+		plain: "Places that score in a queue of 63,041 scored adult records. A percentile of 90 means the profile is more unusual than 90% of that reference sample. It is a position in a distribution, not a probability and not a risk category.",
 	},
 	{
 		id: "contributions",
 		term: "Feature contributions",
-		plain:
-			"Are the measurements the model was least able to reproduce for this record. They point at where the unusualness sits, so a clinician knows what to look at. They are not causes, and they are not ranked by clinical importance.",
+		plain: "Are the measurements the model was least able to reproduce for this record. They point at where the unusualness sits, so a clinician knows what to look at. They are not causes, and they are not ranked by clinical importance.",
 	},
 	{
 		id: "abstention",
 		term: "no_stable_clusters",
-		plain:
-			"Is the clustering pipeline refusing to report groups. Candidate groupings dissolved when the data were resampled, and they lined up with which NHANES survey cycle a record came from - assay methods and availability changed between cycles. A boundary that follows collection cycles cannot be read as biology, so the honest output is no output.",
+		plain: "Is the clustering pipeline refusing to report groups. Candidate groupings dissolved when the data were resampled, and they lined up with which NHANES survey cycle a record came from - assay methods and availability changed between cycles. A boundary that follows collection cycles cannot be read as biology, so the honest output is no output.",
 	},
 ];
 
 export default function HowItWorks({ onNavigate }) {
 	return (
 		<>
-			<Notice kind="blocked" title="What this model cannot do.">
-				<span data-testid="text-longitudinal-limit">{LONGITUDINAL_LIMIT_STATEMENT}</span>
+			<Notice
+				kind="blocked"
+				title="What this model cannot do."
+			>
+				<span data-testid="text-longitudinal-limit">
+					{LONGITUDINAL_LIMIT_STATEMENT}
+				</span>
 			</Notice>
 
 			<p>
-				MetaboGuard learns what ordinary adult metabolic profiles look like, then
-				flags profiles that do not fit that pattern. Everything below follows from
-				that one idea, and from the fact that the training data record each person
-				only once.
+				MetaboGuard learns what ordinary adult metabolic
+				profiles look like, then flags profiles that do
+				not fit that pattern. Everything below follows
+				from that one idea, and from the fact that the
+				training data record each person only once.
 			</p>
+			<Notice
+				kind="info"
+				title="Separate synthetic simulator."
+			>
+				The Future Risk Simulation section replays
+				selected models trained on Synthea-derived
+				longitudinal histories. It verifies software
+				behaviour only; it does not change the
+				limitation above or enable patient scoring.
+			</Notice>
 
-			<section className="card" aria-labelledby="pipeline-heading">
-				<h2 id="pipeline-heading">The pipeline, step by step</h2>
-				<ol className="flow" data-testid="pipeline-flow">
+			<section
+				className="card"
+				aria-labelledby="pipeline-heading"
+			>
+				<h2 id="pipeline-heading">
+					The pipeline, step by step
+				</h2>
+				<ol
+					className="flow"
+					data-testid="pipeline-flow"
+				>
 					{PIPELINE_STEPS.map((step, index) => (
-						<li className="flow-step" key={step.id} data-testid={`flow-step-${step.id}`}>
-							<div className="flow-marker" aria-hidden="true">
-								<span className="flow-number">{index + 1}</span>
+						<li
+							className="flow-step"
+							key={step.id}
+							data-testid={`flow-step-${step.id}`}
+						>
+							<div
+								className="flow-marker"
+								aria-hidden="true"
+							>
+								<span className="flow-number">
+									{index +
+										1}
+								</span>
 							</div>
 							<div className="flow-body">
-								<span className="flow-label">{step.label}</span>
-								<h3>{step.title}</h3>
-								<p>{step.body}</p>
+								<span className="flow-label">
+									{
+										step.label
+									}
+								</span>
+								<h3>
+									{
+										step.title
+									}
+								</h3>
+								<p>
+									{
+										step.body
+									}
+								</p>
 							</div>
 						</li>
 					))}
 				</ol>
 				<p className="field-hint">
-					Steps 1 to 5 run for every record you score. Step 6 runs only in research
-					analysis and currently abstains. Steps 7 and 8 are human work, and they are
-					not optional.
+					Steps 1 to 5 run for every record you
+					score. Step 6 runs only in research
+					analysis and currently abstains. Steps 7
+					and 8 are human work, and they are not
+					optional.
 				</p>
 			</section>
 
-			<section className="card" aria-labelledby="reading-heading">
-				<h2 id="reading-heading">Reading the outputs in plain language</h2>
+			<section
+				className="card"
+				aria-labelledby="reading-heading"
+			>
+				<h2 id="reading-heading">
+					Reading the outputs in plain language
+				</h2>
 				<dl className="plain-list">
 					{READING_OUTPUTS.map((item) => (
-						<div key={item.id} data-testid={`plain-${item.id}`}>
+						<div
+							key={item.id}
+							data-testid={`plain-${item.id}`}
+						>
 							<dt>{item.term}</dt>
 							<dd>{item.plain}</dd>
 						</div>
@@ -286,117 +344,234 @@ export default function HowItWorks({ onNavigate }) {
 				</dl>
 			</section>
 
-			<section className="card" aria-labelledby="comparison-heading">
-				<h2 id="comparison-heading">Current model vs a future longitudinal model</h2>
+			<section
+				className="card"
+				aria-labelledby="comparison-heading"
+			>
+				<h2 id="comparison-heading">
+					Current model vs a future longitudinal
+					model
+				</h2>
 				<p>
-					The right-hand column is not a roadmap and nothing in it is scheduled. It
-					lists what a study would have to provide before any risk-over-time claim
-					could be made at all.
+					The right-hand column is not a roadmap
+					and nothing in it is scheduled. It lists
+					what a study would have to provide
+					before any risk-over-time claim could be
+					made at all.
 				</p>
 				<div className="table-wrap">
-					<table className="stack-table" data-testid="comparison-table">
+					<table
+						className="stack-table"
+						data-testid="comparison-table"
+					>
 						<caption>
-							Why longitudinal data is the blocker: every row on the right is
-							missing from the data the current model was trained on.
+							Why longitudinal data is
+							the blocker: every row
+							on the right is missing
+							from the data the
+							current model was
+							trained on.
 						</caption>
 						<thead>
 							<tr>
-								<th scope="col">Dimension</th>
-								<th scope="col">Current model (available now)</th>
-								<th scope="col">Required for a future longitudinal model</th>
+								<th scope="col">
+									Dimension
+								</th>
+								<th scope="col">
+									Current
+									model
+									(available
+									now)
+								</th>
+								<th scope="col">
+									Required
+									for a
+									future
+									longitudinal
+									model
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							{COMPARISON_ROWS.map((row) => (
-								<tr key={row.dimension}>
-									<th scope="row" className="wrap" data-label="Dimension">
-										{row.dimension}
-									</th>
-									<td className="wrap" data-label="Current model">
-										{row.current}
-									</td>
-									<td className="wrap" data-label="Required for a longitudinal model">
-										{row.future}
-									</td>
-								</tr>
-							))}
+							{COMPARISON_ROWS.map(
+								(row) => (
+									<tr
+										key={
+											row.dimension
+										}
+									>
+										<th
+											scope="row"
+											className="wrap"
+											data-label="Dimension"
+										>
+											{
+												row.dimension
+											}
+										</th>
+										<td
+											className="wrap"
+											data-label="Current model"
+										>
+											{
+												row.current
+											}
+										</td>
+										<td
+											className="wrap"
+											data-label="Required for a longitudinal model"
+										>
+											{
+												row.future
+											}
+										</td>
+									</tr>
+								),
+							)}
 						</tbody>
 					</table>
 				</div>
 			</section>
 
-			<section className="card" aria-labelledby="tcga-heading">
-				<h2 id="tcga-heading">Where TCGA fits, and where it does not</h2>
+			<section
+				className="card"
+				aria-labelledby="tcga-heading"
+			>
+				<h2 id="tcga-heading">
+					Where TCGA fits, and where it does not
+				</h2>
 				<p>
-					TCGA data come from people who already had a cancer diagnosis when their
-					samples were taken. They are used for <strong>post-diagnosis biological
-					context only</strong>: understanding pathways and marker behaviour in
-					established disease, and sanity-checking what the literature describes.
+					TCGA data come from people who already
+					had a cancer diagnosis when their
+					samples were taken. They are used for{" "}
+					<strong>
+						post-diagnosis biological
+						context only
+					</strong>
+					: understanding pathways and marker
+					behaviour in established disease, and
+					sanity-checking what the literature
+					describes.
 				</p>
 				<ul>
 					<li>
-						TCGA columns are never model inputs. Every <code>tcga_*</code> field is on
-						the input denylist and is reported as <em>prohibited</em> during dataset
-						screening.
+						TCGA columns are never model
+						inputs. Every{" "}
+						<code>tcga_*</code> field is on
+						the input denylist and is
+						reported as <em>prohibited</em>{" "}
+						during dataset screening.
 					</li>
 					<li>
-						TCGA is never used for prevention scoring. Learning from samples taken
-						after diagnosis and applying it to apparently healthy people is exactly
-						the leakage this project refuses.
+						TCGA is never used for
+						prevention scoring. Learning
+						from samples taken after
+						diagnosis and applying it to
+						apparently healthy people is
+						exactly the leakage this project
+						refuses.
 					</li>
 					<li>
-						TCGA cannot supply a risk horizon. Its follow-up starts at diagnosis, so
-						it says nothing about the years before one.
+						TCGA cannot supply a risk
+						horizon. Its follow-up starts at
+						diagnosis, so it says nothing
+						about the years before one.
 					</li>
 				</ul>
-				<Notice kind="caution" title="Two separate worlds.">
-					Prevention work uses label-free, pre-diagnosis measurements. TCGA describes
-					established disease. Results from one are never presented as evidence about
-					the other.
+				<Notice
+					kind="caution"
+					title="Two separate worlds."
+				>
+					Prevention work uses label-free,
+					pre-diagnosis measurements. TCGA
+					describes established disease. Results
+					from one are never presented as evidence
+					about the other.
 				</Notice>
 			</section>
 
-			<section className="card" aria-labelledby="capability-heading">
-				<h2 id="capability-heading">Capability status</h2>
+			<section
+				className="card"
+				aria-labelledby="capability-heading"
+			>
+				<h2 id="capability-heading">
+					Capability status
+				</h2>
 				<p>
-					Three states only. Nothing moves between them automatically: an item in the
-					third state stays there until a longitudinal study exists, is validated and
-					is reviewed.
+					Three states only. Nothing moves between
+					them automatically: an item in the third
+					state stays there until a longitudinal
+					study exists, is validated and is
+					reviewed.
 				</p>
 				<div className="table-wrap">
-					<table className="stack-table" data-testid="capability-table">
+					<table
+						className="stack-table"
+						data-testid="capability-table"
+					>
 						<caption>
-							Capability status for this deployment. "Unavailable until
-							longitudinal validation" is a statement about missing data, not a
+							Capability status for
+							this deployment.
+							"Unavailable until
+							longitudinal validation"
+							is a statement about
+							missing data, not a
 							release schedule.
 						</caption>
 						<thead>
 							<tr>
-								<th scope="col">Capability</th>
-								<th scope="col">Status</th>
-								<th scope="col">Note</th>
+								<th scope="col">
+									Capability
+								</th>
+								<th scope="col">
+									Status
+								</th>
+								<th scope="col">
+									Note
+								</th>
 							</tr>
 						</thead>
 						<tbody>
-							{CAPABILITIES.map((item) => (
-								<tr key={item.capability}>
-									<th scope="row" className="wrap" data-label="Capability">
-										{item.capability}
-									</th>
-									<td data-label="Status">
-										<span
-											className="badge"
-											data-tier={item.tier}
-											data-testid={`capability-state-${item.tier}`}
+							{CAPABILITIES.map(
+								(item) => (
+									<tr
+										key={
+											item.capability
+										}
+									>
+										<th
+											scope="row"
+											className="wrap"
+											data-label="Capability"
 										>
-											{item.state}
-										</span>
-									</td>
-									<td className="wrap" data-label="Note">
-										{item.note}
-									</td>
-								</tr>
-							))}
+											{
+												item.capability
+											}
+										</th>
+										<td data-label="Status">
+											<span
+												className="badge"
+												data-tier={
+													item.tier
+												}
+												data-testid={`capability-state-${item.tier}`}
+											>
+												{
+													item.state
+												}
+											</span>
+										</td>
+										<td
+											className="wrap"
+											data-label="Note"
+										>
+											{
+												item.note
+											}
+										</td>
+									</tr>
+								),
+							)}
 						</tbody>
 					</table>
 				</div>
@@ -417,7 +592,8 @@ export default function HowItWorks({ onNavigate }) {
 					onClick={() => onNavigate("evidence")}
 					data-testid="button-to-evidence"
 				>
-					See the evidence catalogue and claim boundaries
+					See the evidence catalogue and claim
+					boundaries
 				</button>
 			</div>
 		</>

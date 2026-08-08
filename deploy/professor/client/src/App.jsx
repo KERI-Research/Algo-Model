@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import DatasetAnalysis from "./components/DatasetAnalysis.jsx";
 import Evidence from "./components/Evidence.jsx";
+import FutureRiskSimulation from "./components/FutureRiskSimulation.jsx";
 import HowItWorks from "./components/HowItWorks.jsx";
 import Login from "./components/Login.jsx";
 import Overview from "./components/Overview.jsx";
@@ -30,6 +31,13 @@ const SECTIONS = [
 		Component: PatientProbe,
 	},
 	{
+		id: "simulation",
+		label: "Future Risk Simulation",
+		title: "Future Risk Simulation",
+		lede: "Explore selected synthetic-data models across explicitly gated future horizons.",
+		Component: FutureRiskSimulation,
+	},
+	{
 		id: "dataset",
 		label: "Dataset Analysis",
 		title: "Dataset Analysis",
@@ -54,7 +62,7 @@ const SECTIONS = [
 
 /**
  * Reachable from Overview and Evidence & Methods, deliberately not in the
- * sidebar: five working sections stay uncluttered, and this explainer is one
+ * sidebar: six working sections stay uncluttered, and this explainer is one
  * click away from both places a reader would look for it.
  */
 const AUX_SECTIONS = [
@@ -83,7 +91,9 @@ export default function App() {
 			if (cancelled) {
 				return;
 			}
-			setAuthenticated(Boolean(session && session.authenticated));
+			setAuthenticated(
+				Boolean(session && session.authenticated),
+			);
 			setStatus(deployment);
 			setChecking(false);
 		});
@@ -110,7 +120,10 @@ export default function App() {
 		return (
 			<div className="login-shell">
 				<div style={{ width: "100%", maxWidth: 420 }}>
-					<Loading label="Verifying session" rows={3} />
+					<Loading
+						label="Verifying session"
+						rows={3}
+					/>
 				</div>
 			</div>
 		);
@@ -143,21 +156,45 @@ export default function App() {
 			</a>
 			<header className="sidebar">
 				<Brand />
-				<nav className="nav" aria-label="Dashboard sections">
+				<nav
+					className="nav"
+					aria-label="Dashboard sections"
+				>
 					{SECTIONS.map((item, index) => (
 						<button
 							type="button"
 							key={item.id}
 							className="nav-item"
 							data-parent-of-active={
-								item.id === section.parent ? "true" : undefined
+								item.id ===
+								section.parent
+									? "true"
+									: undefined
 							}
-							aria-current={item.id === active ? "page" : undefined}
-							onClick={() => setActive(item.id)}
+							aria-current={
+								item.id ===
+								active
+									? "page"
+									: undefined
+							}
+							onClick={() =>
+								setActive(
+									item.id,
+								)
+							}
 							data-testid={`nav-${item.id}`}
 						>
-							<span className="nav-index" aria-hidden="true">
-								{String(index + 1).padStart(2, "0")}
+							<span
+								className="nav-index"
+								aria-hidden="true"
+							>
+								{String(
+									index +
+										1,
+								).padStart(
+									2,
+									"0",
+								)}
 							</span>
 							{item.label}
 						</button>
@@ -166,7 +203,11 @@ export default function App() {
 				<button
 					type="button"
 					className="nav-aside"
-					aria-current={active === "how" ? "page" : undefined}
+					aria-current={
+						active === "how"
+							? "page"
+							: undefined
+					}
 					onClick={() => setActive("how")}
 					data-testid="nav-how"
 				>
@@ -174,8 +215,10 @@ export default function App() {
 				</button>
 				<div className="sidebar-foot">
 					<span>
-						Non-diagnostic research. Prototype hosting: no identifiable or clinical
-						patient data.
+						Non-diagnostic research.
+						Prototype hosting: no
+						identifiable or clinical patient
+						data.
 					</span>
 					<button
 						type="button"

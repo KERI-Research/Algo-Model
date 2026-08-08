@@ -13,11 +13,14 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
 | `server/auth.py`                                  | SHA-256 key check, signed `__Host-` cookie, bearer fallback, rate limiter.  |
 | `server/dataset.py`                               | CSV intake: identifier screening, denylist, tiers, ephemeral parsing, row rule. |
 | `server/model.py`                                 | NumPy inference wrapper, aggregates, results CSV, field meanings, boundaries. |
+| `server/future_risk.py`                           | Simulation-only NumPy replay, input allowlist, horizon abstentions and clinical refusal text. |
+| `server/future_risk_export.py`                    | Offline export/parity harness; never imported on the request path.            |
 | `server/reports.py`                               | Reliability, clustering abstention, evidence payloads, path sanitisation.    |
 | `server/core/`                                    | Byte-for-byte copies of `api/{self_supervised,data_integrity,data_reliability,evidence_catalogue}.py`. Never edit here; edit `api/` and re-run `prepare_assets.py`. |
 | `client/src/components/`                          | One file per dashboard section, plus `common.jsx` primitives and `Login.jsx`. |
 | `client/src/components/HowItWorks.jsx`            | "How the AI works" explainer. Content lives in the exported `PIPELINE_STEPS`, `READING_OUTPUTS`, `COMPARISON_ROWS` and `CAPABILITIES` arrays, so edits are data edits and the tests read the same arrays. |
 | `client/src/lib/synthetic_patient.js`             | Vendored unchanged from `frontend/src/interface/` and **tracked**. Do not edit here; edit the source and re-run `prepare_assets.py`. |
+| `client/src/lib/synthetic_history.js`             | Vendored deterministic longitudinal generator used by the simulation panel.   |
 | `client/src/lib/synthetic_prevention.js`          | New extension that fills the remaining prevention-allowlist inputs.         |
 | `prepare_assets.py`                               | Regenerates `assets/`, `server/core/`, the vendored client modules, `preprocessor_params.json` and `research_constants.json`. |
 | `api/index.py`, `vercel.json`, `.vercelignore`, `requirements.txt` | Vercel Hobby deployment: static build plus one Python function. |
@@ -36,12 +39,12 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
    returns), reused as the favicon.
 2. **Heading sizes stay small** (`--text-lg` maximum) because this is a data-dense
    dashboard, not a marketing page. Dark mode follows `prefers-color-scheme`.
-3. **Navigation is state-based**, not routed: five sections in a sidebar that
+3. **Navigation is state-based**, not routed: six sections in a sidebar that
    becomes a two-column button grid below 900px. No URL routing means no
    hash-routing pitfalls inside the preview iframe. "How the AI works" is an
    auxiliary section (`AUX_SECTIONS` in `App.jsx`), reached from prominent cards
    on Overview and Evidence & Methods plus a dashed sidebar helper link, so the
-   numbered navigation stays at five items. Only one element ever carries
+  numbered navigation stays at six items. Only one element ever carries
    `aria-current="page"`; the parent section is marked with
    `data-parent-of-active` instead.
 4. **Terminology is fixed by the research contract.** "Metabolic deviation score",
@@ -68,6 +71,11 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
 10. **Bearer fallback exists only for cookie-blocked hosts** (the thread preview
    iframe). Cookies are the primary transport; remove the fallback if the preview
    path is not needed (see `SECURITY_PRIVACY.md`).
+11. **Future-risk simulation is a separate capability.** It accepts only
+  generated multi-visit histories and replays selected models from the
+  Synthea-derived simulation artifact. The Vercel request path uses NumPy and
+  JSON constants only; the authoritative joblib/PyTorch file is not deployed.
+  `/api/v1/future-risk/score` remains a permanent `409` refusal.
 
 ## Conventions for incremental edits
 
@@ -112,7 +120,7 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
 - `client/src/lib/` was invisible to Git because the repository root
   `.gitignore` has a broad `lib/` rule (line 594). `deploy/professor/.gitignore`
   now re-includes that directory; keep the negation if you touch that file.
-- Generated paths (`assets/`, `server/core/`, `client/src/lib/synthetic_patient*.js`)
+- Generated paths (`assets/`, `server/core/`, and synthetic generators in `client/src/lib/`)
   are required at build/run time and are therefore **tracked**, so Git-triggered
   builds work. Never re-add them to `.gitignore`: doing so reproduces the Vite
   "cannot resolve ../lib/synthetic_patient.js" build failure and leaves the
@@ -125,11 +133,6 @@ run, `SECURITY_PRIVACY.md` for the access-control and data-handling contract.
 
 ## Known constraints
 
-- The agent sandbox cannot write into `/Volumes/Personal-Projects/KERI`, so
-  `prepare_assets.py`, `npm ci`, `npm run build` and `pytest` must be run there by
-  a human shell. All of them were run successfully in the sandbox copy against
-  byte-identical sources.
-- Two leftover marker files could not be deleted from the repository by the agent:
-  `deploy/professor/.keep`, `deploy/professor/assets/ssl_artifact/.keep` (both now
-  carry an explanatory line) and an empty `.pc_write_test.txt` at the repository
-  root, which can be deleted safely.
+- The synthetic simulator is software verification only. Its held-out event
+  counts are underpowered, its calibration is in-simulation only and none of its
+  estimates may be presented as patient risk.

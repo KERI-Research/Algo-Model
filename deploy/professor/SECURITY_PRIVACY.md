@@ -49,7 +49,7 @@ identifiable or clinical patient data.**
 
 - Unauthenticated: `/api/v1/health`, `/api/v1/status`, `/api/v1/session`,
   `/api/v1/auth/login`, `/api/v1/auth/logout`.
-- Every model, dataset, evidence, reliability and clustering route depends on
+- Every model, simulation, dataset, evidence, reliability and clustering route depends on
   `require_session`, enforced server side. Bypassing the frontend route guard
   achieves nothing; the API refuses the request. Unknown `/api/...` paths return
   `404` rather than the SPA shell.
@@ -83,6 +83,21 @@ identifiable or clinical patient data.**
   runs with `--no-access-log` and there is no telemetry or analytics of any kind.
 - Results exports are rendered in memory from data the client already holds.
   There is no server-side retention and no history endpoint.
+
+## Future-risk simulation data
+
+- The browser generates deterministic synthetic histories from a numeric seed;
+  the panel does not accept a patient record or file upload.
+- `/api/v1/simulation/score` requires `simulation_mode=true`, at least two
+  distinct visit times and a strict measurement-key allowlist. Names, record
+  numbers, dates, free-text visit labels and arbitrary archetype text are
+  refused before scoring.
+- The request is scored in memory and discarded. No simulation history or result
+  is persisted, logged or sent to a third party.
+- `/api/v1/future-risk/score` is the clinical route and always returns `409`.
+  The deployed artifact contains only selected models from the synthetic
+  Synthea-derived run; the authoritative joblib/PyTorch artifact is never copied
+  into the deployment.
 
 ## Static bundle
 

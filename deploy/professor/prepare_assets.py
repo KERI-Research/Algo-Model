@@ -49,6 +49,13 @@ REPO_ROOT = Path(os.environ.get("KERI_REPO_ROOT", DEPLOY_DIR.parent.parent)).res
 ARTIFACT_DIR = REPO_ROOT / "model_artifacts" / "metaboguard_ssl" / "nhanes_multicycle_v2"
 RESEARCH_RUN = REPO_ROOT / "model_artifacts" / "research_runs" / "research__20260804T164743Z"
 EVIDENCE_SRC = REPO_ROOT / "data" / "evidence" / "biomarker_evidence.json"
+FUTURE_RISK_ARTIFACT = (
+    REPO_ROOT
+    / "model_artifacts"
+    / "future_risk"
+    / "simulation_synthea_pooled"
+    / "artifact"
+)
 
 #: Authoritative research modules vendored into ``server/core/`` unchanged.
 CORE_MODULES = (
@@ -56,10 +63,19 @@ CORE_MODULES = (
     "data_integrity.py",
     "data_reliability.py",
     "evidence_catalogue.py",
+    # Simulation-only future-risk sources. Vendored for the offline export and for
+    # reference; the request path uses the portable artifact, not these modules.
+    "future_risk_models.py",
+    "longitudinal_schema.py",
+    "longitudinal_dataset.py",
 )
 
 #: Frontend modules vendored unchanged from the existing dashboard.
-CLIENT_MODULES = ("synthetic_patient.js", "synthetic_patient.test.js")
+CLIENT_MODULES = (
+    "synthetic_patient.js",
+    "synthetic_patient.test.js",
+    "synthetic_history.js",
+)
 
 REFERENCE_GRID_POINTS = 8001
 
@@ -86,7 +102,7 @@ def write_json(path: Path, payload: Any) -> None:
 def main() -> int:
     import numpy as np
 
-    for required in (ARTIFACT_DIR, RESEARCH_RUN, EVIDENCE_SRC):
+    for required in (ARTIFACT_DIR, RESEARCH_RUN, EVIDENCE_SRC, FUTURE_RISK_ARTIFACT):
         if not required.exists():
             print(f"missing source: {required}", file=sys.stderr)
             return 1
@@ -99,6 +115,7 @@ def main() -> int:
 
     core_out = DEPLOY_DIR / "server" / "core"
     core_out.mkdir(parents=True, exist_ok=True)
+    sys.path.insert(0, str(DEPLOY_DIR))
     print("vendored research modules (byte-for-byte from api/):")
     for name in CORE_MODULES:
         shutil.copy(REPO_ROOT / "api" / name, core_out / name)
@@ -139,8 +156,20 @@ def main() -> int:
     print("evidence catalogue:")
     write_json(evidence_out / "biomarker_evidence.json", json.loads(EVIDENCE_SRC.read_text()))
 
+    print("future-risk portable artifact (simulation only):")
+    from server.future_risk_export import export as export_future_risk
+
+    report = export_future_risk(FUTURE_RISK_ARTIFACT, DEPLOY_DIR / "assets" / "future_risk")
+    print(
+        f"  parity verdict={report['verdict']} "
+        f"max_abs_difference={report['max_abs_difference']:.3e} "
+        f"histories={report['histories_compared']}"
+    )
+    if report["verdict"] != "parity":
+        print("  REFUSING: portable scoring does not match the authoritative artifact.")
+        return 1
+
     print("serverless exports (NumPy-only runtime):")
-    sys.path.insert(0, str(DEPLOY_DIR))
     from server.inference import export_preprocessor_params  # noqa: E402
     from server.research_constants import export_constants  # noqa: E402
 

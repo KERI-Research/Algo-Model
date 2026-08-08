@@ -15,6 +15,7 @@ PROTECTED_GET_ROUTES = [
     "/api/v1/model",
     "/api/v1/overview",
     "/api/v1/probe/schema",
+    "/api/v1/simulation/capability",
     "/api/v1/reliability",
     "/api/v1/clusters",
     "/api/v1/evidence",
@@ -49,6 +50,11 @@ def test_protected_post_routes_reject_anonymous_callers(client):
         data={"deidentified_confirmed": "true", "analysis_confirmed": "true"},
     ).status_code == 401
     assert client.post("/api/v1/dataset/export", json={"rows": []}).status_code == 401
+    assert client.post(
+        "/api/v1/simulation/score",
+        json={"visits": [], "simulation_mode": True},
+    ).status_code == 401
+    assert client.post("/api/v1/future-risk/score", json={}).status_code == 401
 
 
 def test_status_exposes_no_secret_material(client):
