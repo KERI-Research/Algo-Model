@@ -16,7 +16,7 @@ identifiable or clinical patient data.**
 | Section                    | Contents                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Overview**               | Non-diagnostic discovery posture, model/version/capability, architecture, status cards, current data limitations.               |
-| **Patient Probe**          | Explicit single-record scoring with a plain-language deviation band, NHANES reference percentile, submitted diabetes context, human-readable standout measurements, four cancer/diabetes research-pathway capability cards, data readiness and evidence boundaries. |
+| **Patient Probe**          | Explicit single-record scoring with a plain-language deviation interpretation, NHANES reference percentile, separate plausibility checks, submitted diabetes context, a cancer-outcome capability selector, human-readable standout measurements, research-pathway context, data readiness and evidence boundaries. |
 | **Future Risk Simulation** | Deterministic synthetic longitudinal histories, selected simulation-only 1/3/5-year model outputs, explicit abstentions, portable-artifact parity, and evaluation caveats. |
 | **Dataset Analysis**       | CSV-only drag/drop or picker, de-identification checkbox, identifier and leakage screening, schema mapping, missingness, range violations, feature tiers, rows accepted/rejected, then in-memory scoring and a downloadable results CSV. |
 | **Reliability & Clusters** | The pipeline's fail-closed reliability report, feature tiers, and the `no_stable_clusters` abstention with the survey-cycle explanation. |
@@ -37,17 +37,20 @@ longitudinal data; every estimate is labelled simulation only, is not calibrated
 to a real population and must not inform care. Clustering still abstains exactly
 as in the research pipeline.
 
-The Patient Probe gives pancreatic cancer and general cancers equal research
-emphasis. Its four pathway cards cover diabetes-related factors and cancer,
-anthropometry, weight-change and reported exposure measurements in cancer
-research, temporal direction between cancer and diabetes-related changes, and
-the same non-glycaemic measurements in diabetes research. Every card reports
-`Probability unavailable` because the current NHANES data are cross-sectional.
-Measurements listed beneath a card are supplied values with existing
-reconstruction diagnostics, grouped by relevance to that research question;
-they are not causal attribution, disease classification or evidence that one
-condition will develop from another. Reported diabetes and onset age remain
-display context and are not sent to the deployed model.
+The Patient Probe lists only cancer outcomes represented by a deployed research
+artifact. The pan-cancer composite links to the synthetic-history simulator;
+pancreatic and other site-specific patient likelihoods remain not estimable. The
+selector never turns a cross-sectional profile into a cancer probability. Its
+four pathway cards group supplied standout measurements by relevance to
+diabetes/cancer and lifestyle research questions; they provide context, not
+probability or causal attribution. Reported diabetes and onset age remain
+displayed context and are not sent to the deployed model.
+
+The deviation result separately answers three questions: how uncommon the
+measurement pattern is versus the NHANES adult reference, whether a better/worse
+health direction can be inferred (it cannot), and whether any supplied value
+falls outside broad project plausibility windows. An unusual but plausible
+combination is not automatically a bad outcome or an invalid record.
 
 ---
 

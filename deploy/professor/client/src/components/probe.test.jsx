@@ -48,6 +48,24 @@ const SCORE_RESPONSE = {
 			warning_label:
 				"Within reference range (not diagnostic)",
 			note: "No model warning; not evidence disease is absent.",
+			deviation_interpretation: {
+				reference_percentile: 87.31,
+				pattern_meaning:
+					"The combination of supplied measurements was harder to reconstruct than most reference records.",
+				health_direction: "not_directional",
+				health_direction_label:
+					"Better or worse cannot be inferred",
+				health_direction_note:
+					"The model cannot say this person is better or worse off.",
+				record_validity_note:
+					"A high deviation does not by itself mean the record is invalid.",
+				range_review: {
+					status: "no_broad_range_flags",
+					checked_values: 4,
+					flagged_values: [],
+					note: "No supplied value fell outside the broad plausibility windows.",
+				},
+			},
 		},
 		standout_factors: {
 			section_title: "Standout factors in this profile",
@@ -79,21 +97,41 @@ const SCORE_RESPONSE = {
 		},
 		research_association: {
 			section_title: "Cancer and diabetes research questions",
-			status: "future_and_causal_probabilities_unavailable",
-			note: "No validated future cancer or diabetes risk model is currently deployed.",
-			cancer_scope: [
+			status: "patient_future_risk_and_causal_effects_not_estimable",
+			note: "No validated patient future-risk or causal model is deployed.",
+			cancer_outcomes: [
+				{
+					id: "pan_cancer",
+					label: "Pan-cancer composite",
+					status: "simulation_only",
+					probability: null,
+					availability_label:
+						"Synthetic simulation only",
+					available_horizons: ["5y"],
+					reason: "Available only for generated synthetic longitudinal histories.",
+				},
 				{
 					id: "pancreatic_cancer",
 					label: "Pancreatic cancer",
-					status: "research_scope_only",
+					status: "not_estimable",
+					probability: null,
+					availability_label:
+						"Likelihood not estimable",
+					available_horizons: [],
+					reason: "The corrected cohort has only 19 cases.",
 				},
 				{
-					id: "general_cancers",
-					label: "General cancers",
-					status: "research_scope_only",
+					id: "other_site_specific_cancers",
+					label: "Other site-specific cancers",
+					status: "not_estimable",
+					probability: null,
+					availability_label:
+						"Likelihood not estimable",
+					available_horizons: [],
+					reason: "No site-specific artifact passed the deployment gates.",
 				},
 			],
-			scope_note: "Pancreatic cancer and general cancers have equal research emphasis here. This model classifies neither scope.",
+			scope_note: "Select an outcome to see what this deployment can actually estimate.",
 			factor_note:
 				"Supplied standout measurements are grouped by relevance to each research question. A measurement may appear in more than one group; grouping does not establish direction or causality.",
 			pathways: [
@@ -185,6 +223,26 @@ describe("ProbeResults contract", () => {
 		expect(screen.queryByText("42%")).not.toBeInTheDocument();
 	});
 
+	it("fails closed when a cancer outcome probability is not null", () => {
+		const invalidResponse = JSON.parse(
+			JSON.stringify(SCORE_RESPONSE),
+		);
+		invalidResponse.patient_assessment.research_association.cancer_outcomes[0].probability = 0.42;
+		render(
+			<ProbeResults
+				result={invalidResponse}
+				submittedForm={{}}
+			/>,
+		);
+		expect(
+			screen.getByText("Pathway contract unavailable."),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByTestId("select-cancer-outcome"),
+		).not.toBeInTheDocument();
+		expect(screen.queryByText("42%")).not.toBeInTheDocument();
+	});
+
 	it("handles a missing percentile and no supplied standout factors", () => {
 		const sparseResponse = JSON.parse(
 			JSON.stringify(SCORE_RESPONSE),
@@ -271,7 +329,12 @@ describe("PatientProbe", () => {
 	});
 
 	it("scores explicitly and shows deviation, percentile and contributions", async () => {
-		render(<PatientProbe onUnauthorised={() => {}} />);
+		render(
+			<PatientProbe
+				onUnauthorised={() => {}}
+				onNavigate={vi.fn()}
+			/>,
+		);
 		const user = userEvent.setup();
 		await user.click(
 			screen.getByTestId("button-generate-synthetic"),
@@ -302,7 +365,13 @@ describe("PatientProbe", () => {
 		expect(payload.patient_record.DIQ_DID040).toBeUndefined();
 		expect(await screen.findByText("1.235")).toBeInTheDocument();
 		expect(screen.getAllByText("87.3%")).toHaveLength(2);
-		expect(screen.getByText(/More unusual than/)).toHaveTextContent(
+		expect(
+			within(
+				screen.getByTestId(
+					"panel-current-profile-assessment",
+				),
+			).getByText(/More unusual than/),
+		).toHaveTextContent(
 			"More unusual than 87.3% of the NHANES adult reference.",
 		);
 		expect(
@@ -322,6 +391,12 @@ describe("PatientProbe", () => {
 			screen.getByTestId("panel-current-profile-assessment"),
 		).toBeInTheDocument();
 		expect(
+			screen.getByTestId("panel-deviation-meaning"),
+		).toHaveTextContent("Better or worse cannot be inferred");
+		expect(
+			screen.getByTestId("panel-deviation-meaning"),
+		).toHaveTextContent("No broad range flags");
+		expect(
 			screen.getByTestId("panel-standout-factors"),
 		).toBeInTheDocument();
 		expect(
@@ -330,26 +405,49 @@ describe("PatientProbe", () => {
 		expect(
 			screen.getByTestId("panel-research-association"),
 		).toBeInTheDocument();
-		expect(
-			screen.getAllByText("Probability unavailable"),
-		).toHaveLength(4);
 		const researchPanel = screen.getByTestId(
 			"panel-research-association",
 		);
 		expect(
-			within(researchPanel).getByText("Pancreatic cancer"),
+			within(researchPanel).getByRole("option", {
+				name: "Pan-cancer composite",
+			}),
 		).toBeInTheDocument();
 		expect(
-			within(researchPanel).getByText("General cancers"),
+			within(researchPanel).getByRole("option", {
+				name: "Pancreatic cancer",
+			}),
 		).toBeInTheDocument();
+		expect(
+			within(researchPanel).getByRole("option", {
+				name: "Other site-specific cancers",
+			}),
+		).toBeInTheDocument();
+		expect(
+			within(researchPanel).queryByText("General cancers"),
+		).not.toBeInTheDocument();
 		expect(
 			within(researchPanel).getByText(
-				/equal research emphasis/i,
+				"Not estimable from this record",
 			),
 		).toBeInTheDocument();
 		expect(
+			within(researchPanel).getByTestId(
+				"button-open-simulation",
+			),
+		).toBeInTheDocument();
+		await user.selectOptions(
+			within(researchPanel).getByTestId(
+				"select-cancer-outcome",
+			),
+			"pancreatic_cancer",
+		);
+		expect(
+			within(researchPanel).getByText(/only 19 cases/i),
+		).toBeInTheDocument();
+		expect(
 			within(researchPanel).getByText(
-				/No validated future cancer or diabetes risk model/i,
+				/No validated patient future-risk or causal model/i,
 			),
 		).toBeInTheDocument();
 		expect(
@@ -373,9 +471,7 @@ describe("PatientProbe", () => {
 			);
 			expect(pathwayPanel).toBeInTheDocument();
 			expect(
-				within(pathwayPanel).getByText(
-					"Probability unavailable",
-				),
+				within(pathwayPanel).getByText("Context only"),
 			).toBeInTheDocument();
 			expect(
 				within(pathwayPanel).getByText(

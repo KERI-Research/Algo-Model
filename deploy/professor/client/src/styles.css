@@ -842,6 +842,49 @@ tbody tr:last-child td {
 	margin-bottom: var(--space-4);
 }
 
+.probe-deviation-meaning {
+	border-left: 3px solid var(--accent);
+}
+
+.probe-meaning-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-5);
+	margin: var(--space-4) 0;
+}
+
+.probe-meaning-grid>div {
+	min-width: 0;
+	border-left: 2px solid var(--border-strong);
+	padding-left: var(--space-3);
+}
+
+.probe-meaning-grid span {
+	display: block;
+	font-size: var(--text-xs);
+	color: var(--ink-500);
+	margin-bottom: var(--space-1);
+}
+
+.probe-meaning-grid strong {
+	display: block;
+	margin-bottom: var(--space-2);
+}
+
+.probe-meaning-grid p {
+	font-size: var(--text-sm);
+	margin: 0;
+}
+
+.probe-range-flags {
+	margin: var(--space-3) 0 0;
+	padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-5) + var(--space-2));
+	border: 1px solid var(--caution);
+	border-radius: var(--radius);
+	background: var(--caution-soft);
+	color: var(--caution);
+}
+
 .probe-context {
 	display: grid;
 	grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr);
@@ -967,6 +1010,31 @@ tbody tr:last-child td {
 	list-style: none;
 	padding: 0;
 	margin: 0 0 var(--space-4);
+}
+
+.probe-cancer-selector {
+	display: grid;
+	grid-template-columns: minmax(210px, 0.7fr) minmax(0, 1.3fr);
+	gap: var(--space-5);
+	align-items: start;
+	margin-bottom: var(--space-5);
+}
+
+.probe-cancer-capability {
+	min-width: 0;
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--surface);
+	padding: var(--space-4);
+}
+
+.probe-cancer-capability[data-status="simulation_only"] {
+	border-left-color: var(--accent);
+}
+
+.probe-cancer-capability p {
+	margin-top: var(--space-3);
 }
 
 .probe-cancer-scope li {
@@ -1293,7 +1361,9 @@ tbody tr:last-child td {
 	.probe-assessment,
 	.probe-context,
 	.probe-factor-row,
-	.probe-pathway-grid {
+	.probe-pathway-grid,
+	.probe-meaning-grid,
+	.probe-cancer-selector {
 		grid-template-columns: 1fr;
 	}
 

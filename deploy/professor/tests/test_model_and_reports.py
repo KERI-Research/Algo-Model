@@ -73,15 +73,26 @@ def test_score_single_record_outputs():
     assert current_profile["note"] == model._deviation_band_from_percentile(
         score["reference_percentile"]
     )["interpretation"]
+    interpretation = current_profile["deviation_interpretation"]
+    assert interpretation["health_direction"] == "not_directional"
+    assert "better or worse" in interpretation["health_direction_note"].lower()
+    assert interpretation["range_review"]["status"] == "no_broad_range_flags"
+    assert interpretation["range_review"]["flagged_values"] == []
+    assert "combination" in interpretation["pattern_meaning"].lower()
 
     research = assessment["research_association"]
-    assert [item["id"] for item in research["cancer_scope"]] == [
+    assert [item["id"] for item in research["cancer_outcomes"]] == [
+        "pan_cancer",
         "pancreatic_cancer",
-        "general_cancers",
+        "other_site_specific_cancers",
     ]
-    assert {item["status"] for item in research["cancer_scope"]} == {
-        "research_scope_only"
-    }
+    assert all(item["probability"] is None for item in research["cancer_outcomes"])
+    assert research["cancer_outcomes"][0]["status"] == "simulation_only"
+    assert all(
+        item["status"] == "not_estimable"
+        for item in research["cancer_outcomes"][1:]
+    )
+    assert "General cancers" not in json.dumps(research)
     assert [pathway["id"] for pathway in research["pathways"]] == [
         "diabetes_related_cancer",
         "lifestyle_related_cancer",
@@ -112,6 +123,26 @@ def test_score_single_record_outputs():
         assert observed == [
             feature for feature in observed_ranked_features if feature in observed
         ]
+
+
+def test_probe_flags_implausible_values_separately_from_deviation():
+    payload = dict(SAMPLE_RECORD)
+    payload["BMX_BMXBMI"] = 900
+    result = model.score_single_record(payload)
+    interpretation = result["patient_assessment"]["current_profile_assessment"][
+        "deviation_interpretation"
+    ]
+    review = interpretation["range_review"]
+    assert review["status"] == "review_flagged_values"
+    assert review["flagged_values"] == [
+        {
+            "feature": "BMX_BMXBMI",
+            "value": 900.0,
+            "plausible_range": list(model.PLAUSIBLE_RANGES["BMX_BMXBMI"]),
+        }
+    ]
+    assert "unit" in review["note"].lower()
+    assert interpretation["health_direction"] == "not_directional"
 
 
 def test_sparse_record_never_labels_imputed_features_as_observed():

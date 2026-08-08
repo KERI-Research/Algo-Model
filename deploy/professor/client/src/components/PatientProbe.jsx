@@ -14,7 +14,7 @@ import {
 } from "../lib/synthetic_prevention.js";
 import { Empty, Notice } from "./common.jsx";
 import ProbeResults from "./ProbeResults.jsx";
-export default function PatientProbe({ onUnauthorised }) {
+export default function PatientProbe({ onUnauthorised, onNavigate }) {
 	const [form, setForm] = useState(emptyProbeForm);
 	const [generated, setGenerated] = useState(null);
 	const [pending, setPending] = useState(false);
@@ -206,6 +206,7 @@ export default function PatientProbe({ onUnauthorised }) {
 															{
 																schema.unit
 															}
+
 															)
 														</span>
 													) : null}
@@ -395,6 +396,7 @@ export default function PatientProbe({ onUnauthorised }) {
 					<ProbeResults
 						result={result}
 						submittedForm={submittedForm}
+						onNavigate={onNavigate}
 					/>
 				) : null}
 			</section>

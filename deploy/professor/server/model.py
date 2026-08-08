@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .core_bridge import CODE_VERSION, PREVENTION_FEATURES
+from .core_bridge import CODE_VERSION, PLAUSIBLE_RANGES, PREVENTION_FEATURES
 from .inference import params_available, score_records
 
 NON_DIAGNOSTIC_WARNING = (
@@ -63,19 +63,47 @@ SECTION_TITLES = {
 }
 
 FUTURE_RISK_DISABLED_STATEMENT = (
-    "No validated future cancer or diabetes risk model is currently deployed."
+    "No validated patient future-risk or causal model is deployed. The separate "
+    "synthetic-history simulator is for software verification only."
 )
 
-RESEARCH_CANCER_SCOPE = [
+RESEARCH_CANCER_OUTCOMES = [
+    {
+        "id": "pan_cancer",
+        "label": "Pan-cancer composite",
+        "status": "simulation_only",
+        "probability": None,
+        "availability_label": "Synthetic simulation only",
+        "available_horizons": ["5y"],
+        "reason": (
+            "A 5-year pan-cancer model exists only for generated synthetic longitudinal "
+            "histories in the Future Risk Simulation. It cannot score this submitted record."
+        ),
+    },
     {
         "id": "pancreatic_cancer",
         "label": "Pancreatic cancer",
-        "status": "research_scope_only",
+        "status": "not_estimable",
+        "probability": None,
+        "availability_label": "Likelihood not estimable",
+        "available_horizons": [],
+        "reason": (
+            "The corrected NHANES cohort has only 19 pancreatic-cancer cases, so the "
+            "site-specific model is disabled and historical supervised artifacts remain "
+            "invalidated."
+        ),
     },
     {
-        "id": "general_cancers",
-        "label": "General cancers",
-        "status": "research_scope_only",
+        "id": "other_site_specific_cancers",
+        "label": "Other site-specific cancers",
+        "status": "not_estimable",
+        "probability": None,
+        "availability_label": "Likelihood not estimable",
+        "available_horizons": [],
+        "reason": (
+            "No site-specific cancer outcome has a deployed artifact that passed the "
+            "event-count, calibration and validation gates."
+        ),
     },
 ]
 
@@ -192,6 +220,76 @@ def _deviation_band_from_percentile(percentile: float) -> dict[str, str]:
     }
 
 
+def _deviation_interpretation(
+    record: dict[str, Any], percentile: float
+) -> dict[str, Any]:
+    """Separate pattern rarity, health direction and broad value plausibility."""
+    checked_values = 0
+    flagged_values: list[dict[str, Any]] = []
+    for feature, raw_value in record.items():
+        bounds = PLAUSIBLE_RANGES.get(feature)
+        if bounds is None:
+            continue
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            continue
+        checked_values += 1
+        low, high = (float(bounds[0]), float(bounds[1]))
+        if not np.isfinite(value) or value < low or value > high:
+            flagged_values.append(
+                {
+                    "feature": feature,
+                    "value": value,
+                    "plausible_range": [low, high],
+                }
+            )
+
+    if flagged_values:
+        range_review = {
+            "status": "review_flagged_values",
+            "checked_values": checked_values,
+            "flagged_values": flagged_values,
+            "note": (
+                "One or more supplied values fall outside the project's broad plausibility "
+                "windows. Check units, sentinel values and data entry before interpreting "
+                "the deviation score."
+            ),
+        }
+    else:
+        range_review = {
+            "status": "no_broad_range_flags",
+            "checked_values": checked_values,
+            "flagged_values": [],
+            "note": (
+                "No supplied value fell outside the project's broad plausibility windows. "
+                "This does not establish that every value is clinically normal; it only "
+                "means no obvious unit, sentinel or entry error was detected."
+            ),
+        }
+
+    return {
+        "reference_percentile": round(float(percentile), 2),
+        "pattern_meaning": (
+            "The supplied measurements, considered together, were harder for the "
+            "label-free model to reconstruct than most reference records. The deviation "
+            "can come from one unusual value or from an uncommon combination of otherwise "
+            "plausible values."
+        ),
+        "health_direction": "not_directional",
+        "health_direction_label": "Better or worse cannot be inferred",
+        "health_direction_note": (
+            "The model was not trained on health outcomes and reconstruction error has no "
+            "healthy/unhealthy direction. It cannot say this person is better or worse off."
+        ),
+        "record_validity_note": (
+            "A high deviation does not by itself mean the record is invalid or does not "
+            "make sense for NHANES; use the separate range review for obvious value issues."
+        ),
+        "range_review": range_review,
+    }
+
+
 def _research_pathways(
     top_deviation_features: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -295,9 +393,9 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("No allowlisted feature values were supplied.")
     frame = pd.DataFrame([cleaned])
     result = score_records(frame, config.SSL_ARTIFACT_DIR)[0]
-    deviation_band = _deviation_band_from_percentile(
-        float(result.get("reference_percentile", 0.0))
-    )
+    reference_percentile = float(result.get("reference_percentile", 0.0))
+    deviation_band = _deviation_band_from_percentile(reference_percentile)
+    deviation_interpretation = _deviation_interpretation(cleaned, reference_percentile)
     features_missing = [
         feature for feature in PREVENTION_FEATURES if feature not in cleaned
     ]
@@ -323,6 +421,7 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
                 "reference_percentile": result.get("reference_percentile"),
                 "warning_label": f"{deviation_band['label']} (not diagnostic)",
                 "note": deviation_band["interpretation"],
+                "deviation_interpretation": deviation_interpretation,
             },
             "standout_factors": {
                 "section_title": SECTION_TITLES["standout_factors"],
@@ -347,12 +446,12 @@ def score_single_record(record: dict[str, Any]) -> dict[str, Any]:
             },
             "research_association": {
                 "section_title": SECTION_TITLES["research_association"],
-                "status": "future_and_causal_probabilities_unavailable",
+                "status": "patient_future_risk_and_causal_effects_not_estimable",
                 "note": FUTURE_RISK_DISABLED_STATEMENT,
-                "cancer_scope": RESEARCH_CANCER_SCOPE,
+                "cancer_outcomes": RESEARCH_CANCER_OUTCOMES,
                 "scope_note": (
-                    "Pancreatic cancer and general cancers have equal research emphasis "
-                    "here. This model classifies neither scope."
+                    "Select an outcome to see what this deployment can actually estimate. "
+                    "No cancer likelihood is inferred from this cross-sectional record."
                 ),
                 "factor_note": (
                     "Supplied standout measurements are grouped by relevance to each "

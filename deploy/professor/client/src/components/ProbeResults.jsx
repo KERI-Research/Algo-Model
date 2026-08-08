@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { domainFor, formatProbeValue, labelFor } from "../lib/probe_fields.js";
 import { DefinitionList, Notice, Stat, formatNumber } from "./common.jsx";
 
@@ -8,15 +9,24 @@ const EXPECTED_PATHWAY_IDS = [
 	"lifestyle_related_diabetes",
 ];
 
-const EXPECTED_CANCER_SCOPE_IDS = ["pancreatic_cancer", "general_cancers"];
+const EXPECTED_CANCER_OUTCOME_IDS = [
+	"pan_cancer",
+	"pancreatic_cancer",
+	"other_site_specific_cancers",
+];
 
 const hasValidResearchContract = (research) =>
-	Array.isArray(research?.cancer_scope) &&
-	research.cancer_scope.length === EXPECTED_CANCER_SCOPE_IDS.length &&
-	research.cancer_scope.every(
-		(scope, index) =>
-			scope.id === EXPECTED_CANCER_SCOPE_IDS[index] &&
-			scope.status === "research_scope_only",
+	Array.isArray(research?.cancer_outcomes) &&
+	research.cancer_outcomes.length ===
+		EXPECTED_CANCER_OUTCOME_IDS.length &&
+	research.cancer_outcomes.every(
+		(outcome, index) =>
+			outcome.id === EXPECTED_CANCER_OUTCOME_IDS[index] &&
+			outcome.probability === null &&
+			["simulation_only", "not_estimable"].includes(
+				outcome.status,
+			) &&
+			Array.isArray(outcome.available_horizons),
 	) &&
 	Array.isArray(research?.pathways) &&
 	research.pathways.length === EXPECTED_PATHWAY_IDS.length &&
@@ -87,7 +97,100 @@ const PathwayFactor = ({ entry, submittedForm }) => (
 	</li>
 );
 
-export default function ProbeResults({ result, submittedForm }) {
+const CancerOutcomeCapability = ({ outcomes, onNavigate }) => {
+	const [selectedId, setSelectedId] = useState(outcomes[0]?.id || "");
+	const selected =
+		outcomes.find((outcome) => outcome.id === selectedId) ||
+		outcomes[0];
+	const simulationOnly = selected?.status === "simulation_only";
+
+	return (
+		<div
+			className="probe-cancer-selector"
+			data-testid="cancer-outcome-capability"
+		>
+			<div>
+				<label htmlFor="probe-cancer-outcome">
+					Cancer outcome
+				</label>
+				<select
+					id="probe-cancer-outcome"
+					value={selectedId}
+					onChange={(event) =>
+						setSelectedId(
+							event.target.value,
+						)
+					}
+					data-testid="select-cancer-outcome"
+				>
+					{outcomes.map((outcome) => (
+						<option
+							key={outcome.id}
+							value={outcome.id}
+						>
+							{outcome.label}
+						</option>
+					))}
+				</select>
+				<p className="field-hint">
+					Only outcomes represented by the
+					deployed research artifacts are listed.
+				</p>
+			</div>
+			<div
+				className="probe-cancer-capability"
+				data-status={selected?.status}
+			>
+				<div className="probe-pathway-head">
+					<h4>{selected?.label}</h4>
+					<span
+						className="badge"
+						data-tier={
+							simulationOnly
+								? "qualified_use"
+								: "unavailable"
+						}
+					>
+						{selected?.availability_label}
+					</span>
+				</div>
+				<DefinitionList
+					items={[
+						[
+							"Patient likelihood",
+							"Not estimable from this record",
+						],
+						[
+							"Synthetic horizons",
+							selected
+								?.available_horizons
+								?.length
+								? selected.available_horizons.join(
+										", ",
+									)
+								: "None",
+						],
+					]}
+				/>
+				<p>{selected?.reason}</p>
+				{simulationOnly && onNavigate ? (
+					<button
+						type="button"
+						className="btn btn-secondary"
+						onClick={() =>
+							onNavigate("simulation")
+						}
+						data-testid="button-open-simulation"
+					>
+						Open synthetic simulation
+					</button>
+				) : null}
+			</div>
+		</div>
+	);
+};
+
+export default function ProbeResults({ result, submittedForm, onNavigate }) {
 	const score = result?.score;
 	const assessment = result?.patient_assessment;
 	const current = assessment?.current_profile_assessment;
@@ -140,6 +243,11 @@ export default function ProbeResults({ result, submittedForm }) {
 	const topContribution =
 		Number(topDeviationFeatures[0]?.reconstruction_error) || 0;
 	const totalFeatures = featuresUsed.length + featuresMissing.length;
+	const deviationInterpretation = current.deviation_interpretation || {};
+	const rangeReview = deviationInterpretation.range_review || {};
+	const flaggedValues = Array.isArray(rangeReview.flagged_values)
+		? rangeReview.flagged_values
+		: [];
 
 	return (
 		<>
@@ -185,6 +293,86 @@ export default function ProbeResults({ result, submittedForm }) {
 						diagnosis.
 					</span>
 				</div>
+			</section>
+
+			<section
+				className="card probe-deviation-meaning"
+				aria-labelledby="deviation-meaning-heading"
+				data-testid="panel-deviation-meaning"
+			>
+				<h3 id="deviation-meaning-heading">
+					What this deviation means
+				</h3>
+				<div className="probe-meaning-grid">
+					<div>
+						<span>Pattern rarity</span>
+						<strong>
+							{hasPercentile
+								? `More unusual than ${percentile}% of the reference`
+								: "Reference comparison unavailable"}
+						</strong>
+						<p>
+							{
+								deviationInterpretation.pattern_meaning
+							}
+						</p>
+					</div>
+					<div>
+						<span>Better or worse?</span>
+						<strong>
+							{deviationInterpretation.health_direction_label ||
+								"Cannot infer"}
+						</strong>
+						<p>
+							{
+								deviationInterpretation.health_direction_note
+							}
+						</p>
+					</div>
+					<div>
+						<span>
+							Do the values look
+							plausible?
+						</span>
+						<strong>
+							{rangeReview.status ===
+							"review_flagged_values"
+								? `Review ${flaggedValues.length} flagged value${flaggedValues.length === 1 ? "" : "s"}`
+								: "No broad range flags"}
+						</strong>
+						<p>{rangeReview.note}</p>
+					</div>
+				</div>
+				<p className="field-hint">
+					{
+						deviationInterpretation.record_validity_note
+					}
+				</p>
+				{flaggedValues.length ? (
+					<ul
+						className="probe-range-flags"
+						data-testid="list-range-flags"
+					>
+						{flaggedValues.map((entry) => (
+							<li key={entry.feature}>
+								<strong>
+									{labelFor(
+										entry.feature,
+									)}
+								</strong>
+								:{" "}
+								{formatProbeValue(
+									entry.feature,
+									entry.value,
+								)}
+								; broad range{" "}
+								{entry.plausible_range.join(
+									" to ",
+								)}
+							</li>
+						))}
+					</ul>
+				) : null}
 			</section>
 
 			<div className="grid grid-3 probe-supporting-stats">
@@ -320,34 +508,36 @@ export default function ProbeResults({ result, submittedForm }) {
 					</div>
 					<span
 						className="badge"
-						data-tier="unavailable"
+						data-tier="qualified_use"
 					>
-						Future and causal estimates
-						unavailable
+						Cross-sectional context only
 					</span>
 				</div>
 
 				{researchContractIsValid ? (
 					<>
-						<ul
-							className="probe-cancer-scope"
-							aria-label="Cancer research scope"
-							role="list"
+						<Notice
+							kind="info"
+							title="Why no patient likelihood appears."
 						>
-							{research.cancer_scope.map(
-								(scope) => (
-									<li
-										key={
-											scope.id
-										}
-									>
-										{
-											scope.label
-										}
-									</li>
-								),
-							)}
-						</ul>
+							This probe receives one
+							cross-sectional profile.
+							It can show which
+							measurements are
+							unusual, but it cannot
+							establish temporal
+							order, a causal effect,
+							or a future cancer
+							likelihood from that
+							record.
+						</Notice>
+
+						<CancerOutcomeCapability
+							outcomes={
+								research.cancer_outcomes
+							}
+							onNavigate={onNavigate}
+						/>
 
 						<div className="probe-pathway-grid">
 							{research.pathways.map(
@@ -369,8 +559,8 @@ export default function ProbeResults({ result, submittedForm }) {
 												className="badge"
 												data-tier="unavailable"
 											>
-												Probability
-												unavailable
+												Context
+												only
 											</span>
 										</div>
 										<p className="probe-pathway-question">
